@@ -1,0 +1,45 @@
+name: Publish
+
+# Publishes @wildwinter/app-shell to the public npm registry (npmjs.org) when a
+# GitHub Release is published. Cut releases with `npm run release -- patch`
+# (etc.) - that script bumps package.json, commits, pushes, tags, and creates
+# the Release in one step, so the released tag always points at a fresh,
+# not-yet-published version. (Publishing a version already on the registry is a
+# no-op: the step below skips it.)
+#
+# Requires an NPM_TOKEN repo secret: an npm automation token for an account with
+# publish rights to the @wildwinter scope on npmjs.org. The package publishes
+# publicly via publishConfig.access: public.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+          scope: '@wildwinter'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - name: Publish @wildwinter/app-shell
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          if npm view "@wildwinter/app-shell@$VER" version >/dev/null 2>&1; then
+            echo "@wildwinter/app-shell@$VER already published; skipping."
+          else
+            npm publish
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

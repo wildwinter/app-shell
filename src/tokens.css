@@ -1,0 +1,64 @@
+/* ============================================================================
+   Design-token GRAMMAR - the app-agnostic layer (design-language.md section 4).
+
+   The shared half of "two palettes, one grammar": the scales that are IDENTICAL
+   across the editor family - elevation, motion, radius, scrollbar chrome. Each
+   app supplies its own colour + font VALUES (its palette) over this grammar in
+   its own theme.css. Do not add app-specific colours here.
+   ============================================================================ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Elevation: three tiers by how far a surface floats (resting cards,
+     floating menus/popovers, full overlays). Theme-agnostic black so it
+     deepens naturally on the dark palettes. */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.14);
+  --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.28);
+
+  /* Motion: one easing curve + a small duration scale, plus the shared
+     panel/backdrop/screen enter-exit vocabulary. Nothing pops. */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --dur-quick: 120ms;
+  --dur-base: 150ms;
+  --dur-settle: 200ms;
+  --dur-slow: 1s;
+  --dur-panel: 260ms;
+  --dur-exit: 170ms;
+  --anim-panel-in: panel-in var(--dur-panel) var(--ease-standard);
+  --anim-backdrop-in: backdrop-in var(--dur-settle) var(--ease-standard);
+  --anim-screen-in: screen-in var(--dur-panel) var(--ease-standard);
+  --anim-panel-out: panel-out var(--dur-exit) var(--ease-standard) forwards;
+  --anim-backdrop-out: backdrop-out var(--dur-exit) var(--ease-standard) forwards;
+
+  /* Corner radius: four steps cover every surface. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Scrollbar thumb: a translucent ink, so it adapts per palette. */
+  --scroll-thumb: color-mix(in oklab, var(--ink) 20%, transparent);
+  --scroll-thumb-hover: color-mix(in oklab, var(--ink) 40%, transparent);
+}
+
+* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); background-clip: padding-box; }
+
+@keyframes panel-in { from { opacity: 0; transform: translateY(-9px) scale(0.965); } to { opacity: 1; transform: none; } }
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes screen-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes panel-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-6px) scale(0.97); } }
+@keyframes backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --anim-panel-in: none; --anim-backdrop-in: none; --anim-screen-in: none;
+    --anim-panel-out: none; --anim-backdrop-out: none;
+  }
+}
