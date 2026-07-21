@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts", "src/tokens.css", "src/pane-shell.css"],
+  entry: ["src/index.ts", "src/menu.ts", "src/tokens.css", "src/pane-shell.css"],
   format: ["esm", "cjs"],
   dts: true,
   clean: true,
