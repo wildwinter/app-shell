@@ -38,3 +38,55 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   }
   return node;
 }
+
+/** A small square glyph button (the move/delete controls list editors share). */
+export function iconBtn(glyph: string, title: string, onClick: () => void, disabled = false, danger = false): HTMLButtonElement {
+  const b = el("button", `shell-icon${danger ? " danger" : ""}`);
+  b.type = "button"; b.textContent = glyph; b.title = title; b.setAttribute("aria-label", title);
+  b.disabled = disabled;
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+/** A captioned field: `<label class="shell-labelled"><span class="shell-fieldcap">…</span>control</label>`. */
+export function labelled(label: string, control: HTMLElement): HTMLElement {
+  const w = el("label", "shell-labelled");
+  w.append(el("span", "shell-fieldcap", label), control);
+  return w;
+}
+
+/** Swap item `i` with its neighbour `i + delta` IN PLACE (the up/down reorder list editors share);
+ *  a no-op when the target is out of range. Returns whether anything moved. */
+export function moveItem<T>(arr: T[], i: number, delta: number): boolean {
+  const j = i + delta;
+  if (j < 0 || j >= arr.length) return false;
+  [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+  return true;
+}
+
+/** A tag-style editor for a string-list field (an enum's allowed values / flags): removable chips + an
+ *  add input (Enter or "," commits; blank / duplicate ignored). Mutates `holder.values` in place (read
+ *  back on save). `onChange` fires after any add / remove so callers can refresh a dependent control. */
+export function tagChips(holder: { values?: string[] }, onChange?: () => void): HTMLElement {
+  const wrap = el("div", "shell-tags");
+  const input = el("input", "shell-tag-input");
+  input.type = "text"; input.placeholder = "add value"; input.spellcheck = false;
+  const makeChip = (v: string): HTMLElement => {
+    const chip = el("span", "shell-tag", v);
+    const x = el("button", "shell-tag-x", "✕");
+    x.type = "button"; x.title = `remove ${v}`; x.setAttribute("aria-label", `remove ${v}`);
+    x.addEventListener("click", () => { holder.values = (holder.values ?? []).filter((o) => o !== v); chip.remove(); onChange?.(); });
+    chip.append(x);
+    return chip;
+  };
+  const commit = (): void => {
+    const v = input.value.trim();
+    if (v && !(holder.values ?? []).includes(v)) { (holder.values ??= []).push(v); wrap.insertBefore(makeChip(v), input); onChange?.(); }
+    input.value = "";
+  };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); commit(); } });
+  input.addEventListener("blur", commit);
+  for (const v of holder.values ?? []) wrap.append(makeChip(v));
+  wrap.append(input);
+  return wrap;
+}

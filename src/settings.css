@@ -1,0 +1,64 @@
+/* ============================================================================
+   The settings dialog + list-editor styling. Reads the shared token grammar
+   (tokens.css) and the app's palette vars (--surface / --ink / --muted / --line
+   / --accent / --danger / --bg, optional --line-soft / --accent-soft). Neutral
+   class names; the app supplies section content.
+   ============================================================================ */
+
+.settings-dialog {
+  padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--surface); color: var(--ink);
+  width: min(760px, 92vw); max-height: 82vh;
+  box-shadow: var(--shadow-3);
+  font: 14px var(--font-ui, system-ui, sans-serif);
+}
+.settings-dialog::backdrop { background: color-mix(in oklab, #000 42%, transparent); }
+.settings-form { display: flex; flex-direction: column; max-height: 82vh; }
+.settings-title { margin: 0; padding: 16px 20px; font-family: var(--font-read, inherit); font-size: 1.15rem; font-weight: 600; border-bottom: 1px solid var(--line-soft, var(--line)); }
+
+.settings-body { display: flex; min-height: 0; flex: 1; }
+.settings-tabs { flex: none; width: 12rem; overflow-y: auto; padding: 10px 8px; border-right: 1px solid var(--line-soft, var(--line)); display: flex; flex-direction: column; gap: 1px; }
+.settings-group { padding: 12px 8px 4px; font: 600 0.62rem/1 var(--font-ui); text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+.settings-tab { text-align: left; width: 100%; padding: 6px 10px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: inherit; font-size: 0.88rem; cursor: pointer; }
+.settings-tab:hover { background: var(--accent-soft, color-mix(in oklab, var(--accent) 12%, transparent)); }
+.settings-tab.active { background: var(--accent-soft, color-mix(in oklab, var(--accent) 16%, transparent)); color: var(--accent); font-weight: 500; }
+
+.settings-panels { flex: 1; min-width: 0; overflow-y: auto; padding: 18px 22px; }
+.settings-panel { display: flex; flex-direction: column; gap: 14px; }
+
+.settings-actions { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--line-soft, var(--line)); }
+.settings-error { flex: 1; margin: 0; color: var(--danger); font-size: 0.82rem; }
+.settings-actions button { font: inherit; padding: 6px 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer; }
+.settings-actions button:hover { color: var(--accent); border-color: var(--accent); }
+.settings-actions .primary { background: var(--accent); color: var(--surface); border-color: transparent; font-weight: 500; }
+.settings-actions .primary:hover { color: var(--surface); filter: brightness(1.06); }
+
+/* --- list editor (rows + disclosure + inline field kit) --------------------- */
+.set-row { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line-soft, var(--line)); }
+.set-rowline { display: flex; align-items: center; gap: 8px; }
+.set-details { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 4px 26px; }
+.set-expand { flex: none; width: 18px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; }
+.set-expand:hover, .set-expand.open { color: var(--accent); }
+
+.set-rowline input, .set-rowline select, .set-details input, .set-details select {
+  font: inherit; font-size: 0.85rem; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 8px;
+}
+.set-rowline input.set-name { flex: 1; min-width: 6rem; }
+.set-rowline input.invalid, .set-details input.invalid { border-color: var(--danger); }
+.set-rowline input:focus-visible, .set-rowline select:focus-visible,
+.set-details input:focus-visible, .set-details select:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+
+.shell-icon { flex: none; width: 24px; height: 24px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; }
+.shell-icon:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.shell-icon:disabled { opacity: 0.4; cursor: default; }
+.shell-icon.danger:hover:not(:disabled) { color: var(--surface); background: var(--danger); border-color: var(--danger); }
+
+.shell-labelled { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+.shell-fieldcap { color: var(--muted); min-width: 5rem; }
+
+.shell-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.shell-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; padding: 2px 4px 2px 9px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink); }
+.shell-tag-x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 0.7rem; padding: 0 2px; }
+.shell-tag-x:hover { color: var(--danger); }
+.shell-tag-input { min-width: 8rem; }

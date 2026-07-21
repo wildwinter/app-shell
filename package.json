@@ -1,6 +1,6 @@
 {
   "name": "@wildwinter/app-shell",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The shared shell for the editor family (Patterpad, Storylet Studio): the app-agnostic design-token grammar, the per-entity colour hash, and the vanilla-TS DOM primitive. Two palettes, one grammar - each app supplies its own palette/fonts over these tokens.",
   "type": "module",
   "license": "MIT",
@@ -31,6 +31,10 @@
       "types": "./dist/menu.d.ts",
       "import": "./dist/menu.js",
       "require": "./dist/menu.cjs"
+    },
+    "./settings.css": {
+      "import": "./dist/settings.css",
+      "require": "./dist/settings.css"
     }
   },
   "files": [
