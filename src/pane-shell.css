@@ -1,0 +1,55 @@
+/* ============================================================================
+   The pane-shell frame: top bar + nav | centre | inspector grid with collapse
+   and drag-resize. Reads the shared token grammar (tokens.css) and the app's
+   palette vars (--surface / --ink / --muted / --line / --accent, and an
+   optional --line-soft). App-specifics stay in the host: the window-drag region
+   (-webkit-app-region) and traffic-light padding, if the app is frameless, are
+   applied by the host over .topbar; the host also fills the pane bodies and the
+   top-bar lead/trail slots.
+   ============================================================================ */
+
+.pane-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+.topbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line-soft, var(--line));
+  background: var(--surface);
+}
+.topbar-lead { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.topbar-spacer { flex: 1; }
+.topbar-trail { display: flex; align-items: center; gap: 10px; }
+.pane-toggle {
+  color: var(--muted); font: inherit; font-size: 0.95rem;
+  background: none; border: 0; border-radius: var(--radius-sm); padding: 2px 8px; cursor: pointer;
+}
+.pane-toggle:hover { color: var(--accent); }
+
+.panes {
+  --nav-open-w: 14rem; --insp-open-w: 22rem;
+  --nav-w: var(--nav-open-w); --insp-w: var(--insp-open-w);
+  position: relative; flex: 1; min-height: 0;
+  display: grid; grid-template-columns: var(--nav-w) minmax(0, 1fr) var(--insp-w);
+  transition: grid-template-columns var(--dur-panel) var(--ease-standard);
+}
+.panes.no-nav { --nav-w: 0px; }
+.panes.no-inspector { --insp-w: 0px; }
+
+/* Side panes clip; their inner holds a fixed width so a collapse wipes cleanly
+   rather than reflowing while the column animates to 0. */
+.pane { overflow: hidden; min-height: 0; }
+.pane-inner { height: 100%; overflow: auto; }
+.pane-nav .pane-inner { width: var(--nav-open-w); }
+.pane-inspector .pane-inner { width: var(--insp-open-w); }
+.pane-centre { min-width: 0; min-height: 0; overflow: auto; }
+
+.panes > .pane { transition: opacity var(--dur-panel) var(--ease-standard); }
+.panes.no-nav > .pane-nav, .panes.no-inspector > .pane-inspector { opacity: 0; pointer-events: none; }
+
+/* Drag seams over each side pane's inner edge, tracking the grid columns. */
+.pane-resizer { position: absolute; top: 0; bottom: 0; width: 7px; z-index: 6; cursor: col-resize; touch-action: none; }
+.pane-resizer-nav { left: calc(var(--nav-w) - 3px); }
+.pane-resizer-insp { right: calc(var(--insp-w) - 3px); }
+.panes.no-nav .pane-resizer-nav, .panes.no-inspector .pane-resizer-insp { display: none; }
+body.pane-resizing { cursor: col-resize; user-select: none; }
+body.pane-resizing .panes { transition: none; }   /* 1:1 feel: suspend the grid tween mid-drag */

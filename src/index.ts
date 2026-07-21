@@ -6,3 +6,5 @@
 export { el } from "./dom.js";
 export type { Child, ElProps } from "./dom.js";
 export { colourIndex, colourFor, PALETTE, PALETTE_SIZE } from "./colour.js";
+export { mountPaneShell } from "./pane-shell.js";
+export type { PaneShell, PaneShellOptions, PaneShellState, PaneSide, PaneSideConfig } from "./pane-shell.js";
