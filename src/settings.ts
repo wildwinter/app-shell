@@ -23,12 +23,14 @@ export function expandableRow(opts: { line: HTMLElement[]; details?: HTMLElement
   if (opts.details && opts.details.length) {
     const details = el("div", "set-details"); details.hidden = true;
     for (const d of opts.details) details.append(d);
-    const toggle = el("button", "set-expand", "▸"); toggle.type = "button";
+    // The triangle is drawn by CSS off `.open` (a text glyph stays hairline-thin).
+    const toggle = el("button", "set-expand"); toggle.type = "button";
     toggle.title = "More"; toggle.setAttribute("aria-label", "More");
+    toggle.setAttribute("aria-expanded", "false");
     toggle.addEventListener("click", () => {
       const open = details.hidden;
       details.hidden = !open;
-      toggle.textContent = open ? "▾" : "▸";
+      toggle.setAttribute("aria-expanded", String(open));
       toggle.classList.toggle("open", open);
     });
     line.append(toggle);

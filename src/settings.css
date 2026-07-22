@@ -25,6 +25,9 @@
 
 .settings-panels { flex: 1; min-width: 0; overflow-y: auto; padding: 18px 22px; }
 .settings-panel { display: flex; flex-direction: column; gap: 14px; }
+/* A `display` on the class beats the UA's `[hidden] { display: none }`, so the
+   panels the tab switcher hides would all render at once. Opt back out. */
+.settings-panel[hidden] { display: none; }
 
 .settings-actions { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--line-soft, var(--line)); }
 .settings-error { flex: 1; margin: 0; color: var(--danger); font-size: 0.82rem; }
@@ -37,8 +40,18 @@
 .set-row { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line-soft, var(--line)); }
 .set-rowline { display: flex; align-items: center; gap: 8px; }
 .set-details { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 4px 26px; }
-.set-expand { flex: none; width: 18px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; }
+.set-details[hidden] { display: none; }   /* see .settings-panel[hidden] */
+/* The disclosure triangle is drawn, not typed: U+25B8/25BE are "small"
+   triangles that stay hairline-thin at any font size. Rotates when open. */
+.set-expand { flex: none; width: 18px; height: 18px; border: 0; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+.set-expand::before {
+  content: ""; width: 0; height: 0;
+  border-left: 6px solid currentColor; border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent;
+  transform-origin: 35% 50%; transition: transform 0.12s ease;
+}
+.set-expand { color: var(--muted); }
 .set-expand:hover, .set-expand.open { color: var(--accent); }
+.set-expand.open::before { transform: rotate(90deg); }
 
 .set-rowline input, .set-rowline select, .set-details input, .set-details select {
   font: inherit; font-size: 0.85rem; background: var(--bg); color: var(--ink);
