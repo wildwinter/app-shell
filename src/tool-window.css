@@ -1,0 +1,43 @@
+/* ---------------------------------------------------------------------------
+   The tool-window kit, CHROME grammar: the slim drag bar a frameless helper
+   window draws in place of the OS title bar, and the pin / close buttons any
+   helper (framed or not) carries. Consumes the host palette (--surface /
+   --ink / --muted / --line / --line-soft / --accent / --font-ui) over the
+   shared tokens. Content styles stay app-side; this is the chrome only.
+   --------------------------------------------------------------------------- */
+
+/* The drag bar standing in for the OS title bar (frame: false). Buttons and
+   other controls inside it opt out so they stay clickable. */
+.swin-head {
+  -webkit-app-region: drag;
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 10px;
+  background: var(--surface);
+  /* --line-soft is an optional host token (Storyletter defines it; Patterpad
+     falls back to --line). */
+  border-bottom: 1px solid var(--line-soft, var(--line));
+}
+.swin-head button, .swin-head select, .swin-head input { -webkit-app-region: no-drag; }
+.swin-title {
+  font: 600 0.68rem/1 var(--font-ui);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--muted);
+}
+.swin-spacer { flex: 1; }
+
+/* The pin + close pair; motion is interpolation, never a jump. */
+.swin-pin, .swin-close {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid transparent; border-radius: var(--radius-sm);
+  cursor: pointer; color: var(--muted); line-height: 0; padding: 4px;
+  transition: background var(--dur-quick) var(--ease-standard),
+    border-color var(--dur-quick) var(--ease-standard),
+    color var(--dur-quick) var(--ease-standard);
+}
+.swin-pin:hover, .swin-close:hover { border-color: var(--line); color: var(--ink); }
+.swin-pin svg { display: block; }
+.swin-pin.on {
+  color: var(--accent); border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+.swin-close { font: 0.8rem var(--font-ui); padding: 2px 7px; }

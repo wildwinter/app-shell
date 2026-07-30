@@ -13,3 +13,7 @@ export type { MenuLabel } from "./menu.js";
 export { iconBtn, labelled, moveItem, tagChips } from "./dom.js";
 export { expandableRow, focusNewRow, dupGuard, mountSettingsDialog } from "./settings.js";
 export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, SettingsDialogOptions } from "./settings.js";
+export { pinButton } from "./tool-window-web.js";
+export type { PinButtonOptions } from "./tool-window-web.js";
+export { confirmDialog } from "./confirm.js";
+export type { ConfirmOptions } from "./confirm.js";
