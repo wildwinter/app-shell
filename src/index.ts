@@ -17,3 +17,7 @@ export { pinButton } from "./tool-window-web.js";
 export type { PinButtonOptions } from "./tool-window-web.js";
 export { confirmDialog } from "./confirm.js";
 export type { ConfirmOptions } from "./confirm.js";
+export { mountJobProgress } from "./job-view.js";
+export type { JobProgressView, JobProgressOptions } from "./job-view.js";
+export { JOB_PROGRESS } from "./job.js";
+export type { JobProgress } from "./job.js";

@@ -1,0 +1,57 @@
+/* The long-job progress strip. Consumes the app's tokens only, so it wears
+   whichever palette the host is in. Quiet: it is a status line, not an alarm. */
+
+.job-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 18px;
+  border-bottom: 1px solid var(--line-soft, var(--line));
+  background: var(--surface);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.job-strip[hidden] { display: none; }
+
+.job-label { flex: none; }
+
+.job-bar {
+  flex: 1;
+  min-width: 80px;
+  height: 6px;
+  background: var(--line-soft, var(--line));
+  border-radius: var(--radius-pill, 999px);
+  overflow: hidden;
+}
+.job-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: var(--radius-pill, 999px);
+  transition: width var(--dur-quick, 120ms) linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .job-fill { transition: none; }
+}
+
+.job-count,
+.job-time {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.job-time { opacity: 0.8; }
+
+.job-cancel {
+  flex: none;
+  font: inherit;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 4px);
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.job-cancel:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); background: none; }
+.job-cancel:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.job-cancel:disabled { opacity: 0.6; cursor: default; }
