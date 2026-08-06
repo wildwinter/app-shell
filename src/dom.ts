@@ -15,7 +15,13 @@ export type Child = Node | string | null | undefined;
 export interface ElProps {
   className?: string;
   text?: string;
+  /** A NATIVE rollover. Prefer `tip`: `title` is OS chrome on the platform's own
+   *  slow delay, which is the seam the themed tooltip exists to close. */
   title?: string;
+  /** A themed rollover (`data-tip`, picked up by the delegated controller that
+   *  `initTooltips()` wires). Also the accessible name, since the elements that
+   *  want one are usually icon buttons with no text of their own. */
+  tip?: string;
   onClick?: (event: MouseEvent) => void;
 }
 
@@ -31,6 +37,7 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   if (props.className) node.className = props.className;
   if (props.text !== undefined && props.text !== null) node.textContent = props.text;
   if (props.title !== undefined) node.title = props.title;
+  if (props.tip !== undefined) { node.dataset["tip"] = props.tip; node.setAttribute("aria-label", props.tip); }
   if (props.onClick) node.addEventListener("click", props.onClick as EventListener);
   for (const child of children) {
     if (child === null || child === undefined) continue;
@@ -39,10 +46,12 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-/** A small square glyph button (the move/delete controls list editors share). */
+/** A small square glyph button (the move/delete controls list editors share).
+ *  Its rollover is the THEMED one (`data-tip`), so an app that has called
+ *  `initTooltips()` gets our bubble rather than the platform's. */
 export function iconBtn(glyph: string, title: string, onClick: () => void, disabled = false, danger = false): HTMLButtonElement {
   const b = el("button", `shell-icon${danger ? " danger" : ""}`);
-  b.type = "button"; b.textContent = glyph; b.title = title; b.setAttribute("aria-label", title);
+  b.type = "button"; b.textContent = glyph; b.dataset["tip"] = title; b.setAttribute("aria-label", title);
   b.disabled = disabled;
   b.addEventListener("click", onClick);
   return b;

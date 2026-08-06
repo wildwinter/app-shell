@@ -1,0 +1,16 @@
+/* The themed tooltip bubble (see tooltip.ts). ONE element for the whole
+   document, moved and refilled per anchor, so this is the entire stylesheet.
+
+   Inverted (ink ground, surface ink) on purpose: a rollover is a passing
+   annotation rather than a panel, and the family's panels are all light-on-dark
+   the other way round, so inverting is what marks it as temporary. */
+.tooltip {
+  position: fixed; z-index: 100; pointer-events: none;
+  max-width: 22rem; white-space: pre-line; /* tips may carry newlines */
+  background: var(--ink); color: var(--surface);
+  font: 0.72rem/1.4 var(--font-ui); letter-spacing: 0.01em;
+  padding: 0.3rem 0.5rem; border-radius: var(--radius-sm);
+  box-shadow: 0 4px 14px color-mix(in oklab, var(--ink) 35%, transparent);
+}
+.tooltip[hidden] { display: none; }
+.tooltip.show { animation: var(--anim-panel-in); }
