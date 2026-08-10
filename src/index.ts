@@ -46,3 +46,9 @@ export { JOB_PROGRESS } from "./job.js";
 export type { JobProgress } from "./job.js";
 export { initTooltips, tipBold, tipAt, hideTip } from "./tooltip.js";
 export type { TooltipOptions, TipRect } from "./tooltip.js";
+
+// The session and the save controller: the shape's own lifecycle (0.14.0).
+// `session.ts` is main-process code and has its own entry, like app-store.
+export { createSaveController } from "./save.js";
+export type { SaveController, SaveControllerOptions, SaveStatus } from "./save.js";
+export { EDIT_MENU } from "./menu.js";
