@@ -32,6 +32,12 @@ export type { ShardVc, VcMap } from "./vc-view.js";
 // Who is at the keyboard: asked once, skippable, persisted by the app.
 export { askIdentity } from "./identity.js";
 export type { Identity, IdentityOptions } from "./identity.js";
+// Documentation states the reason (notes); comments are the conversation. The
+// shell owns both surfaces; the app owns what they are attached to.
+export { openNotesEditor } from "./notes-editor.js";
+export type { DocLine, Notes, NotesEditorOptions } from "./notes-editor.js";
+export { openComments } from "./comments.js";
+export type { Comment, CommentMessage, CommentsOptions } from "./comments.js";
 export type { AboutOptions } from "./about.js";
 export type { ConfirmOptions } from "./confirm.js";
 export { mountJobProgress } from "./job-view.js";

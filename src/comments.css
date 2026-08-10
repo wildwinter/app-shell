@@ -1,0 +1,41 @@
+/* A comment thread inside the anchored panel (comments.ts). */
+.shell-cmt-list { display: flex; flex-direction: column; gap: 8px; }
+.shell-cmt-list.resolved { opacity: 0.55; }
+.shell-cmt-msg-head { display: flex; gap: 8px; align-items: baseline; }
+.shell-cmt-author { font: 600 0.76rem/1.2 var(--font-ui); }
+.shell-cmt-ts { font: 0.68rem/1.2 var(--font-ui); color: var(--muted); }
+.shell-cmt-body { font: 0.82rem/1.45 var(--font-read, var(--font-ui)); white-space: pre-wrap; }
+.shell-cmt-input {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--ink);
+  font: 0.82rem/1.4 var(--font-read, var(--font-ui)); padding: 6px 8px;
+}
+.shell-cmt-input:focus { outline: none; border-color: var(--accent); }
+.shell-cmt-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.shell-cmt-btn {
+  font: 0.76rem/1 var(--font-ui); padding: 5px 10px;
+  border-radius: var(--radius-sm); border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); cursor: pointer;
+}
+.shell-cmt-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+/* The picker, when one thing has more than one thread. */
+.shell-cmt-row {
+  display: flex; gap: 6px; align-items: baseline; width: 100%; text-align: left;
+  border: 0; background: none; color: var(--ink); cursor: pointer;
+  padding: 6px 4px; border-radius: var(--radius-sm);
+}
+.shell-cmt-row:hover { background: var(--accent-soft); }
+.shell-cmt-row.resolved { opacity: 0.55; }
+.shell-cmt-row-author { font: 600 0.74rem/1.2 var(--font-ui); flex: none; }
+.shell-cmt-row-gist {
+  font: 0.78rem/1.3 var(--font-read, var(--font-ui)); color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.shell-cmt-row-count { margin-left: auto; font: 0.7rem/1 var(--font-ui); color: var(--muted); }
+.shell-cmt-new {
+  align-self: flex-start; font: 0.76rem/1 var(--font-ui);
+  border: 1px dashed var(--line); background: none; color: var(--muted);
+  border-radius: var(--radius-sm); padding: 5px 10px; cursor: pointer;
+}
+.shell-cmt-new:hover { color: var(--accent); border-color: var(--accent); }
