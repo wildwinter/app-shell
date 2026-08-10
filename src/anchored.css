@@ -1,0 +1,33 @@
+/* The anchored panel (anchored.ts): a floating panel hung off the thing it is
+   about. Sized and positioned in script (the placement has to measure); this is
+   only what it looks like. Its body scrolls, because the placement caps the
+   height rather than letting a long thread run off the screen. */
+.shell-anchored {
+  position: fixed; z-index: 40;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface); color: var(--ink);
+  box-shadow: var(--shadow-2, var(--shadow-1));
+  overflow: hidden;
+}
+.shell-anchored-head {
+  flex: none;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.shell-anchored-title {
+  font: 600 0.72rem/1 var(--font-ui);
+  text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
+}
+.shell-anchored-close {
+  border: 0; background: none; color: var(--muted);
+  font-size: 0.8rem; line-height: 1; padding: 0 2px; cursor: pointer;
+}
+.shell-anchored-close:hover { color: var(--accent); }
+.shell-anchored-body {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px;
+}

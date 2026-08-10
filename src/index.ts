@@ -22,6 +22,9 @@ export type { PinButtonOptions } from "./tool-window-web.js";
 export { confirmDialog } from "./confirm.js";
 // Every app has an About, and none of them should be the grey OS panel.
 export { showAbout } from "./about.js";
+// One floating panel anchored to its subject: Patterpad's, generalised.
+export { openAnchoredPanel, closeAnchoredPanel, placeAnchored } from "./anchored.js";
+export type { AnchoredPanel, AnchoredPanelOptions } from "./anchored.js";
 export type { AboutOptions } from "./about.js";
 export type { ConfirmOptions } from "./confirm.js";
 export { mountJobProgress } from "./job-view.js";
