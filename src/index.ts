@@ -6,6 +6,10 @@
 export { el } from "./dom.js";
 export type { Child, ElProps } from "./dom.js";
 export { colourIndex, colourFor, PALETTE, PALETTE_SIZE } from "./colour.js";
+// The family's icon vocabulary: an icon is a word, and two apps must spell it
+// the same way (icons.ts).
+export { icon, iconSvg } from "./icons.js";
+export type { IconName, IconSvgName } from "./icons.js";
 export { mountPaneShell } from "./pane-shell.js";
 export type { PaneShell, PaneShellOptions, PaneShellState, PaneSide, PaneSideConfig } from "./pane-shell.js";
 export { PANE_MENU } from "./menu.js";
@@ -16,6 +20,9 @@ export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, 
 export { pinButton } from "./tool-window-web.js";
 export type { PinButtonOptions } from "./tool-window-web.js";
 export { confirmDialog } from "./confirm.js";
+// Every app has an About, and none of them should be the grey OS panel.
+export { showAbout } from "./about.js";
+export type { AboutOptions } from "./about.js";
 export type { ConfirmOptions } from "./confirm.js";
 export { mountJobProgress } from "./job-view.js";
 export type { JobProgressView, JobProgressOptions } from "./job-view.js";

@@ -1,0 +1,31 @@
+/* The About surface (about.ts): the family's, so two apps' About boxes are
+   recognisably siblings. Quiet, centred, one way out. */
+.shell-about {
+  width: min(420px, 90vw);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface); color: var(--ink);
+  padding: 22px 24px 16px;
+  box-shadow: var(--shadow-2, var(--shadow-1));
+  text-align: center;
+}
+.shell-about::backdrop { background: rgba(0, 0, 0, 0.28); }
+.shell-about-mark { margin-bottom: 12px; }
+.shell-about-mark svg { max-width: 220px; height: auto; }
+.shell-about-name { font: 600 1.15rem/1.2 var(--font-read, var(--font-ui)); }
+.shell-about-version { font: 0.78rem/1.4 var(--font-ui); color: var(--muted); margin-top: 2px; }
+.shell-about-blurb { font: 0.85rem/1.5 var(--font-read, var(--font-ui)); margin: 14px 0 0; }
+.shell-about-credits { font: 0.78rem/1.55 var(--font-ui); color: var(--muted); margin: 10px 0 0; white-space: pre-line; }
+.shell-about-links { display: flex; gap: 14px; justify-content: center; margin-top: 14px; }
+.shell-about-link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: 0.78rem/1 var(--font-ui); color: var(--accent); text-decoration: underline;
+}
+.shell-about-link:hover { text-decoration: none; }
+.shell-about-actions { display: flex; justify-content: center; margin-top: 18px; }
+.shell-about-close {
+  font: 0.8rem/1 var(--font-ui); padding: 6px 18px;
+  border-radius: var(--radius-sm); border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); cursor: pointer;
+}
+.shell-about-close:hover { border-color: var(--accent); color: var(--accent); }
