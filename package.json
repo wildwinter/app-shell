@@ -1,6 +1,6 @@
 {
   "name": "@wildwinter/app-shell",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "The shared shell for the editor family (Patterpad, Storylet Studio): the app-agnostic design-token grammar, the per-entity colour hash, and the vanilla-TS DOM primitive. Two palettes, one grammar - each app supplies its own palette/fonts over these tokens.",
   "type": "module",
   "license": "MIT",
@@ -69,6 +69,19 @@
     "./anchored.css": {
       "import": "./dist/anchored.css",
       "require": "./dist/anchored.css"
+    },
+    "./vc.css": {
+      "import": "./dist/vc.css",
+      "require": "./dist/vc.css"
+    },
+    "./identity.css": {
+      "import": "./dist/identity.css",
+      "require": "./dist/identity.css"
+    },
+    "./vc-status": {
+      "types": "./dist/vc-status.d.ts",
+      "import": "./dist/vc-status.js",
+      "require": "./dist/vc-status.cjs"
     }
   },
   "files": [
@@ -91,14 +104,19 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "peerDependencies": {
+    "@wildwinter/simple-vc-lib": ">=0.2.0",
     "electron": ">=28"
   },
   "peerDependenciesMeta": {
     "electron": {
       "optional": true
+    },
+    "@wildwinter/simple-vc-lib": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@wildwinter/simple-vc-lib": "^0.2.1",
     "electron": "42.6.0",
     "jsdom": "^25.0.0",
     "tsup": "^8.3.5",

@@ -25,6 +25,13 @@ export { showAbout } from "./about.js";
 // One floating panel anchored to its subject: Patterpad's, generalised.
 export { openAnchoredPanel, closeAnchoredPanel, placeAnchored } from "./anchored.js";
 export type { AnchoredPanel, AnchoredPanelOptions } from "./anchored.js";
+// Version control, the renderer half: badges, the lock notice, and turning a
+// held document's controls off. (The main half is @wildwinter/app-shell/vc-status.)
+export { foldVc, vcBadgeFor, paintVcBadges, lockControls, lockNotice } from "./vc-view.js";
+export type { ShardVc, VcMap } from "./vc-view.js";
+// Who is at the keyboard: asked once, skippable, persisted by the app.
+export { askIdentity } from "./identity.js";
+export type { Identity, IdentityOptions } from "./identity.js";
 export type { AboutOptions } from "./about.js";
 export type { ConfirmOptions } from "./confirm.js";
 export { mountJobProgress } from "./job-view.js";

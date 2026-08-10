@@ -1,0 +1,27 @@
+/* The identity dialog (identity.ts): asked once, skippable, and the same in
+   every app in the family. */
+.shell-ident {
+  width: min(400px, 90vw);
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--ink);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-2, var(--shadow-1));
+}
+.shell-ident::backdrop { background: rgba(0, 0, 0, 0.28); }
+.shell-ident-title { font: 600 0.95rem/1.3 var(--font-ui); }
+.shell-ident-hint { font: 0.78rem/1.45 var(--font-ui); color: var(--muted); margin: 6px 0 0; }
+.shell-ident-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.shell-ident-input {
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--ink);
+  font: 0.85rem/1.4 var(--font-ui); padding: 6px 8px;
+}
+.shell-ident-input:focus { outline: none; border-color: var(--accent); }
+.shell-ident-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+.shell-ident-btn {
+  font: 0.8rem/1 var(--font-ui); padding: 6px 14px;
+  border-radius: var(--radius-sm); border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); cursor: pointer;
+}
+.shell-ident-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }

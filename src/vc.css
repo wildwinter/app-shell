@@ -1,0 +1,20 @@
+/* Version-control surfacing (vc-view.ts): the badge a row flies, and what a
+   locked document looks like. Monochrome and themed - never colour emoji - so
+   each glyph inherits its palette and reads the same in every theme. */
+.vc-badge { margin-left: 6px; font-size: 0.78rem; line-height: 1; opacity: 0.85; }
+.vc-badge.vc-locked { color: var(--danger); }
+.vc-badge.vc-stale { color: var(--warn); }
+.vc-badge.vc-frozen { color: var(--muted); opacity: 0.6; }
+
+/* A document somebody else holds: everything reads, nothing types. */
+.vc-readonly { position: relative; }
+.vc-off { opacity: 0.6; cursor: not-allowed; }
+.vc-lock {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px; padding: 7px 10px;
+  border: 1px solid var(--line); border-left: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  font: 0.8rem/1.4 var(--font-ui); color: var(--ink);
+}
+.vc-lock-glyph { color: var(--danger); }
