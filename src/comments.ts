@@ -84,6 +84,19 @@ export interface CommentsOptions {
   deleteMessage?: (threadId: string, index: number) => void;
   /** Where the panel sits: "centre" for a point on a canvas (see anchored.ts). */
   prefer?: "left" | "below" | "centre";
+  /**
+   * The text a thread is pinned to, shown above it as a quotation.
+   *
+   * A callback rather than a field on `Comment`, because resolving an anchor is
+   * the APP's half of the seam and this is only that resolution rendered: an app
+   * that pins threads to a span of prose can quote it, one that pins them to a
+   * whole card has nothing to quote and passes nothing. Keeping it out of the
+   * thread type also means no change to what is written to disk, which matters
+   * for files living in version control.
+   *
+   * Return undefined (or "") for a thread with no quotable anchor.
+   */
+  quoteFor?: (thread: Comment) => string | undefined;
 }
 
 export function openComments(opts: CommentsOptions): void {
@@ -127,6 +140,13 @@ export function openComments(opts: CommentsOptions): void {
 
     const thread = open;
     if (thread) {
+      // The span this thread is pinned to, quoted above it. Without it a comment
+      // on a phrase reads as a comment on the whole thing, and the reader has to
+      // remember what was selected.
+      const quote = opts.quoteFor?.(thread);
+      if (quote !== undefined && quote !== "") {
+        body.append(el("blockquote", { className: "shell-cmt-quote", text: quote }));
+      }
       const list = el("div", { className: `shell-cmt-list${thread.resolved === true ? " resolved" : ""}` });
       thread.messages.forEach((message, index) => {
         const head = el("div", { className: "shell-cmt-msg-head" },

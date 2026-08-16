@@ -27,6 +27,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
+import { closeWithExit } from "./exit.js";
 
 export interface AnchoredPanel {
   panel: HTMLElement;
@@ -90,8 +91,11 @@ export function openAnchoredPanel(opts: AnchoredPanelOptions): AnchoredPanel | n
     if (current?.panel === panel) current = null;
     document.removeEventListener("pointerdown", onDown, true);
     document.removeEventListener("keydown", onKey, true);
-    panel.remove();
-    opts.onClose?.();
+    // Play the exit, THEN tear down. The order matters: `onClose` is where a
+    // caller unmounts whatever it put in the body, so running it first would
+    // leave an empty panel fading out. Listeners come off above rather than
+    // here, because a panel mid-fade must not still be taking clicks.
+    closeWithExit(panel, () => { opts.onClose?.(); panel.remove(); });
   };
   closeBtn.addEventListener("click", close);
 

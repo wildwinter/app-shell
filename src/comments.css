@@ -1,4 +1,13 @@
 /* A comment thread inside the anchored panel (comments.ts). */
+
+/* The span the thread is pinned to (quoteFor). A quotation rather than a heading:
+   these are somebody else's words, not a title the panel gave itself. */
+.shell-cmt-quote {
+  margin: 0; padding: 0.2rem 0.5rem;
+  border-left: 2px solid var(--accent);
+  color: var(--muted); font: italic 0.8rem var(--font-ui);
+}
+
 .shell-cmt-list { display: flex; flex-direction: column; gap: 8px; }
 .shell-cmt-list.resolved { opacity: 0.55; }
 .shell-cmt-msg-head { display: flex; gap: 8px; align-items: baseline; }

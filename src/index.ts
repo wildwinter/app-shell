@@ -20,6 +20,10 @@ export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, 
 export { pinButton } from "./tool-window-web.js";
 export type { PinButtonOptions } from "./tool-window-web.js";
 export { confirmDialog } from "./confirm.js";
+// The exit half of the panel motion vocabulary. Public because an app's own
+// surfaces have to close the same way the shell's do, or the two halves of one
+// window animate differently (exit.ts).
+export { closeWithExit } from "./exit.js";
 // Every app has an About, and none of them should be the grey OS panel.
 export { showAbout } from "./about.js";
 // One floating panel anchored to its subject: Patterpad's, generalised.

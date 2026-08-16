@@ -10,7 +10,14 @@
   background: var(--surface); color: var(--ink);
   box-shadow: var(--shadow-2, var(--shadow-1));
   overflow: hidden;
+  /* The family's panel motion. Placement is set in script as left/top, so a
+     transform-based keyframe composes with it rather than fighting it. */
+  animation: var(--anim-panel-in);
 }
+/* Exit: .closing swaps the enter keyframe for its reverse, and the fading panel
+   stops taking clicks so a second press cannot reach a control on its way out.
+   Zero-duration under prefers-reduced-motion, where teardown is immediate. */
+.shell-anchored.closing { animation: var(--anim-panel-out); pointer-events: none; }
 .shell-anchored-head {
   flex: none;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;

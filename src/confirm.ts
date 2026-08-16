@@ -12,6 +12,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
+import { closeWithExit } from "./exit.js";
 
 export interface ConfirmOptions {
   title: string;
@@ -42,18 +43,10 @@ export function confirmDialog(opts: ConfirmOptions): Promise<boolean> {
       if (done) return;
       done = true;
       resolve(ok);
-      // Exit motion: .closing swaps the enter keyframes for their reverse
-      // (zero-duration under prefers-reduced-motion, so teardown is instant).
-      dlg.classList.add("closing");
-      const dur = parseFloat(getComputedStyle(dlg).animationDuration) || 0;
-      const teardown = (): void => { dlg.close(); dlg.remove(); };
-      if (dur === 0) { teardown(); return; }
-      const timer = setTimeout(teardown, dur * 1000 + 120);
-      dlg.addEventListener("animationend", (e) => {
-        if (e.target !== dlg) return;
-        clearTimeout(timer);
-        teardown();
-      });
+      // Exit motion, shared with every other closing surface (exit.ts): .closing
+      // swaps the enter keyframes for their reverse, and teardown is instant
+      // under prefers-reduced-motion.
+      closeWithExit(dlg, () => { dlg.close(); dlg.remove(); });
     };
 
     cancel.addEventListener("click", () => finish(false));
