@@ -47,3 +47,83 @@ export const PANE_MENU: {
   showInspector: { label: "Show Inspector", accelerator: "CmdOrCtrl+2" },
   resetView: { label: "Reset View" },
 };
+
+/**
+ * The Help menu items the family shares, and the one platform rule that goes
+ * with them.
+ *
+ * Lifted from Patterpad, which is the only app that has ever had these: a
+ * second app writing its own updater or About is pure waste (`design/
+ * shared-shell.md`), and a suite is recognised by finding Check for Updates
+ * where you left it. Storyletter will grow both; until it does, these labels
+ * are the agreement rather than a description of two implementations.
+ *
+ * PLACEMENT, which differs by platform and is easy to get wrong:
+ * - macOS keeps About in the APP menu (the one named after the product), and
+ *   Help carries documentation + Check for Updates only.
+ * - Windows and Linux have no app menu, so About goes at the foot of Help,
+ *   after a separator. That is the conventional home there.
+ */
+export const HELP_MENU: {
+  checkForUpdates: MenuLabel;
+} = {
+  checkForUpdates: { label: "Check for Updates\u2026" },
+};
+
+/** The app-menu items the family shares (macOS; the identity item also belongs in File elsewhere). */
+export const APP_MENU: {
+  userInfo: MenuLabel;
+} = {
+  /** Name + optional email, used to sign edits and comments. One label across the suite. */
+  userInfo: { label: "User Information\u2026" },
+};
+
+/** What an app must tell the shell to build its named menu items. */
+export interface MenuNaming {
+  /** The product, as it appears in menus: "Patterpad", "Storyletter". */
+  appName: string;
+  /** The product's own documentation URL. Omit while an app has no docs yet and
+   *  the item is rendered disabled rather than opening a broken link. */
+  docsUrl?: string;
+  /** The suite's documentation home, shared by every app in the family. */
+  suiteDocsUrl?: string;
+  /** The suite, as it appears in "<suite> Documentation Home". Defaults to "Patter". */
+  suiteName?: string;
+}
+
+/** A named menu item: the label, plus the URL it opens (absent = nothing wired yet). */
+export interface NamedMenuItem extends MenuLabel {
+  url?: string;
+  /** False when the app has not supplied a URL, so the builder can render it
+   *  disabled instead of opening nothing. A placeholder, honestly labelled. */
+  ready: boolean;
+}
+
+/**
+ * The menu labels that carry a product or suite name, so no app spells its own
+ * About or Documentation item differently from the rest of the family.
+ *
+ * An app with no documentation site yet still gets the ITEM, marked
+ * `ready: false`, so the menu has its family shape from day one and wiring the
+ * URL later is a one-line change rather than a menu redesign.
+ */
+export function namedMenuItems(naming: MenuNaming): {
+  about: NamedMenuItem;
+  docs: NamedMenuItem;
+  suiteDocs: NamedMenuItem;
+} {
+  const suite = naming.suiteName ?? "Patter";
+  return {
+    about: { label: `About ${naming.appName}`, ready: true },
+    docs: {
+      label: `${naming.appName} Documentation`,
+      ...(naming.docsUrl ? { url: naming.docsUrl } : {}),
+      ready: naming.docsUrl !== undefined,
+    },
+    suiteDocs: {
+      label: `${suite} Documentation Home`,
+      ...(naming.suiteDocsUrl ? { url: naming.suiteDocsUrl } : {}),
+      ready: naming.suiteDocsUrl !== undefined,
+    },
+  };
+}
