@@ -64,6 +64,15 @@ export const icon = {
   dot: "●",
   /** Play, in the sense of "run this". */
   play: "▶",
+  /** Start the thing again from the top: a play session, a sweep. Named for the
+   *  act, not the arrow, which is the table's rule. */
+  restart: "⟲",
+  /** The three ways a collection can be shown. Named by what you get rather than
+   *  by the glyph, so a second app can pick the same three without copying
+   *  somebody's taste in symbols. */
+  viewCards: "▦",
+  viewTable: "☰",
+  viewNode: "◈",
 
   // --- handling -------------------------------------------------------------
   /** The drag grip on a reorderable row. */
