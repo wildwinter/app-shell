@@ -64,13 +64,61 @@ event loop (16ms), so a fast inner loop neither floods IPC nor stutters.
 **A strip, not a modal.** The window that started the job shows it; the rest of
 the app stays usable.
 
+## v0.18 (the bars, and the third semantic colour)
+
+Three drawings each app had grown its own copy of, and the token the family kept
+needing and never had.
+
+- **`renderStepperBar`** - a bottom bar that walks a list of things to attend to,
+  one at a time: count, previous, position, next, the entry as a button, an
+  action slot. Four bars across the two apps are this shape (problems, review
+  walks). It knows about a list and an index; it knows nothing about what a
+  problem or a comment is.
+
+  ```ts
+  import { renderStepperBar } from "@wildwinter/app-shell";
+  import "@wildwinter/app-shell/stepper.css";
+  renderStepperBar(host, {
+    items: problems.map((p) => ({ kind: p.severity, kindClass: `sev-${p.severity}`, where: p.path, text: p.message })),
+    at, tone: "danger", onStep: (i) => { at = i; paint(); }, onGo: (i) => jumpTo(problems[i]),
+  });
+  ```
+
+  Whether stepping NAVIGATES is the caller's decision, and the bar takes no view:
+  an ambient surface moves the view and never the focus; a mode you entered may
+  take you somewhere.
+
+- **`saveIndicator`** - the six lines that draw what `createSaveController`
+  already computes. Three states, always present: a dot that only ever appears
+  to worry you leaves "did that get written?" unanswered.
+
+  ```ts
+  const ind = saveIndicator();
+  topbar.append(ind.el);
+  const saver = createSaveController({ write, onStatus: ind.set });
+  ```
+
+- **`staleBar`** - a running session that has fallen behind its source. The app
+  supplies the noun and the callback; the sentence is shared, because both apps
+  had written it independently and landed a word apart.
+
+  ```ts
+  staleBar({ subject: "The project", onRestart: () => void rebuild() });
+  ```
+
+- **`--ok`** joins `--danger` and `--warn` in `tokens.css`, with a `light-dark()`
+  default every palette should override in its own `theme.css`. It is the only
+  colour in the grammar layer, and it is there because it kept not being
+  anywhere: "all is well" was being met with raw green literals that could not
+  theme-shift.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),
-reconciling Storylet Studio's variants: the pane grid + toggles, the save/dirty
-controller, the command palette, the anchored popover/panel + toast, and the
-detached-window out-of-date / restart pattern. Storylet Studio migrates each
-first (proving app-agnosticism); Patterpad follows.
+reconciling Storylet Studio's variants: the pane grid + toggles, the command
+palette, and version control's renderer half. Storylet Studio migrates each
+first (proving app-agnosticism); Patterpad follows - see
+`patterkit/design/from-storylets/patterpad-onto-the-shell.md` for that order.
 
 ## Release
 

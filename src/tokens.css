@@ -10,6 +10,18 @@
 :root {
   color-scheme: light dark;
 
+  /* The semantic set's third member, and the only COLOUR in this file.
+
+     It is here because it kept not being anywhere. An app's palette owns
+     --danger and --warn; neither owned "all is well", so a real need - the live
+     debug link, an in-sync shard, a saved document - was met with a raw green
+     literal that could not theme-shift (surface-audit-shell.md F2). A default
+     in the grammar layer means the shell's own widgets may say it, and an app
+     that has not thought about green yet still gets a green that works on both
+     grounds. Every palette should override it in its theme.css, as it does the
+     other two: this is a floor, not a decision. */
+  --ok: light-dark(#3f7d49, #79bd80);
+
   /* Elevation: three tiers by how far a surface floats (resting cards,
      floating menus/popovers, full overlays). Theme-agnostic black so it
      deepens naturally on the dark palettes. */
@@ -47,7 +59,7 @@
 ::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-corner { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: var(--radius-sm); border: 3px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); background-clip: padding-box; }
 
 @keyframes panel-in { from { opacity: 0; transform: translateY(-9px) scale(0.965); } to { opacity: 1; transform: none; } }

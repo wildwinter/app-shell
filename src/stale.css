@@ -1,0 +1,19 @@
+/* The stale-session bar (stale.ts). Warn-toned rather than danger: nothing has
+   gone wrong, and nothing is lost - what is on screen is simply older than the
+   project. It is a full-width banner at the top of the surface it applies to,
+   so it reads as a condition on that surface rather than as a passing remark. */
+.stale-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px solid var(--warn); border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--warn) 12%, transparent);
+  color: var(--ink); font: 0.85rem var(--font-ui);
+}
+/* The sentence takes the room; the way out stays its own size at the end. */
+.stale-bar-msg { flex: 1; }
+.stale-bar-go {
+  flex: none; font: inherit; padding: 4px 12px;
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  background: var(--accent); color: var(--surface); cursor: pointer;
+}
+.stale-bar-go:hover { background: color-mix(in oklab, var(--accent) 85%, var(--ink)); }

@@ -32,7 +32,7 @@
 .shell-notes-line { font: 0.82rem/1.4 var(--font-read, var(--font-ui)); color: var(--muted); }
 .shell-notes-cls {
   font: 0.68rem/1 var(--font-ui); color: var(--muted);
-  border: 1px solid var(--line-soft); border-radius: 999px;
+  border: 1px solid var(--line-soft); border-radius: var(--radius-pill);
   padding: 1px 6px; margin-right: 6px;
 }
 .shell-notes-hint { font: 0.72rem/1 var(--font-ui); color: var(--muted); margin: 0; }

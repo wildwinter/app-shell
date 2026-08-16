@@ -1,0 +1,48 @@
+/* The stepper bar (stepper.ts): one row, one entry at a time.
+
+   A host puts `.stepbar` where it wants the bar - both apps stack theirs at the
+   bottom of the window - and adds a modifier class when it runs two of them, as
+   Storyletter's review walk does over its problems bar. One grammar with one
+   modifier, rather than a parallel class set per bar. */
+.stepbar {
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid var(--line-soft); background: var(--surface);
+  font: 0.8rem var(--font-ui); padding: 6px 16px; min-height: 34px;
+}
+.stepbar[hidden] { display: none; }
+
+/* How many there are, in the tone the app chose. Tabular so the number does not
+   shuffle the row as it counts down. */
+.stepbar-count { flex: none; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stepbar-count.danger { color: var(--danger); }
+.stepbar-count.warn { color: var(--warn); }
+.stepbar-count.accent { color: var(--accent); }
+.stepbar-count.muted { color: var(--muted); }
+
+.stepbar-nav {
+  flex: none; width: 20px; height: 20px; padding: 0; line-height: 1;
+  border: none; background: none; color: var(--muted);
+  border-radius: var(--radius-sm); font: inherit; cursor: pointer;
+}
+.stepbar-nav:hover { background: var(--accent-soft); color: var(--accent); }
+/* The way out sits hard right, past whatever the app put in the action slot. */
+.stepbar-close { margin-left: auto; }
+
+/* Where you are in the walk. Quiet: it answers a question rather than asking one. */
+.stepbar-of { flex: none; color: var(--muted); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+
+/* The entry is the way TO the entry, so it looks like a control at rest rather
+   than only on hover. */
+.stepbar-cur {
+  flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px;
+  text-align: left; padding: 3px 8px; border: none; background: none;
+  border-radius: var(--radius-sm); font: inherit; color: inherit; cursor: pointer;
+}
+.stepbar-cur:hover { background: var(--accent-soft); }
+.stepbar-cat { flex: none; font-weight: 600; }
+.stepbar-where { flex: none; font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+/* One line, always: the bar's height must not depend on how wordy an entry is. */
+.stepbar-msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+
+/* An empty MODE still shows its bar, and this is what it says. */
+.stepbar-empty { flex: 1; color: var(--muted); }

@@ -105,6 +105,18 @@
       "types": "./dist/session.d.ts",
       "import": "./dist/session.js",
       "require": "./dist/session.cjs"
+    },
+    "./stale.css": {
+      "import": "./dist/stale.css",
+      "require": "./dist/stale.css"
+    },
+    "./save.css": {
+      "import": "./dist/save.css",
+      "require": "./dist/save.css"
+    },
+    "./stepper.css": {
+      "import": "./dist/stepper.css",
+      "require": "./dist/stepper.css"
     }
   },
   "files": [

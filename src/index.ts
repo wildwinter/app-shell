@@ -54,4 +54,16 @@ export type { TooltipOptions, TipRect } from "./tooltip.js";
 // `session.ts` is main-process code and has its own entry, like app-store.
 export { createSaveController } from "./save.js";
 export type { SaveController, SaveControllerOptions, SaveStatus } from "./save.js";
+// ...and the six lines that draw what it computes, so the two apps cannot
+// disagree about what "saved" looks like (save-view.ts).
+export { saveIndicator } from "./save-view.js";
+export type { SaveIndicator } from "./save-view.js";
+// A running session that has fallen behind its source: both apps had one, in
+// nearly the same words (stale.ts).
+export { staleBar } from "./stale.js";
+export type { StaleBarOptions } from "./stale.js";
+// The bottom bar that walks a list of things to attend to: problems, comments,
+// whatever the app has a queue of (stepper.ts).
+export { renderStepperBar } from "./stepper.js";
+export type { StepperBarOptions, StepperItem, StepperTone } from "./stepper.js";
 export { EDIT_MENU } from "./menu.js";
