@@ -33,6 +33,11 @@ export interface GameIdEditorOptions {
   validate?: (gameId: string) => boolean;
   /** Where the panel goes, for hosts that anchor it somewhere tight. */
   prefer?: "left" | "below" | "centre";
+  /** Chrome the panel must not cover, passed through to the anchored panel: an
+   *  app with a problems bar along the bottom wants it usable while an address
+   *  is being edited. Without this the editor is the one panel in a host that
+   *  can land on top of its own bars. */
+  keepClear?: string[];
 }
 
 /**
@@ -47,6 +52,7 @@ export function openGameIdEditor(opts: GameIdEditorOptions): boolean {
   const panel = openAnchoredPanel({
     anchor: opts.anchor, className: "shell-id-editor", title: opts.title ?? "Game ID", width: 260,
     ...(opts.prefer !== undefined ? { prefer: opts.prefer } : {}),
+    ...(opts.keepClear !== undefined ? { keepClear: opts.keepClear } : {}),
   });
   if (!panel) return false;
 

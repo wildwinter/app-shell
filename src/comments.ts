@@ -85,6 +85,12 @@ export interface CommentsOptions {
   /** Where the panel sits: "centre" for a point on a canvas (see anchored.ts). */
   prefer?: "left" | "below" | "centre";
   /**
+   * Chrome the panel must not cover. Defaults to `[".problembar"]`, which was
+   * hardcoded here and should not have been: one app's class name in shared
+   * code, and it misses any OTHER bar a host has. A second app arrived with two.
+   */
+  keepClear?: string[];
+  /**
    * The text a thread is pinned to, shown above it as a quotation.
    *
    * A callback rather than a field on `Comment`, because resolving an anchor is
@@ -107,7 +113,7 @@ export function openComments(opts: CommentsOptions): void {
     // want it to the left; and never over the problems bar, which an author may
     // be stepping through while reading the thread.
     prefer: opts.prefer ?? "below",
-    keepClear: [".problembar"],
+    keepClear: opts.keepClear ?? [".problembar"],
   });
   if (!panel) return;      // the same anchor again: that click closed it
   const { body, close } = panel;
