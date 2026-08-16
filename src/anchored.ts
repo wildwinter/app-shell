@@ -49,7 +49,7 @@ export interface AnchoredPanelOptions {
    * inspector); `"below"` suits one hung off a button in a document's header
    * (Storyletter's topline). Either way it flips when the room is not there.
    */
-  prefer?: "left" | "below";
+  prefer?: "left" | "below" | "centre";
   /** Selectors for chrome the panel must not cover - a problems bar, a review
    *  bar - so those stay usable while it is open. */
   keepClear?: string[];
@@ -127,7 +127,7 @@ export function closeAnchoredPanel(): void {
 /** Patterpad's placement, with the side as a parameter. */
 export function placeAnchored(
   panel: HTMLElement, anchor: HTMLElement, width: number,
-  prefer: "left" | "below", keepClear: string[],
+  prefer: "left" | "below" | "centre", keepClear: string[],
 ): void {
   const a = anchor.getBoundingClientRect();
   const GAP = 10;
@@ -135,13 +135,23 @@ export function placeAnchored(
   const MIN_H = 140;
   panel.style.width = `${width}px`;
 
-  // Horizontally: left of the anchor when asked and there is room, otherwise
-  // aligned to it and nudged back inside the window.
-  const leftOf = a.left - width - GAP;
-  const alignedRight = Math.min(a.right - width, window.innerWidth - width - 8);
-  panel.style.left = `${Math.round(prefer === "left" && leftOf >= 8
-    ? leftOf
-    : Math.max(8, prefer === "left" ? a.left : alignedRight))}px`;
+  // "centre" is for an anchor that is a POINT rather than a control: a zero-size
+  // proxy dropped where somebody clicked on a canvas. Aligning a panel's edge to
+  // a point puts the whole panel up and to one side of the spot the person just
+  // chose, which reads as the panel having appeared somewhere else. Centred on
+  // the point, it appears where they pointed.
+  if (prefer === "centre") {
+    const centred = a.left + a.width / 2 - width / 2;
+    panel.style.left = `${Math.round(Math.min(Math.max(8, centred), window.innerWidth - width - 8))}px`;
+  } else {
+    // Horizontally: left of the anchor when asked and there is room, otherwise
+    // aligned to it and nudged back inside the window.
+    const leftOf = a.left - width - GAP;
+    const alignedRight = Math.min(a.right - width, window.innerWidth - width - 8);
+    panel.style.left = `${Math.round(prefer === "left" && leftOf >= 8
+      ? leftOf
+      : Math.max(8, prefer === "left" ? a.left : alignedRight))}px`;
+  }
 
   // Vertically: whichever side has more room, staying off the app's bottom bars.
   let bottomLimit = window.innerHeight - 8;
@@ -150,6 +160,19 @@ export function placeAnchored(
     if (!bar) continue;
     const r = bar.getBoundingClientRect();
     if (r.height > 0) bottomLimit = Math.min(bottomLimit, r.top - 6);
+  }
+  // Centred on a point vertically as well, for the same reason, but only while
+  // the panel actually fits: past that it falls back to the more-room-wins rule
+  // below rather than hanging off the top of the window.
+  if (prefer === "centre") {
+    const height = Math.min(CAP, Math.max(MIN_H, panel.offsetHeight));
+    const mid = a.top + a.height / 2 - height / 2;
+    if (mid >= 8 && mid + height <= bottomLimit) {
+      panel.style.top = `${Math.round(mid)}px`;
+      panel.style.bottom = "auto";
+      panel.style.maxHeight = `${Math.round(CAP)}px`;
+      return;
+    }
   }
   const roomBelow = bottomLimit - (a.bottom + GAP);
   const roomAbove = (a.top - GAP) - 8;

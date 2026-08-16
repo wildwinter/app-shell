@@ -2,6 +2,26 @@
 .shell-cmt-list { display: flex; flex-direction: column; gap: 8px; }
 .shell-cmt-list.resolved { opacity: 0.55; }
 .shell-cmt-msg-head { display: flex; gap: 8px; align-items: baseline; }
+/* The delete: QUIET but always there.
+   It was rollover-revealed at first, following the grip grammar the lists use,
+   and that was the wrong borrowing: a list row hides its grip because a dense
+   column of them would be clutter, whereas this popover holds two or three
+   messages and is already a surface you opened on purpose. Hidden, the only
+   way to delete a comment was to discover that hovering one exact row revealed
+   something - which is to say there was no way to delete a comment. Reported as
+   "there is apparently no delete option", which is exactly right.
+   Low contrast carries "secondary"; invisibility carries "absent". */
+.shell-cmt-del {
+  margin-left: auto; flex: none; padding: 0 4px; line-height: 1;
+  background: none; border: none; cursor: pointer;
+  font-size: 0.72rem; color: var(--muted); opacity: 0.55;
+  transition: opacity var(--dur-quick, 120ms) var(--ease-standard, ease),
+    color var(--dur-quick, 120ms) var(--ease-standard, ease);
+}
+.shell-cmt-msg:hover .shell-cmt-del, .shell-cmt-del:focus-visible { opacity: 1; }
+.shell-cmt-del:hover { opacity: 1; color: var(--danger, #b00); }
+/* A withdrawn message keeps its place in the thread and stops asking to be read. */
+.shell-cmt-msg.gone .shell-cmt-body { font-style: italic; color: var(--muted); }
 .shell-cmt-author { font: 600 0.76rem/1.2 var(--font-ui); }
 .shell-cmt-ts { font: 0.68rem/1.2 var(--font-ui); color: var(--muted); }
 .shell-cmt-body { font: 0.82rem/1.45 var(--font-read, var(--font-ui)); white-space: pre-wrap; }

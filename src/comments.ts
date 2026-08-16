@@ -25,7 +25,14 @@ import { openAnchoredPanel } from "./anchored.js";
 
 /** One message. The author is a NAME stamped at posting time, not a reference:
  *  people leave projects and their words stay. */
-export interface CommentMessage { author: string; ts: string; body: string }
+export interface CommentMessage {
+  author: string; ts: string; body: string;
+  /** A TOMBSTONE: the words are gone, the turn in the conversation is not.
+   *  Deleting a reply out of a thread would renumber the argument around it, so
+   *  what is left says who spoke and when and that they withdrew it. The body is
+   *  emptied on the way out, so "deleted" means deleted from the file too. */
+  deleted?: boolean;
+}
 
 /** A thread, anchored to the id of whatever it is about. */
 export interface Comment {
@@ -41,9 +48,11 @@ const stamp = (ts: string): string => {
   return when.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 };
 
-/** A preview of a thread, for the list: its first message, shortened. */
+/** A preview of a thread, for the list: its first message, shortened. The first
+ *  message that still SAYS something - a thread whose opener was withdrawn is
+ *  previewed by whatever carried on, not by its tombstone. */
 const gist = (thread: Comment): string => {
-  const first = thread.messages[0]?.body ?? "";
+  const first = thread.messages.find((m) => m.deleted !== true)?.body ?? "";
   return first.length > 60 ? `${first.slice(0, 57)}…` : first;
 };
 
@@ -59,6 +68,22 @@ export interface CommentsOptions {
   newThreadId: () => string;
   post: (threadId: string, body: string) => void;
   setResolved: (threadId: string, resolved: boolean) => void;
+  /**
+   * Withdraw one message. Absent = the host does not offer deletion.
+   *
+   * By INDEX, because a message has no id of its own and giving every message
+   * one would be a format change to every stored thread for the sake of one
+   * verb. The index is read off the list the reader is looking at, and these
+   * files are edited by one person at a time with a VCS underneath.
+   *
+   * The host decides what deleting MEANS: the agreed rule is that the message
+   * becomes a tombstone, and the whole thread goes when nothing readable would
+   * be left (which covers the common case of withdrawing a comment nobody had
+   * replied to).
+   */
+  deleteMessage?: (threadId: string, index: number) => void;
+  /** Where the panel sits: "centre" for a point on a canvas (see anchored.ts). */
+  prefer?: "left" | "below" | "centre";
 }
 
 export function openComments(opts: CommentsOptions): void {
@@ -68,7 +93,7 @@ export function openComments(opts: CommentsOptions): void {
     // Below its button (the topline), unlike Patterpad's inspector rows which
     // want it to the left; and never over the problems bar, which an author may
     // be stepping through while reading the thread.
-    prefer: "below",
+    prefer: opts.prefer ?? "below",
     keepClear: [".problembar"],
   });
   if (!panel) return;      // the same anchor again: that click closed it
@@ -103,13 +128,23 @@ export function openComments(opts: CommentsOptions): void {
     const thread = open;
     if (thread) {
       const list = el("div", { className: `shell-cmt-list${thread.resolved === true ? " resolved" : ""}` });
-      for (const message of thread.messages) {
-        list.append(el("div", { className: "shell-cmt-msg" },
-          el("div", { className: "shell-cmt-msg-head" },
-            el("span", { className: "shell-cmt-author", text: message.author === "" ? "Someone" : message.author }),
-            el("span", { className: "shell-cmt-ts", text: stamp(message.ts) })),
-          el("div", { className: "shell-cmt-body", text: message.body })));
-      }
+      thread.messages.forEach((message, index) => {
+        const head = el("div", { className: "shell-cmt-msg-head" },
+          el("span", { className: "shell-cmt-author", text: message.author === "" ? "Someone" : message.author }),
+          el("span", { className: "shell-cmt-ts", text: stamp(message.ts) }));
+        // Rollover-revealed, at the end of the head: the family's grip grammar,
+        // and a delete that is always visible invites the accident it is.
+        // Nothing is offered on a tombstone: there is nothing left to withdraw.
+        if (opts.deleteMessage && message.deleted !== true) {
+          const bin = el("button", { className: "shell-cmt-del", text: "✕" });
+          bin.title = "Delete this comment";
+          bin.addEventListener("click", () => opts.deleteMessage?.(thread.id, index));
+          head.append(bin);
+        }
+        list.append(el("div", { className: `shell-cmt-msg${message.deleted === true ? " gone" : ""}` },
+          head,
+          el("div", { className: "shell-cmt-body", text: message.deleted === true ? "Comment deleted" : message.body })));
+      });
       body.append(list);
     }
 
