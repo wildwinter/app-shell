@@ -163,7 +163,8 @@ export function openComments(opts: CommentsOptions): void {
         // Nothing is offered on a tombstone: there is nothing left to withdraw.
         if (opts.deleteMessage && message.deleted !== true) {
           const bin = el("button", { className: "shell-cmt-del", text: "✕" });
-          bin.title = "Delete this comment";
+          bin.dataset.tip = "Delete this comment";
+          bin.setAttribute("aria-label", "Delete this comment");
           bin.addEventListener("click", () => opts.deleteMessage?.(thread.id, index));
           head.append(bin);
         }

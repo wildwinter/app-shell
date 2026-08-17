@@ -25,7 +25,10 @@ export function expandableRow(opts: { line: HTMLElement[]; details?: HTMLElement
     for (const d of opts.details) details.append(d);
     // The triangle is drawn by CSS off `.open` (a text glyph stays hairline-thin).
     const toggle = el("button", "set-expand"); toggle.type = "button";
-    toggle.title = "More"; toggle.setAttribute("aria-label", "More");
+    // `data-tip`, not `title`: this package ships a themed tooltip and nothing
+    // else in it raises an OS rollover. A lone `title` here would be the one
+    // place a host's chrome broke character, and on the platform's own delay.
+    toggle.dataset.tip = "More"; toggle.setAttribute("aria-label", "More");
     toggle.setAttribute("aria-expanded", "false");
     toggle.addEventListener("click", () => {
       const open = details.hidden;
