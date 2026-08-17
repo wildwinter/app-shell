@@ -57,8 +57,24 @@ export interface PaneState {
  * lands you at the top of A, having forgotten. Nobody wants that, and no editor
  * outside this package does it.
  */
+/**
+ * A project in the Open Recent menu.
+ *
+ * The NAME is here rather than being derived from the path, because a project's
+ * display name is what its file says it is, not what its folder is called: two
+ * projects can sit in folders called `draft`, and one can be renamed without
+ * moving. Every app in the family shows this menu, so both halves are shared.
+ *
+ * Optional because the path is the identity and the name is only how it reads.
+ * An entry recorded before a name was known still works.
+ */
+export interface RecentProject {
+  path: string;
+  name?: string;
+}
+
 export interface AppSettingsCore<Place> {
-  recents: string[];
+  recents: RecentProject[];
   lastProject?: string;
   /** Project path -> where the author was in it. Capped with `recents`, so a
    *  project forgotten from the list stops carrying a place around too. */
@@ -88,8 +104,10 @@ export interface AppStore<Place, App> {
   get(): AppSettings<Place, App>;
   /** Merge into the app's own slice and save. */
   patchApp(patch: Partial<App>): void;
-  /** Record an opened project: front of recents, deduped, capped. */
-  touchProject(path: string): void;
+  /** Record an opened project: front of recents, deduped, capped. The name is
+   *  refreshed each time, so renaming a project updates the menu on next open;
+   *  omitting it keeps whatever was known before rather than blanking it. */
+  touchProject(path: string, name?: string): void;
   /** Drop one that failed to open (moved, deleted). */
   forgetProject(path: string): void;
   /** Where the author was in the CURRENT project. Compared before writing: this
@@ -120,10 +138,13 @@ export function createAppStore<Place, App extends object>(
   }
 
   const state: AppSettings<Place, App> = {
-    recents: [],
     panes: opts.panes ?? {},
     windows: {},
     ...loaded,
+    // Migration: recents used to be bare paths. Keep them, without names, rather
+    // than emptying somebody's Open Recent menu on an update.
+    recents: (loaded.recents ?? []).map((r) =>
+      typeof r === "string" ? { path: r } : r) as RecentProject[],
     // Migration: a settings file written before places were keyed by project has
     // a single `place` belonging to `lastProject`. Carry it over rather than
     // dropping it, or everyone's first launch after this update forgets where
@@ -161,19 +182,23 @@ export function createAppStore<Place, App extends object>(
       Object.assign(state.app, patch);
       save();
     },
-    touchProject(path) {
-      state.recents = [path, ...state.recents.filter((p) => p !== path)].slice(0, maxRecents);
+    touchProject(path, name) {
+      const known = state.recents.find((r) => r.path === path);
+      // An omitted name keeps the one we had: reopening from a route that does
+      // not know the name must not blank the menu entry.
+      const entry: RecentProject = { path, ...(name ?? known?.name ? { name: name ?? known?.name } : {}) };
+      state.recents = [entry, ...state.recents.filter((r) => r.path !== path)].slice(0, maxRecents);
       state.lastProject = path;
       // Places follow recents: one that has aged off the list should not keep a
       // place in the file for ever. Nothing is dropped for merely opening
       // something else, which is the whole point of keying them.
       for (const key of Object.keys(state.places)) {
-        if (!state.recents.includes(key)) delete state.places[key];
+        if (!state.recents.some((r) => r.path === key)) delete state.places[key];
       }
       save();
     },
     forgetProject(path) {
-      state.recents = state.recents.filter((p) => p !== path);
+      state.recents = state.recents.filter((r) => r.path !== path);
       if (state.lastProject === path) delete state.lastProject;
       delete state.places[path]; // it moved or went: its place is meaningless now
       save();

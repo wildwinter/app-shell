@@ -50,7 +50,7 @@ describe("places are per project", () => {
     const s = createAppStore<Where, object>({ dir, defaults: {}, maxRecents: 2 });
     s.touchProject("/a"); s.setPlace({ scene: "one" });
     s.touchProject("/b"); s.touchProject("/c");
-    expect(s.get().recents).toEqual(["/c", "/b"]);
+    expect(s.get().recents.map((r) => r.path)).toEqual(["/c", "/b"]);
     expect(s.placeOf("/a")).toBeUndefined();
   });
 
@@ -73,7 +73,41 @@ describe("places are per project", () => {
   it("writes atomically, leaving no temp file behind", () => {
     const s = store();
     s.touchProject("/a");
-    const saved = JSON.parse(readFileSync(join(dir, "app-settings.json"), "utf8")) as { recents: string[] };
-    expect(saved.recents).toEqual(["/a"]);
+    const saved = JSON.parse(readFileSync(join(dir, "app-settings.json"), "utf8")) as { recents: { path: string }[] };
+    expect(saved.recents).toEqual([{ path: "/a" }]);
+  });
+});
+
+describe("recents carry a display name", () => {
+  it("records the name and refreshes it when the project is renamed", () => {
+    const s = store();
+    s.touchProject("/a", "The Tavern");
+    expect(s.get().recents[0]).toEqual({ path: "/a", name: "The Tavern" });
+    s.touchProject("/a", "The Tavern (rewrite)");
+    expect(s.get().recents).toEqual([{ path: "/a", name: "The Tavern (rewrite)" }]);
+  });
+
+  it("KEEPS a known name when reopened without one", () => {
+    // Not every route that opens a project knows its display name, and none of
+    // them should blank the menu entry on the way past.
+    const s = store();
+    s.touchProject("/a", "The Tavern");
+    s.touchProject("/a");
+    expect(s.get().recents[0]?.name).toBe("The Tavern");
+  });
+
+  it("dedupes by PATH, not by name", () => {
+    const s = store();
+    s.touchProject("/a", "Draft");
+    s.touchProject("/b", "Draft"); // two projects may legitimately share a name
+    expect(s.get().recents.map((r) => r.path)).toEqual(["/b", "/a"]);
+  });
+
+  it("MIGRATES bare-path recents written by an older version", () => {
+    writeFileSync(join(dir, "app-settings.json"), JSON.stringify({
+      recents: ["/a", "/b"], panes: {}, windows: {}, places: {},
+    }));
+    // Kept, without names, rather than emptying somebody's Open Recent menu.
+    expect(store().get().recents).toEqual([{ path: "/a" }, { path: "/b" }]);
   });
 });
