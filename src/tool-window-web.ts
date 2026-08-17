@@ -15,13 +15,27 @@ const PIN_ICON = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" st
 
 export interface PinButtonOptions {
   pinned: boolean;
-  /** Persist the choice (the button keeps its own visual state). */
+  /** Persist the choice. The button reflects the click itself. */
   onToggle: (on: boolean) => void;
+}
+
+/** A pin and the handle to drive it, the same shape `saveIndicator` returns. */
+export interface PinButton {
+  el: HTMLButtonElement;
+  /**
+   * Reflect a pin state decided ELSEWHERE, without calling `onToggle`.
+   *
+   * The state is not always the button's to choose: main re-pins a helper window
+   * on Reset View, and the window is told after the fact. Before this existed a
+   * host had to reach in and set the class, the aria and the title by hand,
+   * which is three chances to disagree with the button about what it is showing.
+   */
+  set: (pinned: boolean) => void;
 }
 
 /** The always-on-top pin: `.swin-pin`, aria-pressed, and a tooltip that says
  *  what a click will do (the richest of the family's variants, kept). */
-export function pinButton(opts: PinButtonOptions): HTMLButtonElement {
+export function pinButton(opts: PinButtonOptions): PinButton {
   const b = el("button", "swin-pin");
   b.type = "button";
   b.innerHTML = PIN_ICON;
@@ -33,5 +47,5 @@ export function pinButton(opts: PinButtonOptions): HTMLButtonElement {
   };
   reflect();
   b.addEventListener("click", () => { pinned = !pinned; reflect(); opts.onToggle(pinned); });
-  return b;
+  return { el: b, set: (next: boolean) => { pinned = next; reflect(); } };
 }

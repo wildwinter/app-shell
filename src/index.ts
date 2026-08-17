@@ -18,7 +18,7 @@ export { iconBtn, labelled, moveItem, tagChips } from "./dom.js";
 export { expandableRow, focusNewRow, dupGuard, mountSettingsDialog } from "./settings.js";
 export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, SettingsDialogOptions } from "./settings.js";
 export { pinButton } from "./tool-window-web.js";
-export type { PinButtonOptions } from "./tool-window-web.js";
+export type { PinButtonOptions, PinButton } from "./tool-window-web.js";
 export { confirmDialog } from "./confirm.js";
 // The exit half of the panel motion vocabulary. Public because an app's own
 // surfaces have to close the same way the shell's do, or the two halves of one
