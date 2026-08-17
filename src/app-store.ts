@@ -44,15 +44,25 @@ export interface PaneState {
 /**
  * The part every app has.
  *
- * `place` is deliberately opaque: "open where you left off" is a family idea,
+ * `places` is deliberately opaque: "open where you left off" is a family idea,
  * but WHERE is a scene and a caret in one app and a box, a tab and a card in
- * another. The shell stores it and clears it when the project changes, which is
- * the one rule about it that is not app-specific.
+ * another.
+ *
+ * It is keyed BY PROJECT, and that is the interesting part. This held a single
+ * `place` and dropped it whenever a different project was opened, on the
+ * reasoning that clearing it was the one rule that could not be app-specific.
+ * That reasoning was wrong, and Patterpad disproved it by having done the other
+ * thing for a long time: it remembers the line you were on in every project you
+ * have opened. With one slot, working on A, glancing at B and coming back to A
+ * lands you at the top of A, having forgotten. Nobody wants that, and no editor
+ * outside this package does it.
  */
 export interface AppSettingsCore<Place> {
   recents: string[];
   lastProject?: string;
-  place?: Place;
+  /** Project path -> where the author was in it. Capped with `recents`, so a
+   *  project forgotten from the list stops carrying a place around too. */
+  places: Record<string, Place>;
   panes: PaneState;
   identity?: Identity;
   /** Keyed by whatever the app calls each window ("board", "search"). */
@@ -82,9 +92,13 @@ export interface AppStore<Place, App> {
   touchProject(path: string): void;
   /** Drop one that failed to open (moved, deleted). */
   forgetProject(path: string): void;
-  /** Where the author was. Compared before writing: this is called on every
-   *  navigation and must not mean a disk write per click. */
+  /** Where the author was in the CURRENT project. Compared before writing: this
+   *  is called on every navigation and must not mean a disk write per click.
+   *  A no-op with no project open, since there is nothing to key it against. */
   setPlace(place: Place): void;
+  /** Where the author was in a project, or undefined if it was never opened or
+   *  has aged out of `recents`. Defaults to the current one. */
+  placeOf(path?: string): Place | undefined;
   setPanes(panes: PaneState): void;
   setIdentity(identity: Identity): void;
   /** One window's bounds and/or pin, merged with what it already had. */
@@ -110,6 +124,16 @@ export function createAppStore<Place, App extends object>(
     panes: opts.panes ?? {},
     windows: {},
     ...loaded,
+    // Migration: a settings file written before places were keyed by project has
+    // a single `place` belonging to `lastProject`. Carry it over rather than
+    // dropping it, or everyone's first launch after this update forgets where
+    // they were, which is the exact complaint the change is meant to fix.
+    places: {
+      ...(loaded.places ?? {}),
+      ...(loaded.lastProject !== undefined && (loaded as { place?: Place }).place !== undefined
+        ? { [loaded.lastProject]: (loaded as { place?: Place }).place as Place }
+        : {}),
+    },
     // The app's slice merges FIELD BY FIELD, so a key added in a new version
     // arrives with its default rather than being absent for everybody who has
     // run the app before.
@@ -138,23 +162,32 @@ export function createAppStore<Place, App extends object>(
       save();
     },
     touchProject(path) {
-      // A DIFFERENT project invalidates the remembered place; the same one must
-      // keep it, or "open where you left off" could never work, since reopening
-      // goes through here.
-      if (state.lastProject !== path) delete state.place;
       state.recents = [path, ...state.recents.filter((p) => p !== path)].slice(0, maxRecents);
       state.lastProject = path;
+      // Places follow recents: one that has aged off the list should not keep a
+      // place in the file for ever. Nothing is dropped for merely opening
+      // something else, which is the whole point of keying them.
+      for (const key of Object.keys(state.places)) {
+        if (!state.recents.includes(key)) delete state.places[key];
+      }
       save();
     },
     forgetProject(path) {
       state.recents = state.recents.filter((p) => p !== path);
       if (state.lastProject === path) delete state.lastProject;
+      delete state.places[path]; // it moved or went: its place is meaningless now
       save();
     },
     setPlace(place) {
-      if (JSON.stringify(state.place) === JSON.stringify(place)) return;
-      state.place = place;
+      const path = state.lastProject;
+      if (path === undefined) return; // no project open: nothing to key it against
+      if (JSON.stringify(state.places[path]) === JSON.stringify(place)) return;
+      state.places[path] = place;
       save();
+    },
+    placeOf: (path) => {
+      const key = path ?? state.lastProject;
+      return key === undefined ? undefined : structuredClone(state.places[key]);
     },
     setPanes(panes) {
       state.panes = { ...state.panes, ...panes };
