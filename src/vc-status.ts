@@ -31,6 +31,17 @@ import type { VCFileStatus, VCStatusOptions } from "@wildwinter/simple-vc-lib";
 export interface ShardRef {
   key: string;
   path: string;
+  /**
+   * This path is the one that decides whether the KEY is untracked.
+   *
+   * A key usually spans several files, and "new" is the one state that does not
+   * fold by "any of them counts": a scene whose flow file is committed but whose
+   * sidecar has never been written is not a new scene, it is an edited one.
+   * Patterpad keys off the flow shard for exactly that reason. Mark the canonical
+   * path and the rest are ignored for `untracked`; mark none and the key never
+   * reports untracked.
+   */
+  primary?: boolean;
 }
 
 /** One shard's version-control state. All-clean is `{ writable: true }`. */
@@ -43,6 +54,14 @@ export interface ShardState {
   lockedBy?: string[];
   /** A newer revision exists on the server (get latest before editing). */
   outOfDate?: boolean;
+  /** WE hold it: checked out / opened by the current user, still ours to edit.
+   *  Distinct from `writable`, which says only that the bit is off. */
+  checkedOutByMe?: boolean;
+  /** Tracked, with local changes not yet committed. */
+  dirty?: boolean;
+  /** Not in version control yet. Decided by the `primary` path alone (see
+   *  `ShardRef.primary`). */
+  untracked?: boolean;
 }
 
 export interface ShardStatus {
@@ -82,6 +101,7 @@ async function query(shards: ShardRef[]): Promise<ShardStatus> {
   const states = new Map<string, ShardState>();
   for (const s of shards) states.set(s.key, { writable: true });
   const keyOf = new Map(shards.map((s) => [s.path, s.key]));
+  const isPrimary = new Set(shards.filter((s) => s.primary).map((s) => s.path));
   // Hit the server only when the window has elapsed; otherwise a cheap local read.
   const doRemote = Date.now() - lastRemoteAt >= REMOTE_STATUS_THROTTLE_MS;
   let system = "filesystem";
@@ -92,6 +112,10 @@ async function query(shards: ShardRef[]): Promise<ShardStatus> {
       system = st.system;
       const acc = states.get(key)!;
       if (!st.writable) acc.writable = false;
+      // Local bits, cheap on every provider, so never throttled.
+      if (st.openedByMe) acc.checkedOutByMe = true;
+      if (st.dirty) acc.dirty = true;
+      if (st.tracked === false && isPrimary.has(st.filePath)) acc.untracked = true;
       if (doRemote) {   // remote bits are authoritative only on a fresh server query
         if (st.lockedBy?.length) acc.lockedBy = [...new Set([...(acc.lockedBy ?? []), ...st.lockedBy])];
         if (st.outOfDate) acc.outOfDate = true;

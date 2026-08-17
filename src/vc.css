@@ -4,6 +4,12 @@
 .vc-badge { margin-left: 6px; font-size: 0.78rem; line-height: 1; opacity: 0.85; }
 .vc-badge.vc-locked { color: var(--danger); }
 .vc-badge.vc-stale { color: var(--warn); }
+/* The three "this one is yours" states. Accent rather than danger or warn:
+   nothing is wrong with a file you are holding, so it must not read as a
+   problem sitting in a list beside ones that are. */
+.vc-badge.vc-mine { color: var(--accent); }
+.vc-badge.vc-dirty { color: var(--accent); font-size: 0.6rem; }
+.vc-badge.vc-new { color: var(--muted); }
 .vc-badge.vc-frozen { color: var(--muted); opacity: 0.6; }
 
 /* A document somebody else holds: everything reads, nothing types. */

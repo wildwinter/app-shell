@@ -58,6 +58,14 @@ export const icon = {
   /** Read-only on disk with no other holder: the resting state of everything
    *  in a lock-based working copy that nobody has checked out yet. */
   readOnly: "○",
+  /** YOU hold this one: checked out / opened by the current user, still yours to
+   *  edit. Shares its glyph with `note`, which the table permits: an entry is a
+   *  MEANING, and two meanings may draw the same shape. */
+  checkedOut: "✎",
+  /** Tracked, with local changes not yet committed. */
+  modified: "●",
+  /** Not in version control yet: new since the last commit. */
+  untracked: "+",
   /** Something needs attention but is not fatal. */
   warning: "‼",
   /** A live thing: the running position, an active marker. */

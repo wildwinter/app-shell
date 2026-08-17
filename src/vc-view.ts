@@ -27,6 +27,12 @@ export interface ShardVc {
   writable: boolean;
   lockedBy?: string[];
   outOfDate?: boolean;
+  /** WE hold it: still ours to edit. */
+  checkedOutByMe?: boolean;
+  /** Tracked, with uncommitted local changes. */
+  dirty?: boolean;
+  /** Not in version control yet. */
+  untracked?: boolean;
 }
 
 /** A snapshot, keyed by shard key. Absent = clean, writable, up to date. */
@@ -45,6 +51,9 @@ export function foldVc(shards: VcMap, keys: string | undefined): ShardVc | undef
     if (!s.writable) out.writable = false;
     if (s.lockedBy?.length) out.lockedBy = [...new Set([...(out.lockedBy ?? []), ...s.lockedBy])];
     if (s.outOfDate) out.outOfDate = true;
+    if (s.checkedOutByMe) out.checkedOutByMe = true;
+    if (s.dirty) out.dirty = true;
+    if (s.untracked) out.untracked = true;
   }
   return out;
 }
@@ -55,6 +64,13 @@ export function foldVc(shards: VcMap, keys: string | undefined): ShardVc | undef
 export function vcBadgeFor(s: ShardVc | undefined): { glyph: string; cls: string; title: string } | null {
   if (s?.lockedBy?.length) return { glyph: icon.locked, cls: "vc-locked", title: `Locked by ${s.lockedBy.join(", ")}` };
   if (s?.outOfDate) return { glyph: icon.down, cls: "vc-stale", title: "Out of date - a newer version is on the server" };
+  // The three states of a file that is YOURS, most actionable first. Ordered so
+  // the badge answers "what would I do about this?" rather than describing the
+  // file: a checkout you are holding matters more than the edits inside it, and
+  // both matter more than a file the VCS has never seen.
+  if (s?.checkedOutByMe) return { glyph: icon.checkedOut, cls: "vc-mine", title: "Checked out by you" };
+  if (s?.dirty) return { glyph: icon.modified, cls: "vc-dirty", title: "Modified - uncommitted local changes" };
+  if (s?.untracked) return { glyph: icon.untracked, cls: "vc-new", title: "New - not yet committed" };
   // Read-only on disk with NO other holder is still editable: the save checks
   // it out. Muted, and last, because under a lock-based VCS this is the
   // resting state of everything the author has not touched yet.
