@@ -33,6 +33,7 @@
 // ---------------------------------------------------------------------------
 
 import { resolve } from "node:path";
+import type { RecentProject } from "./app-store.js";
 
 /** As much of a BrowserWindow as this file has any business knowing. */
 export interface SatelliteWindow {
@@ -58,8 +59,10 @@ export interface Satellite {
 /** The slice of the app store this needs. Structural, so the real store fits
  *  without dragging its generic parameters in here. */
 export interface SessionStore {
-  get(): { recents: string[]; lastProject?: string };
-  touchProject(path: string): void;
+  get(): { recents: RecentProject[]; lastProject?: string };
+  /** The name is what the app just learned by opening the project. Omitting it
+   *  keeps whatever was known, which is `createAppStore`'s rule. */
+  touchProject(path: string, name?: string): void;
   forgetProject(path: string): void;
 }
 
@@ -72,8 +75,13 @@ export interface ProjectSessionOptions<S, R> {
    * file-association launch names a shard INSIDE a project, and it is the
    * project that belongs in recents. `reply` is whatever the app sends back to
    * its renderer - this never looks inside it.
+   *
+   * `name` is the project's display name, if opening it revealed one. Return it
+   * and the session records it with the path; leave it out and whatever was
+   * known is kept. This is here so no app has to touch the store a second time
+   * just to name what it has already opened.
    */
-  open: (path: string) => { session: S; root: string; reply: R } | { error: string };
+  open: (path: string) => { session: S; root: string; name?: string; reply: R } | { error: string };
   /**
    * The outgoing session is finished with: sweep its temporary files, close its
    * handles. Called only once the replacement has opened successfully, so a
@@ -126,7 +134,7 @@ export function createProjectSession<S, R>(opts: ProjectSessionOptions<S, R>): P
       }
       if (session !== undefined) opts.close?.(session);
       session = opened.session;
-      opts.store.touchProject(opened.root);
+      opts.store.touchProject(opened.root, opened.name);
       invalidateSatellites();
       opts.refreshMenu?.();
       return opened.reply;
@@ -134,9 +142,15 @@ export function createProjectSession<S, R>(opts: ProjectSessionOptions<S, R>): P
 
     isKnownPath(path) {
       const s = opts.store.get();
-      const known = new Set(
-        [s.lastProject, ...s.recents].filter((p): p is string => typeof p === "string" && p !== "").map((p) => resolve(p)),
-      );
+      // Read `path` off each recent EXPLICITLY rather than filtering the list to
+      // whatever looks like a string. The old form did the latter, and when
+      // recents became objects in 0.25.0 every entry quietly failed the test and
+      // was dropped: no error, no empty list to notice, just a launcher that had
+      // stopped recognising every project but the last one. A defensive filter is
+      // what turns a shape change into a silent behaviour change, so this one
+      // states the shape it wants and lets the compiler enforce it.
+      const paths = [s.lastProject, ...s.recents.map((r) => r.path)];
+      const known = new Set(paths.filter((p): p is string => !!p).map((p) => resolve(p)));
       return known.has(resolve(path));
     },
 

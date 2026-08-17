@@ -1,17 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { createProjectSession, type Satellite, type SessionStore } from "../src/session.js";
+import type { RecentProject } from "../src/app-store.js";
 
-function fakeStore(initial: { recents?: string[]; lastProject?: string } = {}): SessionStore & { state: { recents: string[]; lastProject?: string } } {
+/** Mirrors `createAppStore`: recents are `{ path, name? }`, and an omitted name
+ *  keeps whatever was known rather than blanking it. */
+function fakeStore(initial: { recents?: RecentProject[]; lastProject?: string } = {}): SessionStore & { state: { recents: RecentProject[]; lastProject?: string } } {
   const state = { recents: initial.recents ?? [], lastProject: initial.lastProject };
   return {
     state,
     get: () => state,
-    touchProject(path) {
-      state.recents = [path, ...state.recents.filter((p) => p !== path)];
+    touchProject(path, name) {
+      const known = state.recents.find((r) => r.path === path);
+      const entry: RecentProject = { path, ...(name ?? known?.name ? { name: name ?? known?.name } : {}) };
+      state.recents = [entry, ...state.recents.filter((r) => r.path !== path)];
       state.lastProject = path;
     },
     forgetProject(path) {
-      state.recents = state.recents.filter((p) => p !== path);
+      state.recents = state.recents.filter((r) => r.path !== path);
       if (state.lastProject === path) state.lastProject = undefined;
     },
   };
@@ -38,7 +43,7 @@ describe("project session", () => {
       open: () => ({ session: "live", root: "/p/proj", reply: "ok" }),
     });
     expect(s.openAt("/p/proj/boxes/a.storyletbox")).toBe("ok");
-    expect(store.state.recents).toEqual(["/p/proj"]);
+    expect(store.state.recents).toEqual([{ path: "/p/proj" }]);
     expect(s.current()).toBe("live");
   });
 
@@ -56,7 +61,7 @@ describe("project session", () => {
     expect(s.openAt("/p/two")).toEqual({ error: "gone" });
     expect(s.current()).toBe("/p/one");        // still open
     expect(closed).toBe(0);                    // and not closed
-    expect(store.state.recents).toEqual(["/p/one"]);
+    expect(store.state.recents).toEqual([{ path: "/p/one" }]);
   });
 
   it("closes the outgoing session only after the new one has opened", () => {
@@ -117,7 +122,7 @@ describe("project session", () => {
   });
 
   it("only lets the renderer name paths the app already knows", () => {
-    const store = fakeStore({ recents: ["/p/one", "/p/two"], lastProject: "/p/one" });
+    const store = fakeStore({ recents: [{ path: "/p/one" }, { path: "/p/two", name: "Two" }], lastProject: "/p/one" });
     const s = createProjectSession<string, string>({
       store,
       open: (p) => ({ session: p, root: p, reply: "ok" }),
@@ -126,5 +131,41 @@ describe("project session", () => {
     expect(s.isKnownPath("/p/two/")).toBe(true);     // resolved, so a trailing slash is the same place
     expect(s.isKnownPath("/p/three")).toBe(false);
     expect(s.isKnownPath("/etc")).toBe(false);
+  });
+
+  it("recognises every recent, not just the last project", () => {
+    // THE REGRESSION 0.25.0 opened. `isKnownPath` filtered the list to whatever
+    // was a string, so when recents became objects every entry was dropped in
+    // silence and a file-association launch stopped recognising anything but
+    // `lastProject`. No error, no empty list, just a launcher that had quietly
+    // narrowed. Asserted on an entry that is NOT lastProject on purpose.
+    const store = fakeStore({ recents: [{ path: "/p/one" }, { path: "/p/two", name: "Two" }], lastProject: "/p/one" });
+    const s = createProjectSession<string, string>({
+      store,
+      open: (p) => ({ session: p, root: p, reply: "ok" }),
+    });
+    expect(s.isKnownPath("/p/two")).toBe(true);
+  });
+
+  it("records the name the open revealed, without a second call to the store", () => {
+    // The session is the thing that just opened the project, so it is where the
+    // name is in hand. Before this an app had to touch the store again itself.
+    const store = fakeStore();
+    const s = createProjectSession<string, string>({
+      store,
+      open: () => ({ session: "live", root: "/p/proj", name: "The Tavern", reply: "ok" }),
+    });
+    s.openAt("/p/proj");
+    expect(store.state.recents).toEqual([{ path: "/p/proj", name: "The Tavern" }]);
+  });
+
+  it("an open that reveals no name keeps the one already known", () => {
+    const store = fakeStore({ recents: [{ path: "/p/proj", name: "The Tavern" }] });
+    const s = createProjectSession<string, string>({
+      store,
+      open: () => ({ session: "live", root: "/p/proj", reply: "ok" }),
+    });
+    s.openAt("/p/proj");
+    expect(store.state.recents).toEqual([{ path: "/p/proj", name: "The Tavern" }]);
   });
 });

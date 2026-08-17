@@ -11,11 +11,14 @@ describe("pinButton", () => {
     const on = pinButton({ pinned: true, onToggle: () => {} });
     expect(on.el.classList.contains("on")).toBe(true);
     expect(on.el.getAttribute("aria-pressed")).toBe("true");
-    expect(on.el.title).toBe("Pinned on top: click to unpin");
+    expect(on.el.dataset["tip"]).toBe("Pinned on top: click to unpin");
+    expect(on.el.getAttribute("aria-label")).toBe("Pinned on top: click to unpin");
+    expect(on.el.title).toBe(""); // the PLATFORM rollover, never raised
 
     const off = pinButton({ pinned: false, onToggle: () => {} });
     expect(off.el.classList.contains("on")).toBe(false);
-    expect(off.el.title).toBe("Click to keep on top");
+    expect(off.el.dataset["tip"]).toBe("Click to keep on top");
+    expect(off.el.getAttribute("aria-label")).toBe("Click to keep on top");
   });
 
   it("says what a CLICK WILL DO, not what the state is", () => {
@@ -24,7 +27,7 @@ describe("pinButton", () => {
     // promise about the click to another.
     const p = pinButton({ pinned: false, onToggle: () => {} });
     p.el.click();
-    expect(p.el.title).toBe("Pinned on top: click to unpin");
+    expect(p.el.dataset["tip"]).toBe("Pinned on top: click to unpin");
   });
 
   it("toggles, and reports the NEW state to the host", () => {
@@ -48,7 +51,7 @@ describe("pinButton", () => {
     p.set(true);
     expect(p.el.classList.contains("on")).toBe(true);
     expect(p.el.getAttribute("aria-pressed")).toBe("true");
-    expect(p.el.title).toBe("Pinned on top: click to unpin");
+    expect(p.el.dataset["tip"]).toBe("Pinned on top: click to unpin");
     expect(onToggle).not.toHaveBeenCalled();
   });
 

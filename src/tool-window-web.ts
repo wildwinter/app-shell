@@ -43,7 +43,15 @@ export function pinButton(opts: PinButtonOptions): PinButton {
   const reflect = (): void => {
     b.classList.toggle("on", pinned);
     b.setAttribute("aria-pressed", String(pinned));
-    b.title = pinned ? "Pinned on top: click to unpin" : "Click to keep on top";
+    // The THEMED rollover, not the platform's. 0.21.0 swept `title` out of this
+    // package and missed this one, so every helper window in the family had a
+    // single control waiting on the OS delay and then drawing the OS bubble,
+    // sitting beside controls that did not. `title` was also the button's only
+    // accessible name (the glyph is an aria-hidden SVG), so the label has to go
+    // to `aria-label` as it moves, or dropping `title` would take the name too.
+    const label = pinned ? "Pinned on top: click to unpin" : "Click to keep on top";
+    b.dataset["tip"] = label;
+    b.setAttribute("aria-label", label);
   };
   reflect();
   b.addEventListener("click", () => { pinned = !pinned; reflect(); opts.onToggle(pinned); });
