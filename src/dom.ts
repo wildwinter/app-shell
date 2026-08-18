@@ -10,6 +10,8 @@
 // `el("div", { className: "c" }, "t")` produce identical DOM.
 // ---------------------------------------------------------------------------
 
+import { ensureTooltipHost, checkTooltipHost } from "./tooltip.js";
+
 export type Child = Node | string | null | undefined;
 
 export interface ElProps {
@@ -37,12 +39,20 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   if (props.className) node.className = props.className;
   if (props.text !== undefined && props.text !== null) node.textContent = props.text;
   if (props.title !== undefined) node.title = props.title;
-  if (props.tip !== undefined) { node.dataset["tip"] = props.tip; node.setAttribute("aria-label", props.tip); }
+  if (props.tip !== undefined) {
+    node.dataset["tip"] = props.tip;
+    node.setAttribute("aria-label", props.tip);
+    // Setting a tip mounts the renderer. Without this, `data-tip` draws nothing at all in a window whose
+    // host never called `initTooltips()`, which is a silent failure rather than a degraded one. No
+    // options passed: the host stays authoritative about behaviour (see tooltip.ts).
+    ensureTooltipHost();
+  }
   if (props.onClick) node.addEventListener("click", props.onClick as EventListener);
   for (const child of children) {
     if (child === null || child === undefined) continue;
     node.append(child);
   }
+  checkTooltipHost(); // one-shot: warns if the APP wrote data-tip and nothing mounted a host
   return node;
 }
 

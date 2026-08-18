@@ -49,6 +49,7 @@ export interface TooltipOptions {
 }
 
 let inited = false;
+let checked = false; // the one-shot no-host warning below has been scheduled
 let suppressed: (() => boolean) | undefined;
 const SHOW_DELAY = 350; // ms - snappier than the OS title delay, slow enough not to flicker on pass-through
 const EDGE = 6;         // viewport inset so the bubble never touches the window edge
@@ -163,14 +164,57 @@ export function tipAt(key: string, rect: TipRect, text: string): void {
 /** Take any tip down: the pointer has left, or a gesture has started. */
 export function hideTip(): void { hide(); }
 
+/**
+ * Mount the renderer because something is about to speak the grammar.
+ *
+ * The themed tooltip is not a feature a host turns on; it is the renderer for a grammar the shell's own
+ * components already speak, and `data-tip` with nothing listening draws NOTHING - not the themed
+ * bubble, not the platform one. That silence cost Patterpad two releases of a pin with no tooltip, and
+ * cost it again when a `title` was converted to `data-tip` in a window that had never mounted this.
+ *
+ * So `el` calls this whenever it sets a tip. Mounting a delegated listener is the same class of act as
+ * `confirmDialog` appending to `document.body`, which this package has always done.
+ */
+export function ensureTooltipHost(): void { initTooltips(); }
+
+/**
+ * One deferred check that an app writing `data-tip` ITSELF has a host, warning if not.
+ *
+ * `ensureTooltipHost` covers anything built through `el`. It cannot cover a `data-tip` written straight
+ * into markup or set by hand, which is the case that leaves a whole window of dead tips with no shell
+ * component involved - so that one gets a warning rather than silence. Scheduled once, after the
+ * current task, so it sees a rendered document rather than an empty one.
+ */
+export function checkTooltipHost(): void {
+  if (checked) return;
+  checked = true;
+  setTimeout(() => {
+    if (inited || typeof document === "undefined") return;
+    if (document.querySelector("[data-tip]")) {
+      console.warn("app-shell: something set `data-tip` but no tooltip host is mounted, so those rollovers will not draw. Call initTooltips() once per window.");
+    }
+  }, 0);
+}
+
 const tipAncestor = (n: EventTarget | null): HTMLElement | null =>
   (n instanceof Element ? n.closest<HTMLElement>("[data-tip]") : null);
 
-/** Wire the one delegated controller. Idempotent; later options are ignored. */
+/**
+ * Wire the one delegated controller. Mounting happens once; OPTIONS do not.
+ *
+ * An explicit call is always authoritative about its options, even after something else has already
+ * mounted the listener. That ordering is not hypothetical, and Storyletter caught it before it shipped:
+ * once components self-mount (see `ensureTooltipHost`), a host's own
+ * `initTooltips({ suppressed })` could land second and be dropped by an early return, silently taking
+ * a rule like "no tooltips in Writing View" with it. Nothing would fail and nothing would show.
+ *
+ * Components therefore call this with NO arguments: they mount the renderer without claiming the
+ * options, and the host keeps the last word on behaviour.
+ */
 export function initTooltips(opts: TooltipOptions = {}): void {
+  if (opts.suppressed !== undefined) suppressed = opts.suppressed; // an explicit call always wins
   if (inited) return;
   inited = true;
-  suppressed = opts.suppressed;
 
   document.addEventListener("pointerover", (e) => {
     const el = tipAncestor(e.target);
