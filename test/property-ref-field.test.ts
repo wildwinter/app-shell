@@ -78,6 +78,21 @@ describe("bindPropertyRef", () => {
     expect([...list.querySelectorAll("option")].map((o) => o.value)).toContain("weather");
   });
 
+  it("still gets its datalist when bound BEFORE the field is mounted", () => {
+    // The ordinary order for a builder: make the nodes, wire them, then append. The datalist is a
+    // sibling of the input, so attaching it at bind time is a no-op here - and the failure is silent,
+    // which is how it survived a release.
+    const host = document.createElement("div");
+    const input = document.createElement("input");
+    bindPropertyRef(input, () => {}, { known: () => ["danger"], scope: "world" });
+    host.append(input);
+    input.dispatchEvent(new Event("input"));           // any use re-tries the attach
+
+    const list = host.querySelector(`datalist#${input.getAttribute("list")}`);
+    expect(list).not.toBeNull();
+    expect([...list!.querySelectorAll("option")].map((o) => o.value)).toEqual(["danger"]);
+  });
+
   it("re-checks when the declarations change under it, with nothing typed", () => {
     // The case a per-field listener cannot catch: rename the property and the
     // reference is wrong from that moment.

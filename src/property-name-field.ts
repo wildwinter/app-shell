@@ -199,9 +199,18 @@ export function bindPropertyRef(
   const list = document.createElement("datalist");
   list.id = `shell-propref-${Math.random().toString(36).slice(2, 9)}`;
   input.setAttribute("list", list.id);
-  input.after(list);
+
+  // Attached lazily, not once at bind. A datalist has to be IN the document to do anything, and it is
+  // attached as a sibling of the input - so binding a field that has not been appended yet (which is
+  // the ordinary order for a builder that makes its nodes and then mounts them) silently produced no
+  // autocomplete at all: no error, nothing to see. This re-tries on every sync, so it heals as soon as
+  // the field reaches the tree.
+  const attach = (): void => {
+    if (!list.isConnected && input.parentNode) input.after(list);
+  };
 
   const sync = (): void => {
+    attach();
     const known = opts.known();
     list.replaceChildren(...known.map((k) => { const o = document.createElement("option"); o.value = k; return o; }));
     const v = input.value.trim();
