@@ -32,6 +32,8 @@ export { gameIdify, isValidGameId } from "./ids.js";
 export { propertyNameify, isValidPropertyName, isCaseOnlyPropertyName,
   RESERVED_PROPERTY_NAMES, PROPERTY_NAME_HINT } from "./property-names.js";
 export { bindPropertyName, propertyNameProblem, firstIllegalPropertyName } from "./property-name-field.js";
+export { bindPropertyRef, propertyRefProblem, revalidatePropertyRefs } from "./property-name-field.js";
+export type { PropertyRefOptions } from "./property-name-field.js";
 export { openGameIdEditor } from "./id-editor.js";
 export type { GameIdEditorOptions } from "./id-editor.js";
 export type { AnchoredPanel, AnchoredPanelOptions } from "./anchored.js";
