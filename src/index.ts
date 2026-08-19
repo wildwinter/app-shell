@@ -29,6 +29,9 @@ export { showAbout } from "./about.js";
 // One floating panel anchored to its subject: Patterpad's, generalised.
 export { openAnchoredPanel, closeAnchoredPanel, placeAnchored } from "./anchored.js";
 export { gameIdify, isValidGameId } from "./ids.js";
+export { propertyNameify, isValidPropertyName, isCaseOnlyPropertyName,
+  RESERVED_PROPERTY_NAMES, PROPERTY_NAME_HINT } from "./property-names.js";
+export { bindPropertyName, propertyNameProblem, firstIllegalPropertyName } from "./property-name-field.js";
 export { openGameIdEditor } from "./id-editor.js";
 export type { GameIdEditorOptions } from "./id-editor.js";
 export type { AnchoredPanel, AnchoredPanelOptions } from "./anchored.js";

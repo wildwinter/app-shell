@@ -72,6 +72,10 @@
 }
 .set-rowline input.set-name { flex: 1; min-width: 6rem; }
 .set-rowline input.invalid, .set-details input.invalid { border-color: var(--danger); }
+/* `.illegal`: a value that breaks a RULE, as opposed to `.invalid`, which the dup guard
+   owns for a value that clashes with another. Both can be true of one field, so they are
+   separate classes and draw the same. */
+.set-rowline input.illegal, .set-details input.illegal { border-color: var(--danger); }
 .set-rowline input:focus-visible, .set-rowline select:focus-visible,
 .set-details input:focus-visible, .set-details select:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 
