@@ -67,10 +67,30 @@ export function iconBtn(glyph: string, title: string, onClick: () => void, disab
   return b;
 }
 
-/** A captioned field: `<label class="shell-labelled"><span class="shell-fieldcap">…</span>control</label>`. */
+/**
+ * A captioned field: `<label class="shell-labelled"><span class="shell-fieldcap">…</span>control</label>`.
+ *
+ * The label is pointed at the field it captions, EXPLICITLY, and never at a button. A `<label>` with no
+ * `for` forwards a click to its first labelable descendant, and buttons are labelable - so a caption
+ * wrapped around a control containing buttons (`tagChips`, whose every chip carries a remove button)
+ * turns every click on the row's dead space into a press of the FIRST button in it. That shipped:
+ * patterkit/patter#44, where clicking a Game Data list value anywhere but its ✕ deleted the first value
+ * in the list. Reported as "clicking a value removes the wrong one", which is not a wrong-index bug at
+ * all - the click never reached the chip.
+ *
+ * When the control holds no labelable field (a chips editor with the add input removed, say), this is a
+ * plain `<div>`: no caption behaviour is better than a caption that presses something.
+ */
 export function labelled(label: string, control: HTMLElement): HTMLElement {
-  const w = el("label", "shell-labelled");
+  const target = control.matches("input, select, textarea")
+    ? control
+    : control.querySelector<HTMLElement>("input:not([type=button]):not([type=submit]), select, textarea");
+  const w = el(target ? "label" : "div", "shell-labelled");
   w.append(el("span", "shell-fieldcap", label), control);
+  if (target) {
+    if (!target.id) target.id = `shell-f-${Math.random().toString(36).slice(2, 9)}`;
+    (w as HTMLLabelElement).htmlFor = target.id;
+  }
   return w;
 }
 
