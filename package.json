@@ -132,6 +132,7 @@
     "access": "public"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath scripts/git-hooks || true",
     "build": "tsup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
