@@ -15,6 +15,41 @@ afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
 const store = () => createAppStore<Where, { greeting: string }>({ dir, defaults: { greeting: "hi" } });
 
+// The legacy singular `place` (pre-0.24) and the fold that went wrong. The
+// migration folded it into places[lastProject] with the LEGACY value winning
+// and never deleted the key, so one stale entry from an old build re-clobbered
+// the current project's place on EVERY launch while every setPlace write
+// landed correctly. Found from a Storyletter user report ("only the view mode
+// seems to persist"): nothing errors, and the restore lands somewhere
+// plausible, which is why it survived. Expectations written before the fix.
+describe("the legacy singular place", () => {
+  const legacyFile = (place: unknown, places?: Record<string, unknown>): void => {
+    writeFileSync(join(dir, "app-settings.json"), JSON.stringify({
+      recents: [{ path: "/a" }], lastProject: "/a",
+      place, ...(places !== undefined ? { places } : {}),
+    }));
+  };
+
+  it("folds the legacy place in ONLY where no keyed entry exists", () => {
+    legacyFile({ scene: "ancient" });
+    expect(store().placeOf("/a")).toEqual({ scene: "ancient" });
+  });
+
+  it("never lets the legacy place beat a keyed entry", () => {
+    legacyFile({ scene: "ancient" }, { "/a": { scene: "fresh", caret: "n9" } });
+    expect(store().placeOf("/a")).toEqual({ scene: "fresh", caret: "n9" });
+  });
+
+  it("retires the key: after any save the file no longer carries it", () => {
+    legacyFile({ scene: "ancient" });
+    const s = store();
+    s.setPanes({ nav: true });   // any save
+    const raw = JSON.parse(readFileSync(join(dir, "app-settings.json"), "utf8")) as Record<string, unknown>;
+    expect(raw["place"]).toBeUndefined();
+    expect((raw["places"] as Record<string, unknown>)["/a"]).toEqual({ scene: "ancient" });
+  });
+});
+
 describe("places are per project", () => {
   it("keeps each project's place while you move between them", () => {
     const s = store();

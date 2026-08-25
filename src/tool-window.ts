@@ -84,9 +84,30 @@ export function centeredOnPrimary(size: ToolWindowSize): { x: number; y: number 
 export function rescueToolWindow(w: BrowserWindow | undefined | null, def: ToolWindowSize): void {
   if (!w || w.isDestroyed()) return;
   if (w.isMinimized()) w.restore();
-  w.setAlwaysOnTop(true);
   w.setBounds({ ...def, ...centeredOnPrimary(def) });
   w.show();
+  // Raise within OUR stack. This used to setAlwaysOnTop(true), which on macOS
+  // and Windows floats the window above every other APPLICATION - and stuck
+  // that way, since nothing ever unset it.
+  w.moveTop();
+}
+
+/**
+ * The pin: keep a tool window above THIS APP'S MAIN WINDOW, not above the
+ * world. `alwaysOnTop` was the first implementation and it floats the window
+ * over every other application on macOS and Windows, so a pinned Board meant
+ * nothing else on the machine could come to the front (a Storyletter user
+ * report, 2026-08-25). A CHILD window is the semantic actually wanted on both
+ * platforms: it stays over its parent and stacks normally against everything
+ * else. Clearing any alwaysOnTop first also heals a window an older build
+ * pinned the old way.
+ */
+export function pinToolWindow(
+  w: BrowserWindow | undefined | null, parent: BrowserWindow | undefined | null, on: boolean,
+): void {
+  if (!w || w.isDestroyed()) return;
+  w.setAlwaysOnTop(false);
+  w.setParentWindow(on && parent && !parent.isDestroyed() ? parent : null);
 }
 
 export interface ToolWindowOptions {
@@ -101,8 +122,15 @@ export interface ToolWindowOptions {
   min?: ToolWindowSize;
   /** false = frameless: the renderer draws its own slim drag bar (.swin-head). */
   frame?: boolean;
-  /** Floats over the editor (the pin); remembered by the host. */
-  alwaysOnTop?: boolean;
+  /** The window to PIN ABOVE: the app's main window, resolved at open time (a
+   *  getter, because the main window can be recreated). With `pinned` true the
+   *  new tool window is parented to it, which keeps it above the editor and
+   *  stacks it normally against every other application - the semantic
+   *  `alwaysOnTop` (this option's late predecessor) got wrong on macOS and
+   *  Windows, where it floats over the whole machine. */
+  pinTo?: () => BrowserWindow | undefined;
+  /** Start pinned (the host remembers); flip later with `pinToolWindow`. */
+  pinned?: boolean;
   /** Wire debounced bounds persistence into the host's store slice. */
   remember?: (bounds: ToolWindowBounds) => void;
   /** Fired when THIS window closes (identity-guarded; a stale close never
@@ -121,12 +149,12 @@ export function openToolWindow(existing: BrowserWindow | undefined | null, opts:
     show: false,
     title: opts.title,
     ...(opts.frame !== undefined ? { frame: opts.frame } : {}),
-    ...(opts.alwaysOnTop !== undefined ? { alwaysOnTop: opts.alwaysOnTop } : {}),
     webPreferences: {
       contextIsolation: true, nodeIntegration: false, sandbox: true,
       preload: opts.preload,
     },
   });
+  if (opts.pinTo !== undefined) pinToolWindow(w, opts.pinTo(), opts.pinned ?? false);
   if (opts.remember) rememberBounds(w, opts.remember);
   w.once("ready-to-show", () => w.show());
   if (opts.onClosed) w.on("closed", opts.onClosed);

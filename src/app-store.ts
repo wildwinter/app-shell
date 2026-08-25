@@ -148,18 +148,26 @@ export function createAppStore<Place, App extends object>(
     // Migration: a settings file written before places were keyed by project has
     // a single `place` belonging to `lastProject`. Carry it over rather than
     // dropping it, or everyone's first launch after this update forgets where
-    // they were, which is the exact complaint the change is meant to fix.
+    // they were - but only where no keyed entry exists. The first cut of this
+    // merge put the legacy value LAST, so a stale singular beat every fresh
+    // per-project write on every launch, and (because the `...loaded` spread
+    // above kept the key alive through save) it did so for ever: writes landed
+    // correctly all session and the next start quietly reset them. Found from
+    // a host's user report; the key is retired just below.
     places: {
-      ...(loaded.places ?? {}),
       ...(loaded.lastProject !== undefined && (loaded as { place?: Place }).place !== undefined
         ? { [loaded.lastProject]: (loaded as { place?: Place }).place as Place }
         : {}),
+      ...(loaded.places ?? {}),
     },
     // The app's slice merges FIELD BY FIELD, so a key added in a new version
     // arrives with its default rather than being absent for everybody who has
     // run the app before.
     app: { ...opts.defaults, ...(loaded.app ?? {}) },
   };
+  // Retire the legacy key: it rode in on `...loaded`, and a state that still
+  // carries it re-runs the fold on every future load.
+  delete (state as { place?: Place }).place;
 
   const save = (): void => {
     try {

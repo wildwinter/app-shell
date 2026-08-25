@@ -12,7 +12,7 @@ vi.mock("electron", () => ({
   },
 }));
 
-const { savedWindowRect, centeredOnPrimary, rescueToolWindow } = await import("../src/tool-window.js");
+const { savedWindowRect, centeredOnPrimary, rescueToolWindow, pinToolWindow } = await import("../src/tool-window.js");
 
 const DEF = { width: 500, height: 400 };
 const MIN = { width: 300, height: 200 };
@@ -51,20 +51,64 @@ describe("rescueToolWindow", () => {
       isDestroyed: () => false,
       isMinimized: () => true,
       restore: () => calls.push("restore"),
-      setAlwaysOnTop: (on: boolean) => calls.push(`pin:${on}`),
       setBounds: (b: unknown) => calls.push(`bounds:${JSON.stringify(b)}`),
       show: () => calls.push("show"),
+      moveTop: () => calls.push("moveTop"),
     };
     rescueToolWindow(w as never, DEF);
+    // No pin: rescuing used to setAlwaysOnTop(true), which on macOS floats the
+    // window above every other APPLICATION and stuck that way. Raising within
+    // our own stack is what a rescue means.
     expect(calls).toEqual([
-      "restore", "pin:true",
+      "restore",
       `bounds:${JSON.stringify({ ...DEF, ...centeredOnPrimary(DEF) })}`,
-      "show",
+      "show", "moveTop",
     ]);
   });
 
   it("is a no-op for a missing or destroyed window", () => {
     rescueToolWindow(undefined, DEF);
     rescueToolWindow({ isDestroyed: () => true } as never, DEF);
+  });
+});
+
+// The pin. `alwaysOnTop` floats a window above every other APPLICATION on
+// macOS and Windows, so a pinned Board meant nothing else on the machine
+// could come to the front (a Storyletter user report, 2026-08-25). What a pin
+// means is "above MY app's main window", and the mechanism that says exactly
+// that on both platforms is a CHILD window. Expectations written first.
+describe("pinToolWindow", () => {
+  const win = () => {
+    const calls: string[] = [];
+    return { calls, w: {
+      isDestroyed: () => false,
+      setAlwaysOnTop: (on: boolean) => calls.push(`aot:${on}`),
+      setParentWindow: (p: unknown) => calls.push(`parent:${p === null ? "none" : (p as { name: string }).name}`),
+    } };
+  };
+  const parent = { name: "main", isDestroyed: () => false };
+
+  it("pins by parenting, and clears any alwaysOnTop an older build left", () => {
+    const { calls, w } = win();
+    pinToolWindow(w as never, parent as never, true);
+    expect(calls).toEqual(["aot:false", "parent:main"]);
+  });
+
+  it("unpins by clearing the parent", () => {
+    const { calls, w } = win();
+    pinToolWindow(w as never, parent as never, false);
+    expect(calls).toEqual(["aot:false", "parent:none"]);
+  });
+
+  it("never parents to a missing or destroyed main window", () => {
+    const { calls, w } = win();
+    pinToolWindow(w as never, undefined, true);
+    pinToolWindow(w as never, { name: "gone", isDestroyed: () => true } as never, true);
+    expect(calls).toEqual(["aot:false", "parent:none", "aot:false", "parent:none"]);
+  });
+
+  it("is a no-op for a missing or destroyed tool window", () => {
+    pinToolWindow(undefined, parent as never, true);
+    pinToolWindow({ isDestroyed: () => true } as never, parent as never, true);
   });
 });
