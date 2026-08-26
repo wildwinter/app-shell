@@ -2,10 +2,8 @@
    The pane-shell frame: top bar + nav | centre | inspector grid with collapse
    and drag-resize. Reads the shared token grammar (tokens.css) and the app's
    palette vars (--surface / --ink / --muted / --line / --accent, and an
-   optional --line-soft). App-specifics stay in the host: the window-drag region
-   (-webkit-app-region) and traffic-light padding, if the app is frameless, are
-   applied by the host over .topbar; the host also fills the pane bodies and the
-   top-bar lead/trail slots.
+   optional --line-soft). The host fills the pane bodies and the top-bar
+   lead/trail slots.
    ============================================================================ */
 
 .pane-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
@@ -24,6 +22,20 @@
   background: none; border: 0; border-radius: var(--radius-sm); padding: 2px 8px; cursor: pointer;
 }
 .pane-toggle:hover { color: var(--accent); }
+
+/* --- the fused title bar (the family ruling, 2026-08-27) --------------------
+   On macOS the topbar IS the window's title bar: the app's main window uses
+   titleBarStyle "hiddenInset" and marks the bar with these classes, so one
+   row carries the traffic lights, the identity and the top-level controls
+   instead of a native strip whose only cargo is a title. `titlebar` makes the
+   bar the drag surface (its controls stay clickable; add `no-drag` to any
+   other interactive thing the host mounts); `titlebar-inset` leaves room for
+   the traffic lights and is added ONLY on macOS - elsewhere the window keeps
+   its native frame and the same bar sits beneath it, identically in every
+   app of the family. */
+.topbar.titlebar { -webkit-app-region: drag; }
+.topbar.titlebar :is(button, input, select, a, .no-drag) { -webkit-app-region: no-drag; }
+.topbar.titlebar-inset { padding-left: 84px; }
 
 .panes {
   --nav-open-w: 14rem; --insp-open-w: 22rem;
