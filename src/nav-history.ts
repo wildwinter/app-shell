@@ -84,11 +84,20 @@ export function createNavHistory<Place>(opts: NavHistoryOptions<Place>): NavHist
 }
 
 /**
- * The quiet arrow pair, VS Code's shape: two plain chevrons sitting to the
- * left of the app's normal navigation, each greyed when there is nowhere to
- * go. One component so the pair looks and sits the same in every app of the
- * family; the caller re-`set`s it whenever a navigation may have changed what
- * the arrows can do.
+ * The quiet arrow pair, VS Code's shape: greyed where there is nowhere to
+ * go, one component so it looks and sits the same in every app of the
+ * family; the caller re-`set`s it whenever a navigation may have changed
+ * what the arrows can do.
+ *
+ * ARROWS, not chevrons, and the distinction is the family's glyph grammar
+ * (the author's ruling, 2026-08-28): a chevron says STRUCTURE - the pane
+ * toggles, a labelled up-crumb, a tree row's disclosure - and an arrow says
+ * TIME. The first cut used chevrons, and sitting on the topbar two seats
+ * from the pane toggle's chevron the pair read as more of the same thing;
+ * it is how every browser, editor and file manager already split the two.
+ *
+ * The pair's HOME is the topbar's lead, immediately after the nav toggle
+ * (Patterpad placed it there first, and the ruling ratified it).
  */
 export function historyNav(onBack: () => void, onForward: () => void): {
   el: HTMLElement;
@@ -104,8 +113,8 @@ export function historyNav(onBack: () => void, onForward: () => void): {
     b.addEventListener("click", onClick);
     return b;
   };
-  const back = btn("‹", "Back", onBack);
-  const forward = btn("›", "Forward", onForward);
+  const back = btn("\u2190", "Back", onBack);
+  const forward = btn("\u2192", "Forward", onForward);
   const el = document.createElement("span");
   el.className = "shell-histnav";
   el.append(back, forward);

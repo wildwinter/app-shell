@@ -80,6 +80,13 @@ describe("the stack", () => {
 });
 
 describe("the arrows", () => {
+  it("draws ARROWS, never chevrons: chevron says structure, arrow says time", () => {
+    const pair = historyNav(() => {}, () => {});
+    const [back, forward] = [...pair.el.querySelectorAll("button")];
+    expect(back!.textContent).toBe("\u2190");
+    expect(forward!.textContent).toBe("\u2192");
+  });
+
   it("greys each side by what set() says, and clicks call through", () => {
     let went = "";
     const pair = historyNav(() => { went = "back"; }, () => { went = "forward"; });
