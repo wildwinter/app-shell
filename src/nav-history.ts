@@ -60,6 +60,9 @@ export function createNavHistory<Place>(opts: NavHistoryOptions<Place>): NavHist
       const p = from.pop();
       if (p === undefined) return undefined;
       if (!usable(p)) continue;          // its document is gone: drop, keep walking
+      if (opts.same(p, current)) continue;   // a step must MOVE: a self-visit (a
+      // tab click routed through a navigation action) is not a journey, and
+      // restoring it reads as a dead button
       to.push(current);
       return p;
     }

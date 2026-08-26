@@ -59,6 +59,16 @@ describe("the stack", () => {
     expect(nav.forward({ doc: "c" })).toBeUndefined();
   });
 
+  it("never lands you where you already stand", () => {
+    // A tab click that routes through a navigation action visits the document
+    // it never left. Restoring that entry is a no-op the author reads as a
+    // broken button, so same-document entries are discarded on the way past.
+    const nav = h();
+    nav.visit({ doc: "a" });
+    nav.visit({ doc: "b", tab: "cards" });   // the self-visit, tab and all
+    expect(nav.back({ doc: "b", tab: "dealing" })).toEqual({ doc: "a" });
+  });
+
   it("caps the past instead of growing forever", () => {
     const nav = createNavHistory<P>({ same: (a, b) => a.doc === b.doc, cap: 3 });
     for (const d of ["a", "b", "c", "d", "e"]) nav.visit({ doc: d });
