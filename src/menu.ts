@@ -37,6 +37,21 @@ export const EDIT_MENU: {
   find: { label: "Find…", accelerator: "CmdOrCtrl+F" },
 };
 
+/**
+ * Back / Forward: navigation HISTORY, the other axis from Up a Level's
+ * hierarchy. One string cannot serve both platforms - the mac pair is Xcode's
+ * (Cmd+[ is already Up a Level in this family, so the browser pair is taken),
+ * and the Alt pair is what every Windows browser and Explorer trained - so the
+ * menu builder picks by platform.
+ */
+export const GO_MENU: {
+  back: { label: string; acceleratorMac: string; acceleratorOther: string };
+  forward: { label: string; acceleratorMac: string; acceleratorOther: string };
+} = {
+  back: { label: "Back", acceleratorMac: "Ctrl+Cmd+Left", acceleratorOther: "Alt+Left" },
+  forward: { label: "Forward", acceleratorMac: "Ctrl+Cmd+Right", acceleratorOther: "Alt+Right" },
+};
+
 /** The pane-frame menu items (a View menu, conventionally). */
 export const PANE_MENU: {
   showNav: MenuLabel;

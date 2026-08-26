@@ -53,3 +53,13 @@
 .panes.no-nav .pane-resizer-nav, .panes.no-inspector .pane-resizer-insp { display: none; }
 body.pane-resizing { cursor: col-resize; user-select: none; }
 body.pane-resizing .panes { transition: none; }   /* 1:1 feel: suspend the grid tween mid-drag */
+
+/* --- the back/forward pair (nav-history.ts) --------------------------------
+   VS Code's quietness: two plain chevrons, borderless, greyed where there is
+   nowhere to go. They sit to the LEFT of the app's normal navigation (the
+   crumb trail here, whatever the host's equivalent is), so they read as part
+   of the chrome, not a control demanding attention. */
+.shell-histnav { display: inline-flex; gap: 2px; margin-right: 6px; }
+.shell-histnav-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: none; border-radius: var(--radius-sm); background: none; color: var(--muted); font-size: 1.05rem; line-height: 1; cursor: pointer; }
+.shell-histnav-btn:hover:not(:disabled) { color: var(--ink); background: var(--accent-soft); }
+.shell-histnav-btn:disabled { opacity: 0.35; cursor: default; }

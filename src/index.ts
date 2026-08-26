@@ -75,4 +75,6 @@ export type { StaleBarOptions } from "./stale.js";
 // whatever the app has a queue of (stepper.ts).
 export { renderStepperBar } from "./stepper.js";
 export type { StepperBarOptions, StepperItem, StepperTone } from "./stepper.js";
-export { EDIT_MENU } from "./menu.js";
+export { EDIT_MENU, GO_MENU } from "./menu.js";
+export { createNavHistory, historyNav } from "./nav-history.js";
+export type { NavHistory, NavHistoryOptions } from "./nav-history.js";
