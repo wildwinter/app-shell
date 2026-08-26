@@ -79,7 +79,11 @@
 .set-rowline input:focus-visible, .set-rowline select:focus-visible,
 .set-details input:focus-visible, .set-details select:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 
-.shell-icon { flex: none; width: 24px; height: 24px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; }
+/* Centre the glyph EXPLICITLY: a bare <button> centres its text by the font's
+   own metrics plus the UA's default padding, which parks arrow and cross
+   glyphs up-left of the square's visual centre (reported from Storyletter's
+   property lists, 2026-08-26; the same buttons everywhere shared the offset). */
+.shell-icon { flex: none; display: inline-flex; align-items: center; justify-content: center; padding: 0; line-height: 1; width: 24px; height: 24px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; }
 .shell-icon:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
 .shell-icon:disabled { opacity: 0.4; cursor: default; }
 .shell-icon.danger:hover:not(:disabled) { color: var(--surface); background: var(--danger); border-color: var(--danger); }
