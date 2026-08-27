@@ -16,7 +16,7 @@
 // factory always wires closed-cleanup through an identity guard.
 // ---------------------------------------------------------------------------
 
-import { BrowserWindow, screen } from "electron";
+import { BrowserWindow, app, screen } from "electron";
 import { join } from "node:path";
 
 export interface ToolWindowSize {
@@ -92,20 +92,63 @@ export function rescueToolWindow(w: BrowserWindow | undefined | null, def: ToolW
   w.moveTop();
 }
 
+/** macOS pinned windows, for the activation toggle below. */
+const macPinned = new Set<BrowserWindow>();
+let macActivationWired = false;
+function wireMacActivation(): void {
+  if (macActivationWired) return;
+  macActivationWired = true;
+  // Floating is a GLOBAL window level: left on while another app is front,
+  // the pinned window would sit over that app too - the exact 2026-08-25
+  // complaint. Scoping it to our app's active state keeps the pin meaning
+  // "above my editor" and nothing more.
+  app.on("did-become-active", () => { for (const w of macPinned) if (!w.isDestroyed()) w.setAlwaysOnTop(true, "floating"); });
+  app.on("did-resign-active", () => { for (const w of macPinned) if (!w.isDestroyed()) w.setAlwaysOnTop(false); });
+}
+
 /**
  * The pin: keep a tool window above THIS APP'S MAIN WINDOW, not above the
- * world. `alwaysOnTop` was the first implementation and it floats the window
- * over every other application on macOS and Windows, so a pinned Board meant
- * nothing else on the machine could come to the front (a Storyletter user
- * report, 2026-08-25). A CHILD window is the semantic actually wanted on both
- * platforms: it stays over its parent and stacks normally against everything
- * else. Clearing any alwaysOnTop first also heals a window an older build
- * pinned the old way.
+ * world. Two findings shaped the mechanism, one per platform family:
+ *
+ * - Bare `alwaysOnTop` (the first implementation) floats the window over
+ *   every other application on macOS and Windows, so a pinned Board meant
+ *   nothing else on the machine could come to the front (a Storyletter user
+ *   report, 2026-08-25).
+ * - A CHILD window (the second implementation) is position-coupled to its
+ *   parent on macOS: dragging the editor dragged the Board with it (a
+ *   Storyletter user report, 2026-08-28). Windows and Linux owned windows do
+ *   not move with their owner, so the child mechanism stays right for them.
+ *
+ * So: on macOS the pin is ACTIVATION-SCOPED alwaysOnTop - floating while
+ * this app is active, dropped the moment it resigns - which is above the
+ * editor without following its drags and without covering anyone else. On
+ * Windows and Linux the pin is a child window, which stays over its parent
+ * and stacks normally against everything else. Each branch clears the other
+ * mechanism first, which also heals a window an older build pinned the old
+ * way. `platform` is a seam for the tests; leave it defaulted.
  */
 export function pinToolWindow(
   w: BrowserWindow | undefined | null, parent: BrowserWindow | undefined | null, on: boolean,
+  platform: NodeJS.Platform = process.platform,
 ): void {
   if (!w || w.isDestroyed()) return;
+  if (platform === "darwin") {
+    w.setParentWindow(null);
+    if (on) {
+      if (!macPinned.has(w)) {
+        macPinned.add(w);
+        w.once("closed", () => macPinned.delete(w));
+      }
+      wireMacActivation();
+      // Raise only when the app is active now; otherwise the next
+      // did-become-active raises it.
+      w.setAlwaysOnTop(BrowserWindow.getFocusedWindow() !== null, "floating");
+    } else {
+      macPinned.delete(w);
+      w.setAlwaysOnTop(false);
+    }
+    return;
+  }
   w.setAlwaysOnTop(false);
   w.setParentWindow(on && parent && !parent.isDestroyed() ? parent : null);
 }
@@ -123,11 +166,11 @@ export interface ToolWindowOptions {
   /** false = frameless: the renderer draws its own slim drag bar (.swin-head). */
   frame?: boolean;
   /** The window to PIN ABOVE: the app's main window, resolved at open time (a
-   *  getter, because the main window can be recreated). With `pinned` true the
-   *  new tool window is parented to it, which keeps it above the editor and
-   *  stacks it normally against every other application - the semantic
-   *  `alwaysOnTop` (this option's late predecessor) got wrong on macOS and
-   *  Windows, where it floats over the whole machine. */
+   *  getter, because the main window can be recreated). With `pinned` true
+   *  the new tool window rides above it - on macOS via activation-scoped
+   *  alwaysOnTop (a child window there follows the editor's drags), on
+   *  Windows and Linux as a child window (bare alwaysOnTop there floats over
+   *  the whole machine). See pinToolWindow for both findings. */
   pinTo?: () => BrowserWindow | undefined;
   /** Start pinned (the host remembers); flip later with `pinToolWindow`. */
   pinned?: boolean;
