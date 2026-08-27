@@ -64,6 +64,11 @@ export interface SessionStore {
    *  keeps whatever was known, which is `createAppStore`'s rule. */
   touchProject(path: string, name?: string): void;
   forgetProject(path: string): void;
+  /** Forget only WHICH project was open, keeping it in recents. Close Project
+   *  calls this so a quit after closing boots to the welcome screen instead of
+   *  silently reopening what the person just closed. Optional: a host without
+   *  it keeps its boot behaviour. */
+  clearLastProject?(): void;
 }
 
 export interface ProjectSessionOptions<S, R> {
@@ -102,6 +107,11 @@ export interface ProjectSession<S, R> {
   /** May the renderer ask for this path? See the note above: only paths the app
    *  already knows, because a native dialog put them there. */
   isKnownPath: (path: string) => boolean;
+  /** Close the open project and return to the no-project state (the welcome
+   *  screen, in both apps): the close hook runs, the satellites are told, the
+   *  menu rebuilds, and the store forgets WHICH project was open while keeping
+   *  it in recents. A no-op when nothing is open. */
+  closeCurrent: () => void;
   /** Register a tool window after construction, which is when they usually
    *  appear. Returns a function that unregisters it. */
   addSatellite: (satellite: Satellite) => () => void;
@@ -138,6 +148,15 @@ export function createProjectSession<S, R>(opts: ProjectSessionOptions<S, R>): P
       invalidateSatellites();
       opts.refreshMenu?.();
       return opened.reply;
+    },
+
+    closeCurrent() {
+      if (session === undefined) return;
+      opts.close?.(session);
+      session = undefined;
+      opts.store.clearLastProject?.();
+      invalidateSatellites();
+      opts.refreshMenu?.();
     },
 
     isKnownPath(path) {

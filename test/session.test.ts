@@ -19,6 +19,9 @@ function fakeStore(initial: { recents?: RecentProject[]; lastProject?: string } 
       state.recents = state.recents.filter((r) => r.path !== path);
       if (state.lastProject === path) state.lastProject = undefined;
     },
+    clearLastProject() {
+      state.lastProject = undefined;
+    },
   };
 }
 
@@ -167,5 +170,40 @@ describe("project session", () => {
     });
     s.openAt("/p/proj");
     expect(store.state.recents).toEqual([{ path: "/p/proj", name: "The Tavern" }]);
+  });
+});
+
+describe("closeCurrent (Close Project)", () => {
+  it("closes the open session, tells the satellites, and forgets WHICH but not THAT", () => {
+    const store = fakeStore();
+    const sat = fakeSatellite();
+    const closed: string[] = [];
+    const s = createProjectSession<{ path: string }, string>({
+      store,
+      open: (path) => ({ session: { path }, root: path, reply: "ok" }),
+      close: (ending) => closed.push(ending.path),
+      satellites: [sat],
+    });
+    s.openAt("/p/one");
+    sat.sent.length = 0; sat.cleared = 0;
+    s.closeCurrent();
+    expect(s.current()).toBeUndefined();
+    expect(closed).toEqual(["/p/one"]);            // the close hook ran
+    expect(sat.cleared).toBe(1);                    // satellites invalidated
+    expect(sat.sent).toEqual(["thing:project"]);
+    expect(store.state.lastProject).toBeUndefined();  // boots to welcome now
+    expect(store.state.recents.map((r) => r.path)).toEqual(["/p/one"]);  // still in recents
+  });
+
+  it("is a no-op with nothing open", () => {
+    const store = fakeStore();
+    const closed: string[] = [];
+    const s = createProjectSession<{ path: string }, string>({
+      store,
+      open: (path) => ({ session: { path }, root: path, reply: "ok" }),
+      close: (ending) => closed.push(ending.path),
+    });
+    s.closeCurrent();
+    expect(closed).toEqual([]);
   });
 });
