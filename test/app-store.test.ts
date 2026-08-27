@@ -146,3 +146,16 @@ describe("recents carry a display name", () => {
     expect(store().get().recents).toEqual([{ path: "/a" }, { path: "/b" }]);
   });
 });
+
+describe("clearLastProject (Close Project's memory)", () => {
+  it("forgets WHICH but keeps recents, and persists", () => {
+    const s = store();
+    s.touchProject("/p/one", "One");
+    s.clearLastProject();
+    expect(s.get().lastProject).toBeUndefined();
+    expect(s.get().recents.map((r) => r.path)).toEqual(["/p/one"]);
+    const again = store();
+    expect(again.get().lastProject).toBeUndefined();
+    expect(again.get().recents.map((r) => r.path)).toEqual(["/p/one"]);
+  });
+});

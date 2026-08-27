@@ -110,6 +110,9 @@ export interface AppStore<Place, App> {
   touchProject(path: string, name?: string): void;
   /** Drop one that failed to open (moved, deleted). */
   forgetProject(path: string): void;
+  /** Forget WHICH project was open, keeping it in recents: Close Project's
+   *  half of the memory, so the next boot lands on the welcome screen. */
+  clearLastProject(): void;
   /** Where the author was in the CURRENT project. Compared before writing: this
    *  is called on every navigation and must not mean a disk write per click.
    *  A no-op with no project open, since there is nothing to key it against. */
@@ -209,6 +212,11 @@ export function createAppStore<Place, App extends object>(
       state.recents = state.recents.filter((r) => r.path !== path);
       if (state.lastProject === path) delete state.lastProject;
       delete state.places[path]; // it moved or went: its place is meaningless now
+      save();
+    },
+    clearLastProject() {
+      if (state.lastProject === undefined) return;
+      delete state.lastProject;
       save();
     },
     setPlace(place) {
