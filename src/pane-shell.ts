@@ -24,6 +24,11 @@ export interface PaneSideConfig {
   label?: string;
   /** Shortcut hint appended to the tooltip, e.g. "Cmd+1". */
   shortcutHint?: string;
+  /** false = the pane is not offered at all: no toggle, togglePane ignored,
+   *  forced closed whatever the remembered state says. For a slot a host has
+   *  retired but keeps mounted (Storyletter's inspector) - the shell used to
+   *  offer a chevron that opened a paneful of nothing. Default true. */
+  offered?: boolean;
 }
 
 export interface PaneShellState {
@@ -68,7 +73,11 @@ const collapseClass: Record<PaneSide, string> = { nav: "no-nav", inspector: "no-
 
 export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneShell {
   const cfg: Record<PaneSide, PaneSideConfig> = { nav: opts.nav, inspector: opts.inspector };
-  const open: Record<PaneSide, boolean> = { nav: opts.initial?.open?.nav ?? true, inspector: opts.initial?.open?.inspector ?? true };
+  const offered = (side: PaneSide): boolean => cfg[side].offered !== false;
+  const open: Record<PaneSide, boolean> = {
+    nav: offered("nav") && (opts.initial?.open?.nav ?? true),
+    inspector: offered("inspector") && (opts.initial?.open?.inspector ?? true),
+  };
   const width: Partial<Record<PaneSide, number>> = { ...(opts.initial?.width ?? {}) };
 
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string): HTMLElementTagNameMap[K] => {
@@ -104,6 +113,10 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
   const root = el("div", "pane-shell");
   root.append(topbar, panes);
   host.append(root);
+  // An unoffered pane's toggle is not hidden but ABSENT: nothing to
+  // discover, nothing to tab to.
+  if (!offered("nav")) navToggle.remove();
+  if (!offered("inspector")) inspToggle.remove();
 
   // --- state application -----------------------------------------------------
   function applyToggleGlyph(side: PaneSide, button: HTMLButtonElement): void {
@@ -125,8 +138,8 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
     panes.style.setProperty(openVar.inspector, width.inspector !== undefined ? `${width.inspector}px` : cfg.inspector.defaultWidth);
     applyToggleGlyph("nav", navToggle);
     applyToggleGlyph("inspector", inspToggle);
-    navResizer.style.display = cfg.nav.resizable === false ? "none" : "";
-    inspResizer.style.display = cfg.inspector.resizable === false ? "none" : "";
+    navResizer.style.display = cfg.nav.resizable === false || !offered("nav") ? "none" : "";
+    inspResizer.style.display = cfg.inspector.resizable === false || !offered("inspector") ? "none" : "";
   }
 
   const snapshot = (): PaneShellState => ({ open: { ...open }, width: { ...width } });
@@ -138,7 +151,7 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
     apply();
     persist();
   }
-  function togglePane(side: PaneSide): void { setPaneOpen(side, !open[side]); }
+  function togglePane(side: PaneSide): void { if (offered(side)) setPaneOpen(side, !open[side]); }
   function resetWidths(): void { delete width.nav; delete width.inspector; apply(); persist(); }
 
   navToggle.addEventListener("click", () => togglePane("nav"));

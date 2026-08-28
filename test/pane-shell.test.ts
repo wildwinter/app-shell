@@ -15,6 +15,27 @@ function mount(initial?: Parameters<typeof mountPaneShell>[1]["initial"], onChan
 }
 
 describe("mountPaneShell", () => {
+  it("an unoffered pane has no toggle and cannot be opened", () => {
+    // Storyletter's inspector slot is retired but stayed mounted, so the
+    // shell still offered a chevron that opened 384px of nothing - the
+    // editor antagonist audit's blank-pane find (2026-08-29). A pane a host
+    // is not offering renders no toggle, ignores togglePane, and stays
+    // closed whatever the remembered state says.
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shell = mountPaneShell(host, {
+      nav: { defaultWidth: "224px", label: "navigator" },
+      inspector: { defaultWidth: "384px", label: "inspector", offered: false },
+      initial: { open: { nav: true, inspector: true } },
+      onChange: vi.fn(),
+    });
+    expect(host.querySelectorAll(".pane-toggle")).toHaveLength(1);
+    expect(shell.isOpen("inspector")).toBe(false);
+    shell.togglePane("inspector");
+    expect(shell.isOpen("inspector")).toBe(false);
+    expect(host.querySelector(".panes")!.classList.contains("no-inspector")).toBe(true);
+  });
+
   it("builds the frame with fillable slots", () => {
     const { host, shell } = mount();
     expect(host.querySelector(".topbar")).not.toBeNull();
