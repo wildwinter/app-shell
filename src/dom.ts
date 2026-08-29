@@ -109,7 +109,9 @@ export function moveItem<T>(arr: T[], i: number, delta: number): boolean {
 export function tagChips(holder: { values?: string[] }, onChange?: () => void): HTMLElement {
   const wrap = el("div", "shell-tags");
   const input = el("input", "shell-tag-input");
-  input.type = "text"; input.placeholder = "add value"; input.spellcheck = false;
+  // Sentence-cased like every other hint (the microcopy ruling, 2026-08-28):
+  // lowercase fragments read as adrift, and a placeholder is a hint speaking.
+  input.type = "text"; input.placeholder = "Add value"; input.spellcheck = false;
   const makeChip = (v: string): HTMLElement => {
     const chip = el("span", "shell-tag", v);
     const x = el("button", "shell-tag-x", "✕");
