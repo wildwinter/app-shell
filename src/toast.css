@@ -1,0 +1,20 @@
+/* The toast (toast.ts): a transient remark, bottom-right, an outlined card on the
+   surface colour. The KIND is carried by the border and the text, never by a
+   solid fill: a remark should not shout, and --ink on --surface reads on every
+   palette without a tuned contrast pair. Tokens only, so it lands in any palette
+   and any window (multi-window-rules.md). */
+.shell-toast {
+  position: fixed; right: 1rem; bottom: 2.2rem; z-index: 40; max-width: 26rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+  padding: 0.55rem 0.8rem; color: var(--ink); font: 0.8rem/1.4 var(--font-ui);
+  /* A long unbroken token (a file path) wraps INSIDE the card; a newline in the
+     message is a line break. */
+  overflow-wrap: anywhere; white-space: pre-line;
+  box-shadow: var(--shadow-2);
+  animation: var(--anim-panel-in, none);
+}
+.shell-toast.ok    { border-color: var(--ok);     color: var(--ok); }
+.shell-toast.error { border-color: var(--danger); color: var(--danger); }
+/* The eased dismiss (closeWithExit), mirroring the enter. */
+.shell-toast.closing { animation: var(--anim-panel-out); }
+.shell-toast[hidden] { display: none; }

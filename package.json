@@ -117,6 +117,10 @@
     "./stepper.css": {
       "import": "./dist/stepper.css",
       "require": "./dist/stepper.css"
+    },
+    "./toast.css": {
+      "import": "./dist/toast.css",
+      "require": "./dist/toast.css"
     }
   },
   "files": [

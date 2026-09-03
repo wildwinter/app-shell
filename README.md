@@ -106,6 +106,18 @@ needing and never had.
   staleBar({ subject: "The project", onRestart: () => void rebuild() });
   ```
 
+- **`toast`** - a transient remark: "Bundle published", "Save refused: ...".
+  Bottom-right, an outlined card on the surface colour with the kind in the
+  border, on the shared panel motion; one at a time, 4s (7s for an error).
+  Both apps had one, and they agreed on nothing but the sentences - place,
+  colour, timing, motion and ARIA all differed. It mounts its own node, so a
+  second window gets it by importing it. Bring `toast.css`.
+
+  ```ts
+  toast(`Bundle published\n${where}`, "ok");
+  toast(`Save refused: ${err}`, "error");
+  ```
+
 - **`--ok`** joins `--danger` and `--warn` in `tokens.css`, with a `light-dark()`
   default every palette should override in its own `theme.css`. It is the only
   colour in the grammar layer, and it is there because it kept not being

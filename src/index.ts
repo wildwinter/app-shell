@@ -70,6 +70,8 @@ export type { SaveIndicator } from "./save-view.js";
 // A running session that has fallen behind its source: both apps had one, in
 // nearly the same words (stale.ts).
 export { staleBar } from "./stale.js";
+export { toast, dismissToast } from "./toast.js";
+export type { ToastKind, ToastOptions } from "./toast.js";
 export type { StaleBarOptions } from "./stale.js";
 // The bottom bar that walks a list of things to attend to: problems, comments,
 // whatever the app has a queue of (stepper.ts).
