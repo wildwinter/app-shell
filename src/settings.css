@@ -44,6 +44,14 @@
    edit, which is what every one of these rows is. Rows are separated by the
    list's `gap`, so nothing here draws a divider. */
 .set-row { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--card); }
+/* Where a jump landed (revealRow): lit for a moment, then left alone. A colour
+   fade and not a movement, so it stays under reduced motion; the scroll before
+   it is what goes instant there. */
+.set-row.landed { animation: set-landed 1.8s var(--ease-standard) both; }
+@keyframes set-landed {
+  0%, 35% { box-shadow: 0 0 0 2px var(--accent); }
+  100% { box-shadow: 0 0 0 2px transparent; }
+}
 .set-rowline { display: flex; align-items: center; gap: 8px; padding: 5px 7px; }
 /* Indented past the disclosure so the secondary fields hang under the row's
    content rather than under its triangle, and ruled off with a lighter line than

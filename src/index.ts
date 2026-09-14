@@ -15,7 +15,7 @@ export type { PaneShell, PaneShellOptions, PaneShellState, PaneSide, PaneSideCon
 export { PANE_MENU } from "./menu.js";
 export type { MenuLabel } from "./menu.js";
 export { iconBtn, labelled, moveItem, tagChips } from "./dom.js";
-export { expandableRow, focusNewRow, dupGuard, mountSettingsDialog } from "./settings.js";
+export { expandableRow, focusNewRow, revealRow, dupGuard, mountSettingsDialog } from "./settings.js";
 export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, SettingsDialogOptions } from "./settings.js";
 export { pinButton } from "./tool-window-web.js";
 export type { PinButtonOptions, PinButton } from "./tool-window-web.js";

@@ -118,6 +118,19 @@ needing and never had.
   toast(`Save refused: ${err}`, "error");
   ```
 
+- **`revealRow`** - land on one row of a settings list. `expandableRow` takes a
+  `name` and stamps it on the row; `revealRow(within, name)` opens that row's
+  details, brings it to the middle of its scroller and lights it for a moment.
+  "Go to definition" in both apps opened the page a property is declared on and
+  stopped there, with the row off screen. It returns false when no row carries
+  the name, so a host whose page fills in late asks again on a later frame.
+  Brings nothing new: the light is in `settings.css`.
+
+  ```ts
+  list.append(expandableRow({ line, details, name: decl.name }));
+  revealRow(document, "mood");
+  ```
+
 - **`--ok`** joins `--danger` and `--warn` in `tokens.css`, with a `light-dark()`
   default every palette should override in its own `theme.css`. It is the only
   colour in the grammar layer, and it is there because it kept not being

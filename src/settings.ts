@@ -16,9 +16,12 @@ import { el } from "./dom.js";
 
 /** A compact list row: a single `.set-rowline` (inline controls) plus, when
  *  `details` are given, a disclosure that reveals a `.set-details` panel below,
- *  so a list scans like a table with secondary fields tucked away. */
-export function expandableRow(opts: { line: HTMLElement[]; details?: HTMLElement[] }): HTMLElement {
+ *  so a list scans like a table with secondary fields tucked away. `name` is
+ *  what the row declares (a property's name, a field's), stamped on it as
+ *  `data-name` so `revealRow` can land on it. */
+export function expandableRow(opts: { line: HTMLElement[]; details?: HTMLElement[]; name?: string }): HTMLElement {
   const row = el("div", "set-row");
+  if (opts.name !== undefined) row.dataset.name = opts.name;
   const line = el("div", "set-rowline");
   if (opts.details && opts.details.length) {
     const details = el("div", "set-details"); details.hidden = true;
@@ -44,6 +47,35 @@ export function expandableRow(opts: { line: HTMLElement[]; details?: HTMLElement
     row.append(line);
   }
   return row;
+}
+
+/**
+ * Land on one row of a list by the `name` it was built with: open its details
+ * (an enum's values sit behind the disclosure, and they are usually what the
+ * jump was for), bring it to the middle of its scroller, and light it for a
+ * moment (`.set-row.landed` in settings.css). "Go to definition" in both apps
+ * used to open the page a property is declared on and stop there, with the
+ * declaration below the fold and nothing marking it (Storyletter, 2026-09-14).
+ *
+ * Returns false when no row carries the name, so a host whose page fills in
+ * asynchronously can ask again on a later frame; asking again is the host's,
+ * since only the host knows what opens on its own time. The row is matched by
+ * reading the stamp rather than by an attribute selector, so a name needs no
+ * escaping.
+ */
+export function revealRow(within: ParentNode, name: string): boolean {
+  const row = [...within.querySelectorAll<HTMLElement>(".set-row")].find((r) => r.dataset.name === name);
+  if (!row) return false;
+  const toggle = row.querySelector<HTMLButtonElement>(".set-rowline > .set-expand");
+  if (toggle && toggle.getAttribute("aria-expanded") !== "true") toggle.click();
+  const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  row.scrollIntoView({ block: "center", behavior: still ? "auto" : "smooth" });
+  // Restarted, so landing on the same row twice lights it twice.
+  row.classList.remove("landed");
+  void row.offsetWidth;
+  row.classList.add("landed");
+  row.addEventListener("animationend", () => row.classList.remove("landed"), { once: true });
+  return true;
 }
 
 /** After a "+ Add" re-renders a list, bring the new (last) row into view and
