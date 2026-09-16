@@ -11,6 +11,7 @@
 
 import { el } from "./dom.js";
 import { iconNode } from "./icons.js";
+import { isEditableTarget } from "./util.js";
 
 export interface PinButtonOptions {
   pinned: boolean;
@@ -84,28 +85,51 @@ export interface ToolWindowHeadOptions {
   className?: string;
   /**
    * Escape closes the window (default true): the family's rule, written once
-   * here rather than per window. Off for a window that layers Escape (a play
-   * surface dismisses its own panels first and closes last): it installs its
-   * own listener and calls `onClose` when nothing smaller is left.
+   * here rather than per window.
+   *
+   * The listener stands aside on its own for a field's Escape (an input,
+   * textarea, select or contenteditable target: clearing, cancelling an edit)
+   * and for an Escape a deeper handler has already `preventDefault()`ed.
+   * `"always"` drops the first of those: a window whose focus LIVES in a
+   * field (Find, whose query box is where the typing is) still closes on
+   * Escape from it. `false` turns the listener off for a window that owns
+   * Escape entirely; it calls `onClose` itself when nothing smaller is left.
    */
-  esc?: boolean;
+  esc?: boolean | "always";
+  /**
+   * A window that layers Escape (a selection to clear, a pending outcome to
+   * drop, a sweep that must not be closed out from under) says so here:
+   * return true when the key was consumed and the window stays open, false
+   * to let it close. Innermost first; the window is last.
+   */
+  onEscape?: () => boolean;
+}
+
+interface EscSlot {
+  onClose: () => void;
+  onEscape?: (() => boolean) | undefined;
+  fromFields: boolean;
 }
 
 /** The one Escape listener per window. The head may be rebuilt on every render
  *  (a play surface does), so the listener is installed once and reads the
  *  latest close through this slot. */
-let escClose: (() => void) | undefined;
+let escSlot: EscSlot | undefined;
 let escWired = false;
 function wireEsc(): void {
   if (escWired) return;
   escWired = true;
   window.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape" || !escClose) return;
-    const t = e.target;
-    // A field's own Escape (clearing, cancelling an edit) comes first.
-    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return;
-    if (t instanceof HTMLElement && t.isContentEditable) return;
-    escClose();
+    if (e.key !== "Escape" || !escSlot) return;
+    // A deeper handler that claimed the key (a popover closing, a picker
+    // dismissing) has said so already.
+    if (e.defaultPrevented) return;
+    // A field's own Escape (clearing, cancelling an edit) comes first, unless
+    // the window asked to close from its fields too.
+    if (!escSlot.fromFields && isEditableTarget(e.target)) return;
+    // The window's own layers, innermost first; true means one of them took it.
+    if (escSlot.onEscape?.() === true) return;
+    escSlot.onClose();
   });
 }
 
@@ -117,7 +141,10 @@ export function toolWindowHead(opts: ToolWindowHeadOptions): HTMLElement {
     (parts ?? []).filter((p): p is Node | string => p !== null);
   const pin = opts.pin
     ?? pinButton({ pinned: opts.pinned ?? true, onToggle: opts.onPin ?? (() => {}) });
-  if (opts.esc !== false) { escClose = opts.onClose; wireEsc(); }
+  if (opts.esc !== false) {
+    escSlot = { onClose: opts.onClose, onEscape: opts.onEscape, fromFields: opts.esc === "always" };
+    wireEsc();
+  }
   return el("header", { className: `swin-head${opts.className ? ` ${opts.className}` : ""}` },
     ...(opts.title !== undefined ? [el("span", { className: "swin-title", text: opts.title })] : []),
     ...(opts.tabs ? [opts.tabs] : []),

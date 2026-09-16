@@ -64,7 +64,7 @@ export type { Comment, CommentMessage, CommentsOptions } from "./comments.js";
 export type { AboutOptions } from "./about.js";
 export type { ConfirmOptions } from "./confirm.js";
 export { mountJobProgress } from "./job-view.js";
-export type { JobProgressView, JobProgressOptions } from "./job-view.js";
+export type { JobProgressView, JobProgressOptions, JobBeginOptions } from "./job-view.js";
 export { JOB_PROGRESS } from "./job.js";
 export type { JobProgress } from "./job.js";
 export { initTooltips, tipBold, tipAt, hideTip } from "./tooltip.js";

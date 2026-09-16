@@ -35,11 +35,32 @@
   .job-fill { transition: none; }
 }
 
+/* The indeterminate band: a job that has not said how big it is (total 0, the
+   host's "no idea yet") or one that never will (a publish, a pull). A quarter
+   of the bar sweeps left to right on the family's motion token; the count is
+   hidden by the view. Under reduced motion the token is `none`, and the band
+   would otherwise sit still at a quarter and read as stuck, so it becomes a
+   full, translucent bar: "busy", said without movement. */
+.job-strip.indeterminate .job-fill {
+  width: 25%;
+  transition: none;
+  animation: var(--anim-job-band, none);
+}
+@keyframes job-band {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(400%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .job-strip.indeterminate .job-fill { width: 100%; opacity: 0.35; }
+}
+
 .job-count,
 .job-time {
   flex: none;
   font-variant-numeric: tabular-nums;
 }
+.job-count[hidden],
+.job-cancel[hidden] { display: none; }
 .job-time { opacity: 0.8; }
 
 .job-cancel {

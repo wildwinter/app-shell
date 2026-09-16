@@ -54,6 +54,8 @@
   --anim-screen-in: screen-in var(--dur-panel) var(--ease-standard);
   --anim-panel-out: panel-out var(--dur-exit) var(--ease-standard) forwards;
   --anim-backdrop-out: backdrop-out var(--dur-exit) var(--ease-standard) forwards;
+  /* The long-job strip's indeterminate band (job.css draws the keyframes). */
+  --anim-job-band: job-band 1.4s var(--ease-standard) infinite;
 
   /* Corner radius: four steps cover every surface. */
   --radius-sm: 6px;
@@ -106,6 +108,6 @@
 @media (prefers-reduced-motion: reduce) {
   :root {
     --anim-panel-in: none; --anim-backdrop-in: none; --anim-screen-in: none;
-    --anim-panel-out: none; --anim-backdrop-out: none;
+    --anim-panel-out: none; --anim-backdrop-out: none; --anim-job-band: none;
   }
 }

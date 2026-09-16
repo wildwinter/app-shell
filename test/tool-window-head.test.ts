@@ -6,7 +6,7 @@ import { toolWindowHead, followButton, pinButton } from "../src/tool-window-web.
 afterEach(() => document.body.replaceChildren());
 
 const esc = (target?: Element): void => {
-  const e = new KeyboardEvent("keydown", { key: "Escape", bubbles: true });
+  const e = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
   (target ?? window).dispatchEvent(e);
 };
 
@@ -68,6 +68,62 @@ describe("toolWindowHead", () => {
     toolWindowHead({ title: "Board", onClose: layered, esc: false });
     esc();
     expect(layered).not.toHaveBeenCalled();
+  });
+
+  it("Escape stands aside for a contenteditable, and for a key a deeper handler claimed", () => {
+    const onClose = vi.fn();
+    document.body.append(toolWindowHead({ title: "Board", onClose }));
+    const note = document.createElement("div");
+    note.setAttribute("contenteditable", "true");
+    document.body.append(note);
+    esc(note);
+    expect(onClose).not.toHaveBeenCalled();
+    // A popover that closes itself on Escape and says so: the window stays.
+    const popover = document.createElement("div");
+    popover.addEventListener("keydown", (e) => { if (e.key === "Escape") e.preventDefault(); });
+    document.body.append(popover);
+    esc(popover);
+    expect(onClose).not.toHaveBeenCalled();
+    // The same element without the claim: the window closes.
+    const plain = document.createElement("div");
+    document.body.append(plain);
+    esc(plain);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("onEscape takes the key while a layer is open, and the window closes after", () => {
+    const onClose = vi.fn();
+    let selection = true;
+    const onEscape = vi.fn(() => {
+      if (!selection) return false;
+      selection = false;
+      return true;
+    });
+    document.body.append(toolWindowHead({ title: "Links", onClose, onEscape }));
+    esc();
+    expect(onEscape).toHaveBeenCalledTimes(1);
+    expect(selection).toBe(false);
+    expect(onClose).not.toHaveBeenCalled();
+    esc();
+    expect(onEscape).toHaveBeenCalledTimes(2);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    // A field's Escape never reaches onEscape either: the field goes first.
+    const input = document.createElement("input");
+    document.body.append(input);
+    esc(input);
+    expect(onEscape).toHaveBeenCalledTimes(2);
+  });
+
+  it('esc: "always" closes from a field too, still behind a deeper claim', () => {
+    const onClose = vi.fn();
+    document.body.append(toolWindowHead({ title: "Find", onClose, esc: "always" }));
+    const input = document.createElement("input");
+    document.body.append(input);
+    esc(input);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    input.addEventListener("keydown", (e) => { if (e.key === "Escape") e.preventDefault(); });
+    esc(input);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
 
