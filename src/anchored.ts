@@ -27,6 +27,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
+import { iconNode } from "./icons.js";
 import { closeWithExit } from "./exit.js";
 
 export interface AnchoredPanel {
@@ -73,7 +74,7 @@ export function openAnchoredPanel(opts: AnchoredPanelOptions): AnchoredPanel | n
   }
 
   const panel = el("div", `shell-anchored ${opts.className ?? ""}`.trim());
-  const closeBtn = el("button", "shell-anchored-close", "✕");
+  const closeBtn = el("button", "shell-anchored-close", iconNode("close", 12));
   closeBtn.type = "button";
   closeBtn.setAttribute("aria-label", "Close");
   const body = el("div", "shell-anchored-body");

@@ -30,7 +30,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
-import { icon } from "./icons.js";
+import { iconNode } from "./icons.js";
 
 export interface StepperItem {
   /**
@@ -79,13 +79,16 @@ export interface StepperBarOptions {
   actions?: (HTMLElement | null | undefined)[];
 }
 
+const STEP_ICON = 12;
+
 /** Draw (or hide) the bar in `host`. Idempotent: call it again with new state. */
 export function renderStepperBar(host: HTMLElement, opts: StepperBarOptions): void {
   const { items } = opts;
+  // 12px inside the bar's 20px control: the bar is set at 0.8rem.
   const close = opts.onClose === undefined ? null : el("button", {
-    className: "stepbar-nav stepbar-close", text: icon.close,
+    className: "stepbar-nav stepbar-close",
     tip: opts.closeTip ?? "Close", onClick: opts.onClose,
-  });
+  }, iconNode("close", STEP_ICON));
   const actions = (opts.actions ?? []).filter((a): a is HTMLElement => a !== null && a !== undefined);
 
   if (items.length === 0) {
@@ -108,11 +111,11 @@ export function renderStepperBar(host: HTMLElement, opts: StepperBarOptions): vo
   // to where you are is furniture pretending to be a control.
   const nav = items.length > 1
     ? [
-        el("button", { className: "stepbar-nav", text: icon.back,
-          tip: opts.tips?.prev ?? "Previous", onClick: () => step(-1) }),
+        el("button", { className: "stepbar-nav",
+          tip: opts.tips?.prev ?? "Previous", onClick: () => step(-1) }, iconNode("back", STEP_ICON)),
         el("span", { className: "stepbar-of", text: `${index + 1}/${items.length}` }),
-        el("button", { className: "stepbar-nav", text: icon.forward,
-          tip: opts.tips?.next ?? "Next", onClick: () => step(1) }),
+        el("button", { className: "stepbar-nav",
+          tip: opts.tips?.next ?? "Next", onClick: () => step(1) }, iconNode("forward", STEP_ICON)),
       ]
     : [];
 

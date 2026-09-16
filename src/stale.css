@@ -12,7 +12,8 @@
 /* The sentence takes the room; the way out stays its own size at the end. */
 .stale-bar-msg { flex: 1; }
 .stale-bar-go {
-  flex: none; font: inherit; padding: 4px 12px;
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; padding: 4px 12px;
   border: 1px solid var(--accent); border-radius: var(--radius-sm);
   background: var(--accent); color: var(--surface); cursor: pointer;
 }

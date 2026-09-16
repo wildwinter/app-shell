@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 
 import { ensureTooltipHost, checkTooltipHost } from "./tooltip.js";
-import { icon } from "./icons.js";
+import { iconNode, iconNameOfGlyph, isIconName, type IconName } from "./icons.js";
 
 export type Child = Node | string | null | undefined;
 
@@ -57,12 +57,20 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-/** A small square glyph button (the move/delete controls list editors share).
+/** A small square icon button (the move/delete controls list editors share).
  *  Its rollover is the THEMED one (`data-tip`), so an app that has called
- *  `initTooltips()` gets our bubble rather than the platform's. */
-export function iconBtn(glyph: string, title: string, onClick: () => void, disabled = false, danger = false): HTMLButtonElement {
+ *  `initTooltips()` gets our bubble rather than the platform's.
+ *
+ *  `name` is a word from the vocabulary ("up", "close"), drawn at 14px. A
+ *  typed glyph from the deprecated `icon` table ("↑", "✕") is accepted for
+ *  now and drawn as the word it stood for, so an app that has not moved its
+ *  call sites yet still gets the drawn set; any other string is set as text,
+ *  which is the old behaviour and on its way out. */
+export function iconBtn(name: IconName | (string & {}), title: string, onClick: () => void, disabled = false, danger = false): HTMLButtonElement {
   const b = el("button", `shell-icon${danger ? " danger" : ""}`);
-  b.type = "button"; b.textContent = glyph; b.dataset["tip"] = title; b.setAttribute("aria-label", title);
+  b.type = "button"; b.dataset["tip"] = title; b.setAttribute("aria-label", title);
+  const word = isIconName(name) ? name : iconNameOfGlyph(name);
+  if (word) b.append(iconNode(word)); else b.textContent = name;
   b.disabled = disabled;
   b.addEventListener("click", onClick);
   return b;
@@ -104,6 +112,10 @@ export function moveItem<T>(arr: T[], i: number, delta: number): boolean {
   return true;
 }
 
+/** The icon size inside a chip's remove / move buttons: the chip is set at
+ *  0.76rem, so its controls draw smaller than a toolbar button's 14px. */
+const CHIP_ICON = 10;
+
 /** A tag-style editor for a string-list field (an enum's allowed values / flags): removable chips + an
  *  add input (Enter or "," commits; blank / duplicate ignored). Mutates `holder.values` in place (read
  *  back on save). `onChange` fires after any add / remove so callers can refresh a dependent control. */
@@ -115,7 +127,7 @@ export function tagChips(holder: { values?: string[] }, onChange?: () => void): 
   input.type = "text"; input.placeholder = "Add value"; input.spellcheck = false;
   const makeChip = (v: string): HTMLElement => {
     const chip = el("span", "shell-tag", v);
-    const x = el("button", "shell-tag-x", icon.close);
+    const x = el("button", "shell-tag-x", iconNode("close", CHIP_ICON));
     x.type = "button"; x.dataset["tip"] = `Remove ${v}`; x.setAttribute("aria-label", `Remove ${v}`);
     x.addEventListener("click", () => { holder.values = (holder.values ?? []).filter((o) => o !== v); chip.remove(); onChange?.(); });
     chip.append(x);
@@ -149,8 +161,8 @@ export function stageChips(holder: { stages?: string[] }, onChange?: () => void)
   const wrap = el("div", "shell-tags shell-stages");
   const input = el("input", "shell-tag-input");
   input.type = "text"; input.placeholder = "Add stage"; input.spellcheck = false;
-  const control = (glyph: string, tip: string, disabled: boolean, onClick: () => void): HTMLButtonElement => {
-    const b = el("button", "shell-tag-x shell-tag-move", glyph);
+  const control = (name: IconName, tip: string, disabled: boolean, onClick: () => void): HTMLButtonElement => {
+    const b = el("button", "shell-tag-x shell-tag-move", iconNode(name, CHIP_ICON));
     b.type = "button"; b.dataset["tip"] = tip; b.setAttribute("aria-label", tip);
     b.disabled = disabled;
     b.addEventListener("click", onClick);
@@ -163,12 +175,12 @@ export function stageChips(holder: { stages?: string[] }, onChange?: () => void)
       const chip = el("span", "shell-tag", `${i + 1}. ${v}`);
       chip.dataset["stage"] = v;
       chip.append(
-        control(icon.back, `Move ${v} earlier`, i === 0,
+        control("back", `Move ${v} earlier`, i === 0,
           () => { if (moveItem(stages, i, -1)) { rebuild(); onChange?.(); } }),
-        control(icon.forward, `Move ${v} later`, i === stages.length - 1,
+        control("forward", `Move ${v} later`, i === stages.length - 1,
           () => { if (moveItem(stages, i, 1)) { rebuild(); onChange?.(); } }),
       );
-      const x = el("button", "shell-tag-x", icon.close);
+      const x = el("button", "shell-tag-x", iconNode("close", CHIP_ICON));
       x.type = "button"; x.dataset["tip"] = `Remove ${v}`; x.setAttribute("aria-label", `Remove ${v}`);
       x.addEventListener("click", () => { holder.stages = (holder.stages ?? []).filter((o) => o !== v); rebuild(); onChange?.(); });
       chip.append(x);

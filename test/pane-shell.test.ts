@@ -81,13 +81,16 @@ describe("mountPaneShell", () => {
     expect(shell.state().width).toEqual({});
   });
 
-  it("swaps the toggle glyph and aria by open state", () => {
+  it("swaps the toggle icon and aria by open state", () => {
     const { host, shell } = mount();
     const navBtn = host.querySelectorAll<HTMLButtonElement>(".pane-toggle")[0]!;
-    expect(navBtn.textContent).toBe("‹");                 // open -> collapse-left chevron
+    const drawn = (): string | null => navBtn.querySelector("svg")?.getAttribute("data-icon") ?? null;
+    expect(drawn()).toBe("back");                          // open -> collapse-left chevron
+    expect(navBtn.textContent).toBe("");                   // drawn, never typed
     expect(navBtn.getAttribute("aria-pressed")).toBe("true");
     shell.togglePane("nav");
-    expect(navBtn.textContent).toBe("›");
+    expect(drawn()).toBe("forward");
+    expect(navBtn.querySelectorAll("svg")).toHaveLength(1); // replaced, not stacked
     // The rollover is the themed one (`data-tip`), never an OS `title`.
     expect(navBtn.title).toBe("");
     expect(navBtn.dataset["tip"]).toBe("Show navigator (Cmd+1)");

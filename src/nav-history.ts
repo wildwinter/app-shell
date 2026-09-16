@@ -24,6 +24,8 @@
 // left and Forward would never reach anything.
 // ---------------------------------------------------------------------------
 
+import { iconNode, type IconName } from "./icons.js";
+
 export interface NavHistoryOptions<Place> {
   /** Same DOCUMENT: a visit whose place is `same` as the newest entry
    *  REPLACES it (keeping the freshest tab) instead of stacking. */
@@ -103,18 +105,18 @@ export function historyNav(onBack: () => void, onForward: () => void): {
   el: HTMLElement;
   set(canBack: boolean, canForward: boolean): void;
 } {
-  const btn = (glyph: string, tip: string, onClick: () => void): HTMLButtonElement => {
+  const btn = (name: IconName, tip: string, onClick: () => void): HTMLButtonElement => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "shell-histnav-btn";
-    b.textContent = glyph;
+    b.append(iconNode(name));
     b.dataset["tip"] = tip;
     b.setAttribute("aria-label", tip);
     b.addEventListener("click", onClick);
     return b;
   };
-  const back = btn("\u2190", "Back", onBack);
-  const forward = btn("\u2192", "Forward", onForward);
+  const back = btn("arrowLeft", "Back", onBack);
+  const forward = btn("arrowRight", "Forward", onForward);
   const el = document.createElement("span");
   el.className = "shell-histnav";
   el.append(back, forward);

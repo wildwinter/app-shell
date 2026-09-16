@@ -9,9 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
-
-/** The pin glyph (shared across the family; byte-identical everywhere). */
-const PIN_ICON = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="17" x2="12" y2="22"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.3V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.7a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>`;
+import { iconNode } from "./icons.js";
 
 export interface PinButtonOptions {
   pinned: boolean;
@@ -38,7 +36,9 @@ export interface PinButton {
 export function pinButton(opts: PinButtonOptions): PinButton {
   const b = el("button", "swin-pin");
   b.type = "button";
-  b.innerHTML = PIN_ICON;
+  // The vocabulary's pin (it used to be a hand-drawn copy of the same shape,
+  // pasted in five places across the two apps before it came here).
+  b.append(iconNode("pin"));
   let pinned = opts.pinned;
   const reflect = (): void => {
     b.classList.toggle("on", pinned);

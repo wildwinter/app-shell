@@ -83,8 +83,11 @@ describe("the arrows", () => {
   it("draws ARROWS, never chevrons: chevron says structure, arrow says time", () => {
     const pair = historyNav(() => {}, () => {});
     const [back, forward] = [...pair.el.querySelectorAll("button")];
-    expect(back!.textContent).toBe("\u2190");
-    expect(forward!.textContent).toBe("\u2192");
+    // Drawn, not typed: the word on each is the arrow, and neither is a chevron.
+    expect(back!.querySelector("svg")?.getAttribute("data-icon")).toBe("arrowLeft");
+    expect(forward!.querySelector("svg")?.getAttribute("data-icon")).toBe("arrowRight");
+    expect(back!.textContent).toBe("");
+    expect(forward!.textContent).toBe("");
   });
 
   it("greys each side by what set() says, and clicks call through", () => {

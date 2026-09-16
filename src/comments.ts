@@ -21,6 +21,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
+import { iconNode } from "./icons.js";
 import { openAnchoredPanel } from "./anchored.js";
 
 /** One message. The author is a NAME stamped at posting time, not a reference:
@@ -162,7 +163,7 @@ export function openComments(opts: CommentsOptions): void {
         // and a delete that is always visible invites the accident it is.
         // Nothing is offered on a tombstone: there is nothing left to withdraw.
         if (opts.deleteMessage && message.deleted !== true) {
-          const bin = el("button", { className: "shell-cmt-del", text: "✕" });
+          const bin = el("button", { className: "shell-cmt-del" }, iconNode("close", 12));
           bin.dataset.tip = "Delete this comment";
           bin.setAttribute("aria-label", "Delete this comment");
           bin.addEventListener("click", () => opts.deleteMessage?.(thread.id, index));

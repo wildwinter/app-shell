@@ -66,6 +66,14 @@
   --scroll-thumb-hover: color-mix(in oklab, var(--ink) 40%, transparent);
 }
 
+/* A drawn icon (`iconNode` / `iconHtml` in icons.ts stamp `data-icon`). A
+   block, so it never sits on a text baseline with descender space under it;
+   no flex shrink, so a crowded row squeezes the text and not the picture; and
+   no pointer events, so a click lands on the button and never on the drawing
+   (a handler comparing `event.target` to its button would otherwise miss).
+   Colour is inherited: every drawing is currentColor. */
+[data-icon] { display: block; flex: none; pointer-events: none; }
+
 /* The family's keyboard focus ring: one rule, zero specificity (:where), so a
    component may draw its own and win without !important. Until 0.39.0
    Patterpad's main window had no ring at all and Storyletter carried five

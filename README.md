@@ -145,6 +145,14 @@ palette, and version control's renderer half. Storylet Studio migrates each
 first (proving app-agnosticism); Patterpad follows - see
 `patterkit/design/from-storylets/patterpad-onto-the-shell.md` for that order.
 
+## Third-party
+
+The icon vocabulary (`iconNode`, `iconSvg` in `src/icons.ts`) vendors drawings
+from [Lucide](https://lucide.dev) 1.46.0, ISC licence, Copyright (c) 2026 Lucide
+Icons and Contributors; some of those derive from Feather, MIT, Copyright (c)
+2013-present Cole Bemis. The notices are in `LICENSES.md` and at the head of
+`src/icons.ts`. Everything else in this package is MIT (see `LICENSE`).
+
 ## Release
 
 ```bash

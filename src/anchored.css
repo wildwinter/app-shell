@@ -29,8 +29,9 @@
   color: var(--muted);
 }
 .shell-anchored-close {
+  display: inline-flex; align-items: center; justify-content: center;
   border: 0; background: none; color: var(--muted);
-  font-size: 0.8rem; line-height: 1; padding: 0 2px; cursor: pointer;
+  line-height: 1; padding: 2px; cursor: pointer;
 }
 .shell-anchored-close:hover { color: var(--accent); }
 .shell-anchored-body {

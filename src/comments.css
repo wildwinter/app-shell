@@ -21,9 +21,10 @@
    "there is apparently no delete option", which is exactly right.
    Low contrast carries "secondary"; invisibility carries "absent". */
 .shell-cmt-del {
-  margin-left: auto; flex: none; padding: 0 4px; line-height: 1;
+  margin-left: auto; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  padding: 2px; line-height: 1;
   background: none; border: none; cursor: pointer;
-  font-size: 0.72rem; color: var(--muted); opacity: 0.55;
+  color: var(--muted); opacity: 0.55;
   transition: opacity var(--dur-quick, 120ms) var(--ease-standard, ease),
     color var(--dur-quick, 120ms) var(--ease-standard, ease);
 }

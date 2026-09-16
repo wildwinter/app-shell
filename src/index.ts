@@ -7,8 +7,9 @@ export { el } from "./dom.js";
 export type { Child, ElProps } from "./dom.js";
 export { colourIndex, colourFor, PALETTE, PALETTE_SIZE } from "./colour.js";
 // The family's icon vocabulary: an icon is a word, and two apps must spell it
-// the same way (icons.ts).
-export { icon, iconSvg } from "./icons.js";
+// the same way (icons.ts). Drawn (Lucide, vendored) since 0.39: `iconNode` is
+// the way to draw one; `icon` is the deprecated glyph table.
+export { icon, iconSvg, iconNode, iconHtml, iconNameOfGlyph, isIconName, ICON_NAMES, ICON_SIZE } from "./icons.js";
 export type { IconName, IconSvgName } from "./icons.js";
 export { mountPaneShell } from "./pane-shell.js";
 export type { PaneShell, PaneShellOptions, PaneShellState, PaneSide, PaneSideConfig } from "./pane-shell.js";
@@ -50,7 +51,7 @@ export type { AnchoredPanel, AnchoredPanelOptions } from "./anchored.js";
 // Version control, the renderer half: badges, the lock notice, and turning a
 // held document's controls off. (The main half is @wildwinter/app-shell/vc-status.)
 export { foldVc, vcBadgeFor, paintVcBadges, lockControls, lockNotice } from "./vc-view.js";
-export type { ShardVc, VcMap } from "./vc-view.js";
+export type { ShardVc, VcMap, VcBadge } from "./vc-view.js";
 // Who is at the keyboard: asked once, skippable, persisted by the app.
 export { askIdentity } from "./identity.js";
 export type { Identity, IdentityOptions } from "./identity.js";

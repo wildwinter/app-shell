@@ -22,7 +22,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
-import { icon } from "./icons.js";
+import { iconNode } from "./icons.js";
 
 export interface StaleBarOptions {
   /**
@@ -46,7 +46,9 @@ export function staleBar(opts: StaleBarOptions): HTMLElement {
   return el("div", { className: "stale-bar" },
     el("span", { className: "stale-bar-msg",
       text: `${opts.subject} changed in the editor. ${opts.advice ?? "Restart to play the new version."}` }),
-    el("button", { className: "stale-bar-go", text: `${icon.restart} ${label}`,
-      onClick: () => opts.onRestart() }),
+    // The icon is a node beside the word, not a character inside it; the
+    // button's flex gap sets the space (stale.css).
+    el("button", { className: "stale-bar-go", onClick: () => opts.onRestart() },
+      iconNode("restart", 12), label),
   );
 }

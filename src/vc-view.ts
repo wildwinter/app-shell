@@ -17,7 +17,7 @@
 // markup.
 // ---------------------------------------------------------------------------
 
-import { icon } from "./icons.js";
+import { icon, iconNode, type IconName } from "./icons.js";
 import { el } from "./dom.js";
 
 /** One shard's state as the renderer sees it. The app's own DTO will be this
@@ -58,23 +58,35 @@ export function foldVc(shards: VcMap, keys: string | undefined): ShardVc | undef
   return out;
 }
 
+/** What a row flies: the word to draw (`name`), the class that colours it,
+ *  and the rollover. `glyph` is the deprecated typed character for a caller
+ *  still setting text; it goes when `icon` does. */
+export interface VcBadge {
+  name: IconName;
+  /** @deprecated Draw `name` with `iconNode` instead. */
+  glyph: string;
+  cls: string;
+  title: string;
+}
+
 /** The one badge an item flies, by priority, or null when there is nothing to
- *  say. Monochrome typographic glyphs (never colour emoji), so each inherits
- *  its themed colour and reads the same in Linen and Baize. */
-export function vcBadgeFor(s: ShardVc | undefined): { glyph: string; cls: string; title: string } | null {
-  if (s?.lockedBy?.length) return { glyph: icon.locked, cls: "vc-locked", title: `Locked by ${s.lockedBy.join(", ")}` };
-  if (s?.outOfDate) return { glyph: icon.down, cls: "vc-stale", title: "Out of date. A newer version is on the server." };
+ *  say. Drawn monochrome (never colour emoji), so each inherits its themed
+ *  colour and reads the same in Linen and Baize. */
+export function vcBadgeFor(s: ShardVc | undefined): VcBadge | null {
+  const badge = (name: IconName, cls: string, title: string): VcBadge => ({ name, glyph: icon[name as keyof typeof icon] ?? "", cls, title });
+  if (s?.lockedBy?.length) return badge("locked", "vc-locked", `Locked by ${s.lockedBy.join(", ")}`);
+  if (s?.outOfDate) return badge("down", "vc-stale", "Out of date. A newer version is on the server.");
   // The three states of a file that is YOURS, most actionable first. Ordered so
   // the badge answers "what would I do about this?" rather than describing the
   // file: a checkout you are holding matters more than the edits inside it, and
   // both matter more than a file the VCS has never seen.
-  if (s?.checkedOutByMe) return { glyph: icon.checkedOut, cls: "vc-mine", title: "Checked out by you" };
-  if (s?.dirty) return { glyph: icon.modified, cls: "vc-dirty", title: "Modified. Local changes aren't committed yet." };
-  if (s?.untracked) return { glyph: icon.untracked, cls: "vc-new", title: "New. Not in version control yet." };
+  if (s?.checkedOutByMe) return badge("checkedOut", "vc-mine", "Checked out by you");
+  if (s?.dirty) return badge("modified", "vc-dirty", "Modified. Local changes aren't committed yet.");
+  if (s?.untracked) return badge("untracked", "vc-new", "New. Not in version control yet.");
   // Read-only on disk with NO other holder is still editable: the save checks
   // it out. Muted, and last, because under a lock-based VCS this is the
   // resting state of everything the author has not touched yet.
-  if (s && !s.writable) return { glyph: icon.readOnly, cls: "vc-frozen", title: "Read-only on disk. Saving checks it out." };
+  if (s && !s.writable) return badge("readOnly", "vc-frozen", "Read-only on disk. Saving checks it out.");
   return null;
 }
 
@@ -85,8 +97,9 @@ export function paintVcBadges(root: ParentNode, shards: VcMap): void {
     host.querySelector(":scope > .vc-badge")?.remove();
     const badge = vcBadgeFor(foldVc(shards, host.dataset["vc"]));
     if (!badge) return;
-    // `tip` carries the accessible name too, so no separate aria-label.
-    const span = el("span", { className: `vc-badge ${badge.cls}`, text: badge.glyph, tip: badge.title });
+    // `tip` carries the accessible name too, so no separate aria-label. 12px:
+    // the badge sits beside a row title at 0.78rem and must not outweigh it.
+    const span = el("span", { className: `vc-badge ${badge.cls}`, tip: badge.title }, iconNode(badge.name, 12));
     host.append(span);
   });
 }
@@ -112,6 +125,6 @@ export function lockControls(host: HTMLElement, off: boolean, staysLive: string)
 /** The notice a locked document opens with: who holds it, and why nothing types. */
 export function lockNotice(holders: string[]): HTMLElement {
   return el("div", { className: "vc-lock" },
-    el("span", { className: "vc-lock-glyph", text: icon.locked }),
+    el("span", { className: "vc-lock-glyph" }, iconNode("locked")),
     el("span", { text: `Locked by ${holders.join(", ")}. Read-only until they release it.` }));
 }

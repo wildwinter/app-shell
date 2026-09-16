@@ -9,7 +9,7 @@
 // root). It reads the shared token grammar (tokens.css).
 // ---------------------------------------------------------------------------
 
-import { icon } from "./icons.js";
+import { iconNode } from "./icons.js";
 import { ensureTooltipHost } from "./tooltip.js";
 
 export type PaneSide = "nav" | "inspector";
@@ -151,7 +151,7 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
   function applyToggleGlyph(side: PaneSide, button: HTMLButtonElement): void {
     const isOpen = open[side];
     // Chevron points toward where the pane collapses to.
-    button.textContent = side === "nav" ? (isOpen ? icon.back : icon.forward) : (isOpen ? icon.forward : icon.back);
+    button.replaceChildren(iconNode(side === "nav" ? (isOpen ? "back" : "forward") : (isOpen ? "forward" : "back")));
     // `data-tip`, not `title`: the themed tooltip, never the OS bubble on the
     // platform's own delay. The tip is also the accessible name, since the
     // button has no text of its own.

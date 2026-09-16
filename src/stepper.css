@@ -20,7 +20,8 @@
 .stepbar-count.muted { color: var(--muted); }
 
 .stepbar-nav {
-  flex: none; width: 20px; height: 20px; padding: 0; line-height: 1;
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; line-height: 1;
   border: none; background: none; color: var(--muted);
   border-radius: var(--radius-sm); font: inherit; cursor: pointer;
 }
