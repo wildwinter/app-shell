@@ -8,7 +8,11 @@
 .shell-about .shell-dialog-actions { justify-content: center; margin-top: 10px; }
 .shell-about-mark { margin-bottom: 2px; }
 .shell-about-mark svg { max-width: 220px; height: auto; }
-.shell-about-version { font: 0.78rem/1.4 var(--font-ui); color: var(--muted); margin-top: -8px; }
+/* The body is a scrolling column, so nothing in it may carry a negative margin: the version line
+   would sit above the body's top edge and be clipped. It tucks under the title through the body's
+   gap instead. */
+.shell-about .shell-dialog-body { gap: 2px; }
+.shell-about-version { font: 0.78rem/1.4 var(--font-ui); color: var(--muted); margin: 0; }
 .shell-about-blurb { font: 0.85rem/1.5 var(--font-read, var(--font-ui)); margin: 6px 0 0; }
 .shell-about-credits { font: 0.78rem/1.55 var(--font-ui); color: var(--muted); margin: 2px 0 0; white-space: pre-line; }
 .shell-about-links { display: flex; gap: 14px; justify-content: center; margin-top: 6px; }
