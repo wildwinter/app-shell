@@ -18,8 +18,16 @@ import { dialogFrame } from "./dialog.js";
 
 export interface ConfirmOptions {
   title: string;
-  body: string;
-  /** The destructive button's label ("Delete box", "Restart"). */
+  /** One plain sentence, ending with what undo does. */
+  body?: string;
+  /**
+   * Content that is evidence rather than a sentence: a list of the scenes that
+   * refer to the thing, a warning line. Rendered after `body` when both are
+   * given. The caller styles it; the frame's body is a column with a gap.
+   */
+  bodyNode?: HTMLElement;
+  /** The destructive button's label, which names its object ("Delete scene",
+   *  "Remove language"). */
   confirmLabel: string;
 }
 
@@ -43,7 +51,8 @@ export function confirmDialog(opts: ConfirmOptions): Promise<boolean> {
     const danger = el("button", "btn danger confirm-btn", opts.confirmLabel);
     cancel.type = "button";
     danger.type = "button";
-    frame.body.append(el("div", "confirm-body", opts.body));
+    if (opts.body !== undefined) frame.body.append(el("div", "confirm-body", opts.body));
+    if (opts.bodyNode) frame.body.append(opts.bodyNode);
     frame.actions.append(cancel, danger);
 
     cancel.addEventListener("click", () => finish(false));

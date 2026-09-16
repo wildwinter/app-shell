@@ -28,9 +28,9 @@ export type { DialogFrame, DialogFrameOptions } from "./dialog.js";
 // The floating-layer lifecycle popups and menus share (floating.ts), and the
 // right-click menu + anchored popover built on the same idea (context-menu.ts).
 export { createFloating } from "./floating.js";
-export type { Floating } from "./floating.js";
+export type { Floating, FloatingOptions } from "./floating.js";
 export { openContextMenu, openPopover } from "./context-menu.js";
-export type { ContextItem } from "./context-menu.js";
+export type { ContextItem, PopoverOptions } from "./context-menu.js";
 // The exit half of the panel motion vocabulary. Public because an app's own
 // surfaces have to close the same way the shell's do, or the two halves of one
 // window animate differently (exit.ts).

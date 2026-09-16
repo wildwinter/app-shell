@@ -68,16 +68,26 @@ function placeBelow(node: HTMLElement, anchor: DOMRect): void {
   if (r.bottom > window.innerHeight) node.style.top = `${Math.max(EDGE, anchor.top - r.height - 4)}px`;
 }
 
+export interface PopoverOptions {
+  /** Where the popover is appended. Default <body>. A popover opened from
+   *  inside a modal <dialog> passes the dialog: a body-level node sits behind
+   *  the scrim, inert, while one inside the dialog paints in its top layer
+   *  (Patterpad's colour swatch popover in Project settings). */
+  host?: HTMLElement;
+}
+
 /** Open a small panel anchored to an element; `build` gets a close callback.
  *  `onClose` runs however it closes (Escape, outside click, or `close`), the
  *  place to flush an edit the panel was collecting. Only one is ever open. */
-export function openPopover(anchor: HTMLElement, build: (close: () => void) => HTMLElement, onClose?: () => void): void {
+export function openPopover(
+  anchor: HTMLElement, build: (close: () => void) => HTMLElement, onClose?: () => void, opts: PopoverOptions = {},
+): void {
   const pop = el("div", "popover");
   let closed = false;
   const finish = (): void => { if (closed) return; closed = true; onClose?.(); };
   const { dismiss } = floating(pop, finish);
   pop.append(build(dismiss));
-  document.body.append(pop);
+  (opts.host ?? document.body).append(pop);
   placeBelow(pop, anchor.getBoundingClientRect());
 }
 

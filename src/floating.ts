@@ -18,8 +18,8 @@
 import { closeWithExit } from "./exit.js";
 
 export interface Floating {
-  /** The floating element. Build content into it; it is appended to <body>,
-   *  hidden until `show()`. */
+  /** The floating element. Build content into it; it is appended to <body>
+   *  (or the `host` given), hidden until `show()`. */
   readonly el: HTMLElement;
   /** Show `el` and keep `reposition` glued to the anchor on scroll / resize.
    *  Safe to call repeatedly (on every re-render): the follower attaches once. */
@@ -42,9 +42,16 @@ function followOnScroll(reposition: () => void): () => void {
   return () => { window.removeEventListener("scroll", onMove, true); window.removeEventListener("resize", onMove); };
 }
 
-export function createFloating(className: string): Floating {
+export interface FloatingOptions {
+  /** Where the element is appended. Default <body>. Under a modal <dialog> a
+   *  body-level node sits behind the scrim, inert, so a popup opened from
+   *  inside one passes the dialog here and paints in its top layer. */
+  host?: HTMLElement;
+}
+
+export function createFloating(className: string, opts: FloatingOptions = {}): Floating {
   const el = document.createElement("div"); el.className = className; el.style.display = "none";
-  document.body.appendChild(el);
+  (opts.host ?? document.body).appendChild(el);
   let open = false;
   let detach: (() => void) | null = null;
   let outside: ((e: MouseEvent) => void) | null = null;

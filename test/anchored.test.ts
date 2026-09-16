@@ -51,6 +51,17 @@ describe("openAnchoredPanel", () => {
     expect(calls).toBe(1);
   });
 
+  it("appends to the host given, so a panel opened inside a modal dialog is not inert under it", () => {
+    const dialog = document.createElement("dialog");
+    const anchor = document.createElement("button");
+    dialog.append(anchor);
+    document.body.append(dialog);
+    const panel = openAnchoredPanel({ anchor, title: "Colour", width: 200, host: dialog });
+    expect(panel?.panel.parentElement).toBe(dialog);
+    panel?.close();
+    expect(document.querySelector(".shell-anchored")).toBeNull();
+  });
+
   it("closeAnchoredPanel closes whatever is open", () => {
     // The close-everything sweep a navigation or a re-render needs: a panel
     // anchored to an element that no longer exists would hang in the air.

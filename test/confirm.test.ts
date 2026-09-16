@@ -58,6 +58,28 @@ describe("confirmDialog", () => {
     await expect(p).resolves.toBe(false);
   });
 
+  it("renders bodyNode after the body sentence, and alone when there is no sentence", async () => {
+    // Evidence, not a sentence: the scenes that refer to the thing being deleted.
+    const refs = document.createElement("ul");
+    refs.className = "refs";
+    refs.append(document.createElement("li"));
+    const p1 = confirmDialog({ title: "Delete it?", body: "Gone (undo restores it).", bodyNode: refs, confirmLabel: "Delete scene" });
+    const dlg = document.querySelector("dialog.confirm-dialog")!;
+    const kids = [...dlg.querySelector(".shell-dialog-body")!.children];
+    expect(kids.map((k) => k.className)).toEqual(["confirm-body", "refs"]);
+    expect(kids[1]).toBe(refs);
+    (dlg.querySelector(".confirm-btn.cancel") as HTMLButtonElement).click();
+    await p1;
+
+    const warn = document.createElement("p");
+    const p2 = confirmDialog({ title: "Delete it?", bodyNode: warn, confirmLabel: "Delete scene" });
+    const dlg2 = document.querySelector("dialog.confirm-dialog")!;
+    expect([...dlg2.querySelector(".shell-dialog-body")!.children]).toEqual([warn]);
+    expect(dlg2.querySelector(".confirm-body")).toBeNull();
+    (dlg2.querySelector(".confirm-btn.cancel") as HTMLButtonElement).click();
+    await p2;
+  });
+
   it("labels the destructive button from confirmLabel, on the family's .btn", () => {
     const { p, dlg } = open();
     const danger = dlg.querySelector(".confirm-btn.danger")!;

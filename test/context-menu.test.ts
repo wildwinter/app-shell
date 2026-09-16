@@ -90,6 +90,19 @@ describe("openPopover", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("appends to the host given, so a popover opened inside a modal dialog paints above it", () => {
+    const dialog = document.createElement("dialog");
+    const anchor = document.createElement("button");
+    dialog.append(anchor);
+    document.body.append(dialog);
+    openPopover(anchor, () => document.createElement("div"), undefined, { host: dialog });
+    const pop = document.querySelector<HTMLElement>(".popover")!;
+    expect(pop.parentElement).toBe(dialog);
+    // Still the one popover, still closed the usual ways.
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(document.querySelector(".popover")).toBeNull();
+  });
+
   it("Escape closes a popover and reports", () => {
     const anchor = document.createElement("button");
     document.body.append(anchor);

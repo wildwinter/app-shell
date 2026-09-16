@@ -59,6 +59,11 @@ export interface AnchoredPanelOptions {
   ignoreDown?: string;
   /** While something matching this exists, Escape belongs to it, not to us. */
   deferEscape?: string;
+  /** Where the panel is appended. Default <body>. A panel opened from inside a
+   *  modal <dialog> passes the dialog: a body-level node sits behind the scrim,
+   *  inert, while one inside the dialog paints in its top layer. Placement is
+   *  viewport-relative either way (`position: fixed`). */
+  host?: HTMLElement;
   onClose?: () => void;
 }
 
@@ -82,7 +87,7 @@ export function openAnchoredPanel(opts: AnchoredPanelOptions): AnchoredPanel | n
     el("div", "shell-anchored-head", el("span", "shell-anchored-title", opts.title), closeBtn),
     body,
   );
-  document.body.append(panel);
+  (opts.host ?? document.body).append(panel);
   placeAnchored(panel, opts.anchor, opts.width, opts.prefer ?? "below", opts.keepClear ?? []);
 
   let closed = false;
