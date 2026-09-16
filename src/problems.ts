@@ -4,7 +4,7 @@
 //
 // Patterpad's `humanizeProblem` (its renderer.ts) proved the shape: a dozen
 // validator categories each mapped to a plain sentence with a next step, naming
-// things by their title, and a fallback that softens the technical tells.
+// things by their title, and a fallback that softens the technical residue.
 // Storyletter showed the raw compiler string and labelled it `path [where]`
 // (ui-review-2026-09, finding 17), the bracketed id that "Diagnostics name what
 // the author can see" (design-language.md) rules out for anything but a
