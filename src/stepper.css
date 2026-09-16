@@ -42,6 +42,10 @@
 .stepbar-cur:hover { background: var(--accent-soft); }
 .stepbar-cat { flex: none; font-weight: 600; }
 .stepbar-where { flex: none; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+/* A breadcrumb in the where slot keeps its own face (names, not an address) at
+   the slot's size, and may give way so the entry's text keeps at least half. */
+.stepbar-where:has(.shell-crumbs) { flex: 0 1 auto; min-width: 0; max-width: 50%; }
+.stepbar-where .shell-crumbs { font-size: inherit; max-width: 100%; }
 /* One line, always: the bar's height must not depend on how wordy an entry is. */
 .stepbar-msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
 

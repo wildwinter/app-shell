@@ -68,6 +68,11 @@ const NAMED: Record<string, { mac: string; other: string }> = {
 
 interface Parsed { mods: Modifier[]; key: string | undefined }
 
+/** The portable modifier words, exactly: the spelling the menu spine uses. The
+ *  aliases above ("Cmd", "Option") are tolerated by `parse` but they are not
+ *  portable, which is what `isKeyCombo` keys on. */
+const PORTABLE_MODS = new Set<string>(["mod", "ctrl", "alt", "shift"]);
+
 /** Split "Mod+Shift+M" into its modifiers and its key. A literal "+" key is
  *  written "Mod++" (the last empty part). Case is ignored on the words. */
 function parse(combo: string): Parsed {
@@ -82,6 +87,30 @@ function parse(combo: string): Parsed {
     key = raw;
   }
   return { mods, key };
+}
+
+/**
+ * Whether `value` is a combo in the portable spelling ("Mod+1", "Ctrl+Shift+M",
+ * "Enter", "Mod++") rather than a literal hint someone already wrote out
+ * ("Cmd+1", "⌘1", "F1 twice"). The test is strict on purpose: only the words
+ * `Mod`, `Ctrl`, `Alt` and `Shift` (any case) count as modifiers, and the one
+ * key must be a single character or a named key. A place that took a literal
+ * string before (the pane shell's `shortcutHint`) can then take a combo as
+ * well without changing what any existing literal draws.
+ */
+export function isKeyCombo(value: string): boolean {
+  // "Mod++" is the plus key, as `parse` reads it: count it, then read the rest.
+  const plus = value.length > 2 && value.endsWith("++");
+  const parts = (plus ? value.slice(0, -2) : value).split("+");
+  let keys = plus ? 1 : 0;
+  for (const raw of parts) {
+    if (raw === "") return false;
+    const word = raw.toLowerCase();
+    if (PORTABLE_MODS.has(word)) continue;
+    if (raw.length === 1 || word in NAMED) { keys++; continue; }
+    return false;
+  }
+  return keys === 1;
 }
 
 function keyLegend(key: string, mac: boolean): string {
@@ -176,7 +205,8 @@ export function hintBar(items: HintBarItem[], opts: KeyHintOptions = {}): HTMLEl
 
 /** Tooltip text with its key in brackets, platform-true: `tipWithKey("Show
  *  scenes", "Mod+1")` is "Show scenes (⌘1)" on a Mac and "Show scenes
- *  (Ctrl+1)" elsewhere. For `data-tip` and `PaneSideConfig.shortcutHint`. */
+ *  (Ctrl+1)" elsewhere. For `data-tip`; the pane shell calls it itself when
+ *  `PaneSideConfig.shortcutHint` is a combo. */
 export function tipWithKey(text: string, combo: string, platform: KeyPlatform = keyPlatform()): string {
   return `${text} (${keyLabel(combo, platform)})`;
 }

@@ -10,6 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { iconNode } from "./icons.js";
+import { isKeyCombo, tipWithKey } from "./keys.js";
 import { ensureTooltipHost } from "./tooltip.js";
 
 export type PaneSide = "nav" | "inspector";
@@ -25,7 +26,10 @@ export interface PaneSideConfig {
   resizable?: boolean;
   /** Noun for the toggle's tooltip/aria, e.g. "navigator" / "inspector". */
   label?: string;
-  /** Shortcut hint appended to the tooltip, e.g. "Cmd+1". */
+  /** The key that toggles the pane, bracketed after the tooltip. A combo in
+   *  the portable spelling ("Mod+1") is drawn for the platform through
+   *  `tipWithKey`: "(⌘1)" on a Mac, "(Ctrl+1)" elsewhere. Anything else is a
+   *  literal and goes in verbatim, as it always has ("Cmd+1" stays "Cmd+1"). */
   shortcutHint?: string;
   /** false = the pane is not offered at all: no toggle, togglePane ignored,
    *  forced closed whatever the remembered state says. For a slot a host has
@@ -49,8 +53,9 @@ export interface PaneShellOptions {
   onChange?: (state: PaneShellState) => void;
   /** The toggle's rollover for a side in a given state. Default: "Show
    *  navigator" / "Hide navigator" from the side's `label`, with the
-   *  `shortcutHint` in brackets. Written as `data-tip` (the themed tooltip)
-   *  and as the accessible name; never as `title`. */
+   *  `shortcutHint` in brackets (platform-true when it is a combo). Written as
+   *  `data-tip` (the themed tooltip) and as the accessible name; never as
+   *  `title`. */
   tipFor?: (side: PaneSide, open: boolean) => string;
   /** An extra class per side, toggled on the `.panes` grid whenever that side
    *  is collapsed, beside the shell's own `no-nav` / `no-inspector`. For an
@@ -142,9 +147,12 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
 
   // --- state application -----------------------------------------------------
   const defaultTip = (side: PaneSide, isOpen: boolean): string => {
-    const noun = cfg[side].label ?? side;
-    const hint = cfg[side].shortcutHint ? ` (${cfg[side].shortcutHint})` : "";
-    return `${isOpen ? "Hide" : "Show"} ${noun}${hint}`;
+    const text = `${isOpen ? "Hide" : "Show"} ${cfg[side].label ?? side}`;
+    const hint = cfg[side].shortcutHint;
+    if (!hint) return text;
+    // A portable combo is spelled for the platform at draw time; a literal
+    // is the caller's own words and goes in as written.
+    return isKeyCombo(hint) ? tipWithKey(text, hint) : `${text} (${hint})`;
   };
   const tipFor = opts.tipFor ?? defaultTip;
 

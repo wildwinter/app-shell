@@ -41,8 +41,12 @@ export interface StepperItem {
   /** An extra class on the kind chip, so an app can colour its own kinds
    *  (Storyletter's `sev-error`, and `done` for a resolved thread). */
   kindClass?: string;
-  /** Where it is, in the app's own address. Set in the mono face. */
-  where?: string;
+  /** Where it is. A string is the app's own address, set in the mono face; a
+   *  Node is a made element, a `breadcrumb(["Box", "Deck", "Card"])` say,
+   *  drawn as it is. Give the bar plain crumbs: the whole entry is already
+   *  the button that goes there, so a crumb with its own click has nowhere
+   *  else to take you. */
+  where?: string | Node;
   /** The entry itself, in one line. Overflow is clipped, not wrapped: the bar
    *  is one row high and stays that way however long the sentence is. */
   text: string;
@@ -125,7 +129,9 @@ export function renderStepperBar(host: HTMLElement, opts: StepperBarOptions): vo
     el("button", { className: "stepbar-cur", tip: opts.tips?.go ?? "Go to this", onClick: () => opts.onGo(index) },
       item.kind === undefined ? null
         : el("span", { className: `stepbar-cat${item.kindClass ? ` ${item.kindClass}` : ""}`, text: item.kind }),
-      item.where === undefined ? null : el("span", { className: "stepbar-where", text: item.where }),
+      item.where === undefined ? null
+        : typeof item.where === "string" ? el("span", { className: "stepbar-where", text: item.where })
+        : el("span", "stepbar-where", item.where),
       el("span", { className: "stepbar-msg", text: item.text }),
     ),
     ...actions, ...(close ? [close] : []),

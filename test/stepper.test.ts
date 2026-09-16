@@ -3,6 +3,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { renderStepperBar, type StepperItem } from "../src/stepper.js";
+import { breadcrumb } from "../src/dom.js";
 
 const items: StepperItem[] = [
   { kind: "error", kindClass: "sev-error", where: "arrival [when]", text: "no such tag" },
@@ -80,6 +81,22 @@ describe("renderStepperBar", () => {
     expect(tail).toEqual(["fixbtn", "stepbar-nav stepbar-close"]);
     h.querySelector<HTMLButtonElement>(".stepbar-close")!.click();
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("draws a where that is a Node as it is, so a bar can carry a breadcrumb", () => {
+    // Storyletter's problems bar joined "Box › Deck › Card" into a string for
+    // this slot; a breadcrumb is a Node, and the slot takes it whole.
+    const h = host();
+    const trail = breadcrumb(["arrivals", "welcome", "greeting"]);
+    renderStepperBar(h, { items: [{ where: trail, text: "no such tag" }], at: 0, onStep: () => {}, onGo: () => {} });
+    const where = h.querySelector(".stepbar-where")!;
+    expect(where.firstElementChild).toBe(trail);
+    expect(where.querySelectorAll(".shell-crumb")).toHaveLength(3);
+    expect(where.querySelector(".shell-crumb[aria-current]")?.textContent).toBe("greeting");
+    // A string still renders as text, exactly as before.
+    renderStepperBar(h, { items: [{ where: "arrivals [when]", text: "no such tag" }], at: 0, onStep: () => {}, onGo: () => {} });
+    expect(h.querySelector(".stepbar-where")?.textContent).toBe("arrivals [when]");
+    expect(h.querySelector(".stepbar-where")?.childElementCount).toBe(0);
   });
 
   it("omits the kind and where segments when an entry has neither", () => {

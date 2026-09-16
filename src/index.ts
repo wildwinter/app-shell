@@ -22,7 +22,7 @@ export { metaLine, breadcrumb } from "./dom.js";
 export type { Crumb } from "./dom.js";
 // Keyboard hints from one helper, "⌘" on a Mac and "Ctrl" elsewhere (keys.ts +
 // keys.css). Also its own entry, @wildwinter/app-shell/keys.
-export { keyLabel, keyLegends, keyHint, hintBar, tipWithKey, keyPlatform, setKeyPlatform } from "./keys.js";
+export { keyLabel, keyLegends, keyHint, hintBar, tipWithKey, isKeyCombo, keyPlatform, setKeyPlatform } from "./keys.js";
 export type { KeyPlatform, KeyHintOptions, HintBarItem } from "./keys.js";
 // Problem copy through a table the app fills (problems.ts). Also its own
 // entry, @wildwinter/app-shell/problems.

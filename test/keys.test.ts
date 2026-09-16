@@ -3,7 +3,7 @@
 // bracketed tooltip key.
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { keyLabel, keyLegends, keyHint, hintBar, tipWithKey, keyPlatform, setKeyPlatform } from "../src/keys.js";
+import { keyLabel, keyLegends, keyHint, hintBar, tipWithKey, isKeyCombo, keyPlatform, setKeyPlatform } from "../src/keys.js";
 
 afterEach(() => { setKeyPlatform(undefined); document.body.replaceChildren(); });
 
@@ -100,5 +100,21 @@ describe("tipWithKey", () => {
     expect(tipWithKey("Show scenes", "Mod+1", "mac")).toBe("Show scenes (⌘1)");
     expect(tipWithKey("Show scenes", "Mod+1", "win")).toBe("Show scenes (Ctrl+1)");
     expect(tipWithKey("Exit writing view", "Mod+Shift+M", "linux")).toBe("Exit writing view (Ctrl+Shift+M)");
+  });
+});
+
+describe("isKeyCombo", () => {
+  it("recognises the portable spelling, in any case", () => {
+    for (const combo of ["Mod+1", "mod+1", "Mod+Shift+M", "Ctrl+Alt+Shift+K", "Shift+Enter", "Enter", "Esc", "Up", "Mod+[", "Mod++"]) {
+      expect(isKeyCombo(combo), combo).toBe(true);
+    }
+  });
+
+  it("leaves a literal hint alone, so a string that drew verbatim still does", () => {
+    // "Cmd" and "Option" are aliases keyLabel tolerates, not the portable words:
+    // a caller who wrote "Cmd+1" for 0.39.0 wrote a literal and gets it back.
+    for (const literal of ["Cmd+1", "⌘1", "Ctrl+1 twice", "F1", "", "+", "Mod", "Mod+Shift", "Mod+1+2", "Option+Up"]) {
+      expect(isKeyCombo(literal), literal || "(empty)").toBe(false);
+    }
   });
 });

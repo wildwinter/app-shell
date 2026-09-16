@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { mountPaneShell } from "../src/pane-shell.js";
+import { setKeyPlatform } from "../src/keys.js";
+
+afterEach(() => { setKeyPlatform(undefined); });
 
 function mount(initial?: Parameters<typeof mountPaneShell>[1]["initial"], onChange = vi.fn()) {
   const host = document.createElement("div");
@@ -95,6 +98,32 @@ describe("mountPaneShell", () => {
     expect(navBtn.title).toBe("");
     expect(navBtn.dataset["tip"]).toBe("Show navigator (Cmd+1)");
     expect(navBtn.getAttribute("aria-label")).toBe("Show navigator (Cmd+1)");
+  });
+
+  it("spells a shortcutHint combo for the platform, and a literal as written", () => {
+    // "Mod+1" is the portable spelling: the toggle says "(⌘1)" on a Mac and
+    // "(Ctrl+1)" elsewhere, like every other tip built with tipWithKey. A
+    // literal such as "Cmd+1" (what 0.39.0 callers wrote) is not touched.
+    const build = (): NodeListOf<HTMLButtonElement> => {
+      const host = document.createElement("div");
+      document.body.append(host);
+      mountPaneShell(host, {
+        nav: { defaultWidth: "224px", label: "navigator", shortcutHint: "Mod+1" },
+        inspector: { defaultWidth: "384px", label: "inspector", shortcutHint: "Cmd+2" },
+        initial: { open: { nav: false, inspector: false } },
+      });
+      return host.querySelectorAll<HTMLButtonElement>(".pane-toggle");
+    };
+    setKeyPlatform("mac");
+    let [nav, insp] = build();
+    expect(nav!.dataset["tip"]).toBe("Show navigator (⌘1)");
+    expect(nav!.getAttribute("aria-label")).toBe("Show navigator (⌘1)");
+    expect(insp!.dataset["tip"]).toBe("Show inspector (Cmd+2)");
+    setKeyPlatform("win");
+    [nav, insp] = build();
+    expect(nav!.dataset["tip"]).toBe("Show navigator (Ctrl+1)");
+    expect(insp!.dataset["tip"]).toBe("Show inspector (Cmd+2)");
+    expect(document.querySelector("[title]")).toBeNull();
   });
 
   it("takes the toggle rollover from tipFor when given", () => {
