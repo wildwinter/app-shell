@@ -49,7 +49,7 @@ export function pinButton(opts: PinButtonOptions): PinButton {
     // sitting beside controls that did not. `title` was also the button's only
     // accessible name (the glyph is an aria-hidden SVG), so the label has to go
     // to `aria-label` as it moves, or dropping `title` would take the name too.
-    const label = pinned ? "Pinned on top: click to unpin" : "Click to keep on top";
+    const label = pinned ? "Pinned on top. Click to unpin." : "Keep on top";
     b.dataset["tip"] = label;
     b.setAttribute("aria-label", label);
   };

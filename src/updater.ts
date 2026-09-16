@@ -186,7 +186,7 @@ function beginDownload(info: UpdateInfo, attempts: number): void {
     } else {
       // Out of attempts for this cycle. Record it where the manual check surfaces it; the next
       // background check (6-hourly, or Help > Check for Updates) starts a fresh cycle.
-      lastBackgroundError = `Downloading ${info.version} failed ${MAX_ATTEMPTS} times (last: ${why}). Will retry on the next check.`;
+      lastBackgroundError = `Downloading ${info.version} failed ${MAX_ATTEMPTS} times, most recently with "${why}". It will be tried again on the next check.`;
       writeLog("error", [`download: giving up on ${info.version} this cycle - ${why}`]);
     }
   });
@@ -259,7 +259,7 @@ async function quitAndInstallSafely(): Promise<void> {
   if (!(await askRendererIsDirty(win))) { autoUpdater.quitAndInstall(); return; }
 
   const response = await themedPrompt(win, {
-    buttons: ["Save and Restart", "Discard and Restart", "Cancel"],
+    buttons: ["Save and restart", "Discard and restart", "Cancel"],
     defaultId: 0,
     cancelId: 2,
     message: "You have unsaved changes.",
@@ -290,11 +290,11 @@ autoUpdater.on("update-downloaded", (info: UpdateDownloadedEvent) => {
   const win = activeWindow();
   if (!win) return;
   void themedPrompt(win, {
-    buttons: ["Restart Now", "Later"],
+    buttons: ["Restart now", "Later"],
     defaultId: 0,
     cancelId: 1,
     message: "Update ready to install",
-    detail: `${appName} ${info.version} has been downloaded. Restart now to apply, or it will install automatically next time you quit.`,
+    detail: `${appName} ${info.version} has been downloaded. Restart now to install it, or it installs the next time you quit.`,
   }).then((response) => { if (response === 0) void quitAndInstallSafely(); });
 });
 
@@ -320,8 +320,8 @@ export async function manualCheckForUpdates(win?: BrowserWindow | null): Promise
 
   if (!app.isPackaged) {
     await themedPrompt(parent, {
-      message: "Updates unavailable in development build",
-      detail: `Auto-update only runs in packaged builds.\n\nCurrent version: ${app.getVersion()}`,
+      message: "Updates unavailable in a development build",
+      detail: `Auto-update only runs in a packaged build. This is version ${app.getVersion()}.`,
       buttons: ["OK"],
     });
     return;
@@ -329,11 +329,11 @@ export async function manualCheckForUpdates(win?: BrowserWindow | null): Promise
 
   if (updateDownloaded) {
     const response = await themedPrompt(parent, {
-      buttons: ["Restart Now", "Later"],
+      buttons: ["Restart now", "Later"],
       defaultId: 0,
       cancelId: 1,
       message: "Update ready to install",
-      detail: `${appName} ${updateDownloaded.version} has been downloaded. Restart now to apply.`,
+      detail: `${appName} ${updateDownloaded.version} has been downloaded. Restart now to install it.`,
     });
     if (response === 0) await quitAndInstallSafely();
     return;
@@ -369,15 +369,15 @@ export async function manualCheckForUpdates(win?: BrowserWindow | null): Promise
     } else if (ready) {
       // The check completed a download between our earlier guard and now (tiny window, but free to handle).
       const response = await themedPrompt(parent, {
-        buttons: ["Restart Now", "Later"], defaultId: 0, cancelId: 1,
+        buttons: ["Restart now", "Later"], defaultId: 0, cancelId: 1,
         message: "Update ready to install",
-        detail: `${appName} ${ready.version} has been downloaded. Restart now to apply.`,
+        detail: `${appName} ${ready.version} has been downloaded. Restart now to install it.`,
       });
       if (response === 0) await quitAndInstallSafely();
     } else if (lastBackgroundError) {
       await themedPrompt(parent, {
-        message: "You're on the latest version, but updates have had errors.",
-        detail: `Current version: ${appName} ${app.getVersion()}\n\nLast update error:\n${lastBackgroundError}`,
+        message: "You're on the latest version.",
+        detail: `${appName} ${app.getVersion()} is up to date. The last update check reported an error:\n${lastBackgroundError}`,
         buttons: ["OK"],
       });
       lastBackgroundError = null;

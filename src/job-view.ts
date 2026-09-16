@@ -81,7 +81,7 @@ export function mountJobProgress(host: HTMLElement, opts: JobProgressOptions): J
       count.textContent = total > 0 ? `${done} / ${total} ${units}` : `${done} ${units}`;
       if (estimable(done, total, elapsedMs)) {
         const remaining = (elapsedMs / done) * (total - done);
-        time.textContent = `${clock(elapsedMs)} elapsed · about ${clock(remaining)} left`;
+        time.textContent = `${clock(elapsedMs)} elapsed, about ${clock(remaining)} left`;
       } else {
         time.textContent = clock(elapsedMs);
       }

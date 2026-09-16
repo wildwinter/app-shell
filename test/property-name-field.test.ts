@@ -96,7 +96,7 @@ describe("propertyNameProblem", () => {
     expect(propertyNameProblem("is-night")).toMatch(/subtraction/);
     expect(propertyNameProblem("9lives")).toMatch(/digit/);
     expect(propertyNameProblem("not")).toMatch(/keyword/);
-    expect(propertyNameProblem("is night")).toMatch(/lower case letters, digits and underscores/);
+    expect(propertyNameProblem("is night")).toMatch(/lower case letters, digits, and underscores/);
     expect(propertyNameProblem("is night")).toContain('Try "is_night"');
     expect(propertyNameProblem("gold")).toBeUndefined();
   });

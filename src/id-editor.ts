@@ -59,10 +59,10 @@ export function openGameIdEditor(opts: GameIdEditorOptions): boolean {
   const input = el("input", "shell-id-input");
   input.type = "text";
   input.value = opts.value;
-  input.placeholder = opts.derived || "<game-id>";
+  input.placeholder = opts.derived || "game-id";
   input.spellcheck = false;
 
-  const hint = el("div", "shell-id-hint", "Lower case, digits, hyphens. Empty = auto from the name.");
+  const hint = el("div", "shell-id-hint", "Lower case letters, digits, and hyphens. Leave it empty to derive one from the name.");
   const actions = el("div", "shell-id-actions");
   const reset = el("button", "shell-id-reset", "Reset to auto");
   const set = el("button", "shell-id-set", "Set");

@@ -39,15 +39,15 @@ export function propertyNameProblem(name: string): string | undefined {
   const suggestion = propertyNameify(name);
   const tail = suggestion ? ` Try "${suggestion}", or press Tab.` : "";
   if (RESERVED_PROPERTY_NAMES.includes(name.toLowerCase())) {
-    return `Cannot be used: "${name.toLowerCase()}" is a keyword in expressions.${tail}`;
+    return `Can't be used. "${name.toLowerCase()}" is a keyword in expressions.${tail}`;
   }
   // The one that is not an error anywhere else: `@scope.a-b` compiles to a-minus-b.
-  if (name.includes("-")) return `Cannot be used: a hyphen reads as subtraction in an expression.${tail}`;
-  if (/^[0-9]/.test(name)) return `Cannot be used: a name cannot start with a digit.${tail}`;
+  if (name.includes("-")) return `Can't be used. A hyphen reads as subtraction in an expression.${tail}`;
+  if (/^[0-9]/.test(name)) return `Can't be used. A name can't start with a digit.${tail}`;
   if (name !== name.toLowerCase()) {
-    return `Cannot be used: expressions fold names, so this would look for "${name.toLowerCase()}".${tail}`;
+    return `Can't be used. Expressions fold names, so this would look for "${name.toLowerCase()}".${tail}`;
   }
-  return `Cannot be used: only lower case letters, digits and underscores.${tail}`;
+  return `Can't be used. Only lower case letters, digits, and underscores.${tail}`;
 }
 
 /**
@@ -72,7 +72,7 @@ export function bindPropertyName(
     const problem = v === "" ? undefined : propertyNameProblem(v);
     input.classList.toggle("illegal", !!problem);
     if (problem) input.title = problem;
-    else if (input.title.startsWith("Cannot be used")) {
+    else if (input.title.startsWith("Can't be used")) {
       if (hint) input.title = hint;
       else input.removeAttribute("title");
     }
@@ -167,10 +167,10 @@ export function propertyRefProblem(name: string, opts: PropertyRefOptions): stri
   if (!isValidPropertyName(folded)) {
     const suggestion = propertyNameify(name);
     const tail = suggestion ? ` Try "${suggestion}", or press Tab.` : "";
-    if (RESERVED_PROPERTY_NAMES.includes(folded)) return `Cannot be used: "${folded}" is a keyword in expressions.${tail}`;
-    if (name.includes("-")) return `Cannot be used: a hyphen reads as subtraction in an expression.${tail}`;
-    if (/^[0-9]/.test(name)) return `Cannot be used: a name cannot start with a digit.${tail}`;
-    return `Cannot be used: only lower case letters, digits and underscores.${tail}`;
+    if (RESERVED_PROPERTY_NAMES.includes(folded)) return `Can't be used. "${folded}" is a keyword in expressions.${tail}`;
+    if (name.includes("-")) return `Can't be used. A hyphen reads as subtraction in an expression.${tail}`;
+    if (/^[0-9]/.test(name)) return `Can't be used. A name can't start with a digit.${tail}`;
+    return `Can't be used. Only lower case letters, digits, and underscores.${tail}`;
   }
   const known = opts.known();
   if (known.some((k) => k.toLowerCase() === folded)) return undefined;
@@ -179,7 +179,7 @@ export function propertyRefProblem(name: string, opts: PropertyRefOptions): stri
   if (known.length === 0) return `No ${scope} properties are declared yet. Declare one above first.`;
   const shown = known.slice(0, 3).map((k) => `"${k}"`).join(", ");
   const more = known.length > 3 ? `, and ${known.length - 3} more` : "";
-  return `No ${scope} property is called "${name}". Declared: ${shown}${more}.`;
+  return `No ${scope} property is called "${name}". Pick one of ${shown}${more}.`;
 }
 
 /**
@@ -217,7 +217,7 @@ export function bindPropertyRef(
     const problem = v === "" ? undefined : propertyRefProblem(v, opts);
     input.classList.toggle("illegal", !!problem);
     if (problem) input.title = problem;
-    else if (input.title.startsWith("Cannot be used") || input.title.startsWith("No ")) {
+    else if (input.title.startsWith("Can't be used") || input.title.startsWith("No ")) {
       if (opts.hint) input.title = opts.hint;
       else input.removeAttribute("title");
     }

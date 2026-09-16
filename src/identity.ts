@@ -44,7 +44,7 @@ export function askIdentity(opts: IdentityOptions = {}): Promise<Identity | unde
     const dialog = el("dialog", "shell-ident",
       el("div", "shell-ident-title", "Who is working here?"),
       el("p", "shell-ident-hint",
-        "Stamped on the comments you write. Kept in this app, never in the project, and changeable later."),
+        "Your name goes on the comments you write. It's kept in this app, not in the project. You can change it later."),
       el("div", "shell-ident-fields", name, email),
       el("div", "shell-ident-actions", skip, save),
     );

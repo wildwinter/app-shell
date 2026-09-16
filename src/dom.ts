@@ -115,7 +115,7 @@ export function tagChips(holder: { values?: string[] }, onChange?: () => void): 
   const makeChip = (v: string): HTMLElement => {
     const chip = el("span", "shell-tag", v);
     const x = el("button", "shell-tag-x", "✕");
-    x.type = "button"; x.dataset["tip"] = `remove ${v}`; x.setAttribute("aria-label", `remove ${v}`);
+    x.type = "button"; x.dataset["tip"] = `Remove ${v}`; x.setAttribute("aria-label", `Remove ${v}`);
     x.addEventListener("click", () => { holder.values = (holder.values ?? []).filter((o) => o !== v); chip.remove(); onChange?.(); });
     chip.append(x);
     return chip;

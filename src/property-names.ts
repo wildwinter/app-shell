@@ -43,7 +43,7 @@ export const RESERVED_PROPERTY_NAMES: readonly string[] = ["true", "false", "and
 
 /** What an editor should tell an author, in one line. */
 export const PROPERTY_NAME_HINT =
-  "Lower case letters, digits and underscores. Cannot start with a digit. No hyphens or spaces.";
+  "Lower case letters, digits, and underscores. It can't start with a digit. No hyphens or spaces.";
 
 /**
  * Coerce a label into a legal property name: lower case, apostrophes dropped,

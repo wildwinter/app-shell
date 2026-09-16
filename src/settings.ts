@@ -112,8 +112,8 @@ export function dupGuard(): DupGuard {
       const k = it.key().trim().toLowerCase();
       const dup = !!k && (counts.get(k) ?? 0) > 1;
       it.input.classList.toggle("invalid", dup);
-      if (dup) { it.input.title = "Duplicate name. Names must be unique."; any = true; }
-      else if (it.input.title === "Duplicate name. Names must be unique.") it.input.removeAttribute("title");
+      if (dup) { it.input.title = "Another row already has this name."; any = true; }
+      else if (it.input.title === "Another row already has this name.") it.input.removeAttribute("title");
     }
     return any;
   };

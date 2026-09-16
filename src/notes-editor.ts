@@ -53,12 +53,12 @@ const label = (cls: string): string =>
     : CLASS_LABEL[cls] ?? (cls[0]!.toUpperCase() + cls.slice(1));
 
 const PLACEHOLDER: Record<string, string> = {
-  vo: "direction for the voice actor / director",
-  loc: "context for translators",
+  vo: "Direction for the voice actor or director",
+  loc: "Context for translators",
 };
 const placeholder = (cls: string): string =>
-  cls === EDITOR_ONLY ? "an internal note - never exported"
-    : PLACEHOLDER[cls] ?? "intent / rationale - why this is here";
+  cls === EDITOR_ONLY ? "An internal note, never exported"
+    : PLACEHOLDER[cls] ?? "Why this is here";
 
 export interface NotesEditorOptions {
   /** What this is about, for the dialog's title ("Notes: Arrive at the gate"). */

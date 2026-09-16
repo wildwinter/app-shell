@@ -63,18 +63,18 @@ export function foldVc(shards: VcMap, keys: string | undefined): ShardVc | undef
  *  its themed colour and reads the same in Linen and Baize. */
 export function vcBadgeFor(s: ShardVc | undefined): { glyph: string; cls: string; title: string } | null {
   if (s?.lockedBy?.length) return { glyph: icon.locked, cls: "vc-locked", title: `Locked by ${s.lockedBy.join(", ")}` };
-  if (s?.outOfDate) return { glyph: icon.down, cls: "vc-stale", title: "Out of date - a newer version is on the server" };
+  if (s?.outOfDate) return { glyph: icon.down, cls: "vc-stale", title: "Out of date. A newer version is on the server." };
   // The three states of a file that is YOURS, most actionable first. Ordered so
   // the badge answers "what would I do about this?" rather than describing the
   // file: a checkout you are holding matters more than the edits inside it, and
   // both matter more than a file the VCS has never seen.
   if (s?.checkedOutByMe) return { glyph: icon.checkedOut, cls: "vc-mine", title: "Checked out by you" };
-  if (s?.dirty) return { glyph: icon.modified, cls: "vc-dirty", title: "Modified - uncommitted local changes" };
-  if (s?.untracked) return { glyph: icon.untracked, cls: "vc-new", title: "New - not yet committed" };
+  if (s?.dirty) return { glyph: icon.modified, cls: "vc-dirty", title: "Modified. Local changes aren't committed yet." };
+  if (s?.untracked) return { glyph: icon.untracked, cls: "vc-new", title: "New. Not in version control yet." };
   // Read-only on disk with NO other holder is still editable: the save checks
   // it out. Muted, and last, because under a lock-based VCS this is the
   // resting state of everything the author has not touched yet.
-  if (s && !s.writable) return { glyph: icon.readOnly, cls: "vc-frozen", title: "Read-only on disk - saving checks it out" };
+  if (s && !s.writable) return { glyph: icon.readOnly, cls: "vc-frozen", title: "Read-only on disk. Saving checks it out." };
   return null;
 }
 
@@ -113,5 +113,5 @@ export function lockControls(host: HTMLElement, off: boolean, staysLive: string)
 export function lockNotice(holders: string[]): HTMLElement {
   return el("div", { className: "vc-lock" },
     el("span", { className: "vc-lock-glyph", text: icon.locked }),
-    el("span", { text: `Locked by ${holders.join(", ")} - read-only until they release it.` }));
+    el("span", { text: `Locked by ${holders.join(", ")}. Read-only until they release it.` }));
 }
