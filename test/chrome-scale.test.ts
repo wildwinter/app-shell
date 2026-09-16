@@ -32,7 +32,8 @@ describe("the chrome scale", () => {
       return m?.[1] ?? "";
     };
     expect(rule(read("dialog.css"), ".shell-dialog")).toContain("font-size: var(--chrome-size)");
-    expect(rule(read("pane-shell.css"), ".pane-shell")).toContain("font-size: var(--chrome-size)");
+    expect(rule(read("pane-shell.css"), ".topbar, .pane-nav, .pane-inspector")).toContain("font-size: var(--chrome-size)");
+    expect(rule(read("pane-shell.css"), ".pane-shell")).not.toContain("font-size");
     expect(rule(read("tool-window.css"), ".swin-head")).toContain("font-size: var(--chrome-size)");
   });
 

@@ -6,10 +6,12 @@
    lead/trail slots.
    ============================================================================ */
 
-/* The chrome base (tokens.css) is set here, so the bars and panes read at 14px
-   whatever the app's reading root is; the app's content surface inside the
-   centre pane sets its own size again. */
-.pane-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; font-size: var(--chrome-size); }
+/* The chrome base (tokens.css) is set on the CHROME panes only: the top bar,
+   the navigator and the inspector read at 14px whatever the app's reading root
+   is. The centre pane is the app's content and inherits the app's own size:
+   pinning the whole shell pulled Patterpad's script down to 14px. */
+.pane-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.topbar, .pane-nav, .pane-inspector { font-size: var(--chrome-size); }
 
 .topbar {
   display: flex; align-items: center; gap: 10px;
