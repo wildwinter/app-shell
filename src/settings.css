@@ -114,3 +114,11 @@
 .shell-tag-x:disabled { opacity: 0.35; cursor: default; }
 .shell-tag-move:hover:not(:disabled) { color: var(--accent); }
 .shell-tag-input { min-width: 8rem; }
+
+/* The property list (property-list.ts) on top of the row kit above. */
+.set-list { display: flex; flex-direction: column; gap: 6px; }
+.set-rowline select.set-type { flex: none; }
+.set-rowline .set-default { flex: 1; min-width: 5rem; }
+.set-flagnote { flex: 1; color: var(--muted); font-size: 0.82rem; font-style: italic; }
+.set-details input.set-purpose { flex: 1; }
+.set-add { align-self: flex-start; margin-top: 6px; }

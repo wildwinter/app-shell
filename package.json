@@ -139,6 +139,43 @@
     "./toast.css": {
       "import": "./dist/toast.css",
       "require": "./dist/toast.css"
+    },
+    "./updater-view": {
+      "types": "./dist/updater-view.d.ts",
+      "import": "./dist/updater-view.js",
+      "require": "./dist/updater-view.cjs"
+    },
+    "./welcome": {
+      "types": "./dist/welcome.d.ts",
+      "import": "./dist/welcome.js",
+      "require": "./dist/welcome.cjs"
+    },
+    "./link-status": {
+      "types": "./dist/link-status.d.ts",
+      "import": "./dist/link-status.js",
+      "require": "./dist/link-status.cjs"
+    },
+    "./property-list": {
+      "types": "./dist/property-list.d.ts",
+      "import": "./dist/property-list.js",
+      "require": "./dist/property-list.cjs"
+    },
+    "./util": {
+      "types": "./dist/util.d.ts",
+      "import": "./dist/util.js",
+      "require": "./dist/util.cjs"
+    },
+    "./updater.css": {
+      "import": "./dist/updater.css",
+      "require": "./dist/updater.css"
+    },
+    "./welcome.css": {
+      "import": "./dist/welcome.css",
+      "require": "./dist/welcome.css"
+    },
+    "./link-status.css": {
+      "import": "./dist/link-status.css",
+      "require": "./dist/link-status.css"
     }
   },
   "files": [

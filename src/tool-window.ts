@@ -18,6 +18,7 @@
 
 import { BrowserWindow, app, screen } from "electron";
 import { join } from "node:path";
+import type { Satellite } from "./session.js";
 
 export interface ToolWindowSize {
   width: number;
@@ -204,4 +205,143 @@ export function openToolWindow(existing: BrowserWindow | undefined | null, opts:
   if (process.env["ELECTRON_RENDERER_URL"]) void w.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/${opts.page}`);
   else void w.loadFile(join(opts.rendererDir, opts.page));
   return w;
+}
+
+// ---------------------------------------------------------------------------
+// The tool windows AS DATA: one row per window, and everything that walks the
+// windows walks the rows. Lifted from Storyletter's TOOL_WINDOWS table +
+// openToolWindowFor + rescueWindows (studio/src/main/index.ts), where it had
+// replaced four near-identical openX() functions whose differences were all
+// mistakes (only one forwarded its console; Reset View rescued two of four).
+// Patterpad's three hand copies (createPlayWindow / createSearchWindow /
+// createCoverageWindow and a four-branch rescueWindows) become three rows.
+//
+// Two things the table makes structurally impossible: forgetting to register
+// a window as a satellite for the project-changed nudge (every row is
+// registered when a session is given), and Reset View rescuing a subset (it
+// walks the rows).
+// ---------------------------------------------------------------------------
+
+
+export interface ToolWindowSpec<N extends string = string> {
+  /** The window's key: the store slice it remembers under, the dev-console
+   *  prefix, and what `open(name)` takes. */
+  name: N;
+  title: string;
+  /** Renderer entry, relative to the env's rendererDir. */
+  page: string;
+  def: ToolWindowSize;
+  min: ToolWindowSize;
+  /** The remembered rect, read at open time (a store read-through). */
+  bounds: () => ToolWindowBounds | undefined;
+  /** Persist a moved / resized rect (debounced by the factory). */
+  remember: (bounds: ToolWindowBounds) => void;
+  /** Whether it starts pinned above the editor (both apps default true). */
+  pinned: () => boolean;
+  /** Frameless (the family's shape: the renderer draws `toolWindowHead`).
+   *  Default false = frameless; pass `frame: true` for an OS title bar. */
+  frame?: boolean;
+  /** The project-changed channel for THIS window when it differs from the
+   *  env's (Storyletter's Links window listens on "links:focus"). */
+  channel?: string;
+  /** Drop what main caches for the outgoing project on this window's behalf
+   *  (a coverage report, a search anchor). Runs whether the window is open
+   *  or not: see session.ts. */
+  clear?: () => void;
+}
+
+export interface ToolWindowEnv {
+  /** Absolute path of the built renderer dir. */
+  rendererDir: string;
+  /** Absolute path of the preload bridge. */
+  preload: string;
+  /** The window to pin above: the app's main window, resolved at open time. */
+  pinTo: () => BrowserWindow | undefined;
+  /** Register every row as a satellite of the project session, so a new
+   *  project cannot open underneath a tool window that still shows the old
+   *  one. `channel` is the nudge each window listens on (a row may override). */
+  session?: { addSatellite: (satellite: Satellite) => () => void; channel: string };
+  /** Reset View's store half, run first: forget every remembered rect and
+   *  set pinned true (`resetWindows(store)` from app-store, or the app's own). */
+  resetStore?: () => void;
+  /** The channel a rescued window's renderer hears its re-pin on, so its pin
+   *  button agrees with the store (default "state:pinned"). */
+  pinChannel?: string;
+  /** Runs once per window created: forward its console in dev, say. */
+  onOpened?: (w: BrowserWindow, name: string) => void;
+}
+
+export interface ToolWindows<N extends string> {
+  /** Open (or focus) one window by name. */
+  open(name: N): BrowserWindow;
+  /** The live window, if open. */
+  get(name: N): BrowserWindow | undefined;
+  /** Reset View's window half, over the table: store reset, then every open
+   *  window restored, default size, centred, re-pinned, and told so. */
+  rescue(): void;
+  /** Every window that is open right now. */
+  all(): BrowserWindow[];
+  readonly names: readonly N[];
+}
+
+/** Build the table. The windows are owned here: a host reads them through
+ *  `get(name)` rather than holding module variables of its own. */
+export function defineToolWindows<N extends string>(specs: ToolWindowSpec<N>[], env: ToolWindowEnv): ToolWindows<N> {
+  const live = new Map<N, BrowserWindow>();
+  const byName = (name: N): ToolWindowSpec<N> => {
+    const found = specs.find((s) => s.name === name);
+    if (!found) throw new Error(`no tool window "${name}"`);
+    return found;
+  };
+  const get = (name: N): BrowserWindow | undefined => {
+    const w = live.get(name);
+    return w && !w.isDestroyed() ? w : undefined;
+  };
+  if (env.session) {
+    for (const spec of specs) {
+      env.session.addSatellite({
+        window: () => get(spec.name),
+        channel: spec.channel ?? env.session.channel,
+        ...(spec.clear ? { clear: spec.clear } : {}),
+      });
+    }
+  }
+  const open = (name: N): BrowserWindow => {
+    const spec = byName(name);
+    const existing = get(name);
+    const opened = openToolWindow(existing, {
+      title: spec.title, page: spec.page, frame: spec.frame ?? false,
+      rendererDir: env.rendererDir, preload: env.preload,
+      rect: savedWindowRect(spec.bounds(), spec.def, spec.min),
+      min: spec.min,
+      pinTo: env.pinTo,
+      pinned: spec.pinned(),
+      remember: spec.remember,
+    });
+    if (opened !== existing) {
+      live.set(name, opened);
+      // Identity-guarded: a stale close never clears a newer window.
+      opened.on("closed", () => { if (live.get(name) === opened) live.delete(name); });
+      env.onOpened?.(opened, name);
+    }
+    return opened;
+  };
+  const rescue = (): void => {
+    env.resetStore?.();
+    for (const spec of specs) rescueToolWindow(get(spec.name), spec.def);
+    // ACTUALLY pin them, then tell them. `rescueToolWindow` restores, resizes,
+    // centres and raises but never pins; the store now says pinned, so the
+    // window and its button have to agree before the claim is made.
+    for (const spec of specs) {
+      const w = get(spec.name);
+      if (!w) continue;
+      pinToolWindow(w, env.pinTo(), true);
+      w.webContents.send(env.pinChannel ?? "state:pinned", true);
+    }
+  };
+  return {
+    open, get, rescue,
+    all: () => specs.map((s) => get(s.name)).filter((w): w is BrowserWindow => w !== undefined),
+    names: specs.map((s) => s.name),
+  };
 }

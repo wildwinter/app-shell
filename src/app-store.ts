@@ -244,3 +244,41 @@ export function createAppStore<Place, App extends object>(
     },
   };
 }
+
+// --- the per-window adapters (ui-review-2026-09, finding 19) ---------------------
+
+/** One helper window's slice of the store, in the shape a tool-window spec
+ *  reads (`bounds` / `remember` / `pinned`), so a row is
+ *  `{ name, title, page, def, min, ...windowSlice(store, name) }`. */
+export interface WindowSlice {
+  bounds(): WindowBounds | undefined;
+  remember(bounds: WindowBounds): void;
+  pinned(): boolean;
+  setPinned(on: boolean): void;
+}
+
+/**
+ * Both apps flattened the shell's `windows` record back into named fields
+ * (`boardPinned`, `searchBounds`, eight setters) and re-keyed it going in.
+ * This is the record read through, per window. `pinned` defaults TRUE: a
+ * helper window floats above the editor until the author unpins it, and the
+ * stored flag is absent until something writes it.
+ */
+export function windowSlice<Place, App>(store: AppStore<Place, App>, name: string, defaults: { pinned?: boolean } = {}): WindowSlice {
+  const pinnedDefault = defaults.pinned ?? true;
+  return {
+    bounds: () => store.get().windows[name]?.bounds,
+    remember: (bounds) => store.setWindow(name, { bounds }),
+    pinned: () => store.get().windows[name]?.pinned ?? pinnedDefault,
+    setPinned: (on) => store.setWindow(name, { pinned: on }),
+  };
+}
+
+/** Reset View's store half: forget every remembered rectangle (so a window
+ *  lost off a disconnected display comes back centred at its default size)
+ *  and re-pin them all. `names` adds windows that have no entry yet; without
+ *  it, every window the store knows is reset. */
+export function resetWindows<Place, App>(store: AppStore<Place, App>, names: string[] = []): void {
+  const keys = new Set([...Object.keys(store.get().windows), ...names]);
+  for (const key of keys) store.setWindow(key, { bounds: undefined, pinned: true });
+}

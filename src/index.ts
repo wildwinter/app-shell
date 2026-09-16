@@ -18,8 +18,8 @@ export type { MenuLabel } from "./menu.js";
 export { iconBtn, labelled, moveItem, tagChips, stageChips, wireReorder } from "./dom.js";
 export { expandableRow, focusNewRow, revealRow, revealRowWhenReady, dupGuard, mountSettingsDialog } from "./settings.js";
 export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, SettingsDialogOptions } from "./settings.js";
-export { pinButton } from "./tool-window-web.js";
-export type { PinButtonOptions, PinButton } from "./tool-window-web.js";
+export { pinButton, toolWindowHead, followButton } from "./tool-window-web.js";
+export type { PinButtonOptions, PinButton, ToolWindowHeadOptions, FollowButtonOptions, FollowButton } from "./tool-window-web.js";
 export { confirmDialog } from "./confirm.js";
 // The one modal skeleton (title, sub, body, actions, scrim, motion, focus
 // return) every dialog in the family sits on, the shell's own included.
@@ -88,6 +88,23 @@ export type { StaleBarOptions } from "./stale.js";
 // whatever the app has a queue of (stepper.ts).
 export { renderStepperBar } from "./stepper.js";
 export type { StepperBarOptions, StepperItem, StepperTone } from "./stepper.js";
-export { EDIT_MENU, GO_MENU } from "./menu.js";
+export { EDIT_MENU, GO_MENU, FILE_MENU, PLAY_MENU, REVIEW_MENU, PUBLISH_MENU, VIEW_MENU } from "./menu.js";
+// The updater's view, on the dialog frame: the renderer half the main-process
+// updater (./updater) cannot run without (updater-view.ts).
+export { showUpdaterDialog, feedUpdaterDownloadProgress } from "./updater-view.js";
+export type { UpdaterViewOptions, UpdaterLink } from "./updater-view.js";
+export type { UpdaterDownloadProgress, UpdaterPromptOptions } from "./updater.js";
+// No project open: the welcome (welcome.ts + welcome.css).
+export { mountWelcome } from "./welcome.js";
+export type { Welcome, WelcomeOptions, WelcomeAction, WelcomeRecent, WelcomeGroup, WelcomeGroupItem } from "./welcome.js";
+// The live-link chip (link-status.ts + link-status.css).
+export { mountLinkStatus, linkStatusClass, linkStatusTip, linkAddress } from "./link-status.js";
+export type { LinkStatus, LinkStatusClass, LinkStatusOptions, LinkStatusChip } from "./link-status.js";
+// The property declaration list (property-list.ts), on the settings row kit.
+export { mountPropertyList, defaultControl, PROPERTY_TYPES } from "./property-list.js";
+export type { PropertyDeclLike, PropertyListType, PropertyListOptions, PropertyListHandle, DefaultControlOptions } from "./property-list.js";
+// The small idioms (util.ts).
+export { plural, debounce, isEditableTarget, formatCount, copyWithFeedback, relativeTime } from "./util.js";
+export type { Debounced } from "./util.js";
 export { createNavHistory, historyNav } from "./nav-history.js";
 export type { NavHistory, NavHistoryOptions } from "./nav-history.js";

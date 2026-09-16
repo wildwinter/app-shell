@@ -1,0 +1,33 @@
+/* ---------------------------------------------------------------------------
+   The live-link status chip (link-status.ts): the bottom-right plug, its
+   four states, and the copiable address. Consumes the host palette
+   (--surface / --ink / --muted / --line / --accent / --warn / --ok /
+   --danger / --font-ui / --font-mono) over the shared tokens.
+   --------------------------------------------------------------------------- */
+
+.linkstatus { position: fixed; right: 0.9rem; bottom: 0.32rem; z-index: 40; display: inline-flex; align-items: center; gap: 0.4rem; }
+.linkstatus[hidden] { display: none; }
+.linkstatus-word { font: 0.7rem var(--font-ui); color: var(--muted); user-select: none; }
+
+.linkstatus-url {
+  font: 0.72rem var(--font-mono); color: var(--muted); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.14rem 0.45rem; cursor: pointer;
+  transition: color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
+}
+.linkstatus-url:hover { border-color: var(--accent); color: var(--accent); }
+/* Lit for a moment after a copy (copyWithFeedback). */
+.linkstatus-url.copied { color: var(--accent); border-color: var(--accent); }
+.linkstatus-url[hidden] { display: none; }
+
+.linkstatus-toggle {
+  flex: none; width: 1.4rem; height: 1.4rem; display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface);
+  color: var(--muted); cursor: pointer;
+  transition: color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
+}
+.linkstatus-toggle:hover { border-color: var(--accent); }
+.linkstatus-toggle svg { display: block; }
+/* The four states. */
+.linkstatus-toggle.listening { color: var(--warn); border-color: var(--warn); background: color-mix(in oklab, var(--warn) 12%, var(--surface)); }
+.linkstatus-toggle.live { color: var(--ok); border-color: var(--ok); background: color-mix(in oklab, var(--ok) 14%, var(--surface)); }
+.linkstatus-toggle.stale { color: var(--danger); border-color: var(--danger); background: color-mix(in oklab, var(--danger) 12%, var(--surface)); }

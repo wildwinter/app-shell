@@ -1,0 +1,27 @@
+/* ---------------------------------------------------------------------------
+   The updater prompt (updater-view.ts): what is the updater's own. The panel,
+   the scrim, the motion and the actions row are the dialog frame's
+   (dialog.css); the buttons are controls.css's `.btn`. Import those two
+   beside this file.
+   --------------------------------------------------------------------------- */
+
+.updater-dialog { --dialog-width: 26rem; }
+.updater-detail { margin: 0; font: 0.82rem/1.45 var(--font-ui); color: var(--muted); white-space: pre-line; }
+
+/* Live download progress: a track, a bar that interpolates to each tick, and
+   the numbers under it in the mono face. */
+.updater-progress-track {
+  height: 6px; margin-top: 4px; overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--ink) 12%, transparent);
+}
+.updater-progress-bar {
+  height: 100%; width: 0%; border-radius: inherit; background: var(--accent);
+  transition: width var(--dur-quick) var(--ease-standard);
+}
+.updater-progress-label { margin: 0; font: 0.78rem var(--font-mono); color: var(--muted); }
+
+/* Web links under the detail: links, so underlined and coloured. */
+.updater-links { margin: 0; display: flex; gap: 1rem; font: 0.85rem var(--font-ui); }
+.updater-links a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.updater-links a:hover { color: var(--ink); }

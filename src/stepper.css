@@ -47,3 +47,21 @@
 
 /* An empty MODE still shows its bar, and this is what it says. */
 .stepbar-empty { flex: 1; color: var(--muted); }
+
+/* The quick-fix chip (`.stepbar-action`, passed through `actions`): a small
+   accent-edged button at the right-hand end, before the close. Patterpad's
+   `.problem-fix` and Storyletter's `.problembar-fix` were this rule twice. */
+.stepbar-action {
+  flex: none; margin-left: auto; cursor: pointer;
+  padding: 2px 9px; border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--accent) 14%, transparent); color: var(--accent);
+  font: 600 0.7rem var(--font-ui);
+  transition: background var(--dur-quick) var(--ease-standard), color var(--dur-quick) var(--ease-standard);
+}
+.stepbar-action:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); }
+.stepbar-action:disabled { opacity: 0.45; cursor: default; }
+/* Amber when what you are standing on is advisory, matching the warn count. */
+.stepbar:has(.stepbar-count.warn) .stepbar-action { color: var(--warn); border-color: var(--warn); background: color-mix(in oklab, var(--warn) 14%, transparent); }
+.stepbar:has(.stepbar-count.warn) .stepbar-action:hover:not(:disabled) { background: var(--warn); color: var(--on-accent); }
+/* The action already pushed everything right; the close sits at its normal gap. */
+.stepbar-action ~ .stepbar-close { margin-left: 0; }
