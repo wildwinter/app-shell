@@ -26,7 +26,25 @@
       "require": "./dist/index.cjs"
     },
     "./tokens.css": "./dist/tokens.css",
+    "./controls.css": "./dist/controls.css",
+    "./dialog.css": "./dist/dialog.css",
+    "./context-menu.css": "./dist/context-menu.css",
     "./pane-shell.css": "./dist/pane-shell.css",
+    "./dialog": {
+      "types": "./dist/dialog.d.ts",
+      "import": "./dist/dialog.js",
+      "require": "./dist/dialog.cjs"
+    },
+    "./floating": {
+      "types": "./dist/floating.d.ts",
+      "import": "./dist/floating.js",
+      "require": "./dist/floating.cjs"
+    },
+    "./context-menu": {
+      "types": "./dist/context-menu.d.ts",
+      "import": "./dist/context-menu.js",
+      "require": "./dist/context-menu.cjs"
+    },
     "./menu": {
       "types": "./dist/menu.d.ts",
       "import": "./dist/menu.js",

@@ -11,6 +11,7 @@
 // ---------------------------------------------------------------------------
 
 import { ensureTooltipHost, checkTooltipHost } from "./tooltip.js";
+import { icon } from "./icons.js";
 
 export type Child = Node | string | null | undefined;
 
@@ -114,7 +115,7 @@ export function tagChips(holder: { values?: string[] }, onChange?: () => void): 
   input.type = "text"; input.placeholder = "Add value"; input.spellcheck = false;
   const makeChip = (v: string): HTMLElement => {
     const chip = el("span", "shell-tag", v);
-    const x = el("button", "shell-tag-x", "✕");
+    const x = el("button", "shell-tag-x", icon.close);
     x.type = "button"; x.dataset["tip"] = `Remove ${v}`; x.setAttribute("aria-label", `Remove ${v}`);
     x.addEventListener("click", () => { holder.values = (holder.values ?? []).filter((o) => o !== v); chip.remove(); onChange?.(); });
     chip.append(x);
@@ -130,4 +131,104 @@ export function tagChips(holder: { values?: string[] }, onChange?: () => void): 
   for (const v of holder.values ?? []) wrap.append(makeChip(v));
   wrap.append(input);
   return wrap;
+}
+
+/**
+ * An ORDERED chips editor for a string-list field whose order means something
+ * (a quality's stages: `advance()` walks them, so 2 comes after 1): numbered
+ * chips, each with move-earlier / move-later / remove, plus an add input
+ * (Enter or "," commits; blank / duplicate ignored). Mutates `holder.stages`
+ * in place; `onChange` fires after any add / move / remove.
+ *
+ * Patterpad's, lifted (ui-review-2026-09, finding 3); Storyletter had been
+ * faking it with `tagChips` over a `values` holder, which loses the order
+ * controls. Same class family as `tagChips` (`.shell-tags`), so it is styled by
+ * settings.css already.
+ */
+export function stageChips(holder: { stages?: string[] }, onChange?: () => void): HTMLElement {
+  const wrap = el("div", "shell-tags shell-stages");
+  const input = el("input", "shell-tag-input");
+  input.type = "text"; input.placeholder = "Add stage"; input.spellcheck = false;
+  const control = (glyph: string, tip: string, disabled: boolean, onClick: () => void): HTMLButtonElement => {
+    const b = el("button", "shell-tag-x shell-tag-move", glyph);
+    b.type = "button"; b.dataset["tip"] = tip; b.setAttribute("aria-label", tip);
+    b.disabled = disabled;
+    b.addEventListener("click", onClick);
+    return b;
+  };
+  const rebuild = (): void => {
+    for (const c of Array.from(wrap.children)) if (c !== input) c.remove();
+    const stages = holder.stages ?? [];
+    stages.forEach((v, i) => {
+      const chip = el("span", "shell-tag", `${i + 1}. ${v}`);
+      chip.dataset["stage"] = v;
+      chip.append(
+        control(icon.back, `Move ${v} earlier`, i === 0,
+          () => { if (moveItem(stages, i, -1)) { rebuild(); onChange?.(); } }),
+        control(icon.forward, `Move ${v} later`, i === stages.length - 1,
+          () => { if (moveItem(stages, i, 1)) { rebuild(); onChange?.(); } }),
+      );
+      const x = el("button", "shell-tag-x", icon.close);
+      x.type = "button"; x.dataset["tip"] = `Remove ${v}`; x.setAttribute("aria-label", `Remove ${v}`);
+      x.addEventListener("click", () => { holder.stages = (holder.stages ?? []).filter((o) => o !== v); rebuild(); onChange?.(); });
+      chip.append(x);
+      wrap.insertBefore(chip, input);
+    });
+  };
+  const commit = (): void => {
+    const v = input.value.trim();
+    if (v && !(holder.stages ?? []).includes(v)) { (holder.stages ??= []).push(v); rebuild(); onChange?.(); }
+    input.value = "";
+  };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); commit(); } });
+  input.addEventListener("blur", commit);
+  wrap.append(input);
+  rebuild();
+  return wrap;
+}
+
+// --- drag-to-reorder ---------------------------------------------------------
+// One drag at a time per window, shared across every wired list, so the
+// midpoint test knows what is being carried without a dataTransfer round trip.
+let reorderDragId: string | null = null;
+const clearDropMarks = (host: ParentNode): void =>
+  host.querySelectorAll(".drop-before, .drop-after").forEach((e) => e.classList.remove("drop-before", "drop-after"));
+
+/**
+ * Make `el` a drag source and a drop target for HTML5 drag-to-reorder among
+ * its siblings. While carried it wears `.dragging`; a hovered target wears
+ * `.drop-before` or `.drop-after` by the midpoint test on `axis` ("y" for
+ * rows, "x" for a wrapping grid); a drop calls `onMove(draggedId, before,
+ * targetId)` and the caller reorders its model and re-renders.
+ *
+ * Storyletter's `wireCardDrag`, lifted (ui-review-2026-09, finding 30);
+ * Patterpad's `wireSceneDrag` is the same idea fixed on "y". The marks are
+ * classes only: the app draws them (Patterpad's `box-shadow: 0 -2px 0 0
+ * var(--accent)` pair is the family's look).
+ */
+export function wireReorder(el: HTMLElement, id: string, axis: "x" | "y", onMove: (id: string, before: boolean, targetId: string) => void): void {
+  el.draggable = true;
+  el.dataset["reorderId"] = id;
+  const host = (): ParentNode => el.parentElement ?? el;
+  el.addEventListener("dragstart", (e) => {
+    reorderDragId = id; el.classList.add("dragging");
+    if (e.dataTransfer) { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", id); }
+  });
+  el.addEventListener("dragend", () => { reorderDragId = null; el.classList.remove("dragging"); clearDropMarks(host()); });
+  el.addEventListener("dragover", (e) => {
+    if (!reorderDragId || reorderDragId === id) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    const r = el.getBoundingClientRect();
+    const before = axis === "y" ? e.clientY < r.top + r.height / 2 : e.clientX < r.left + r.width / 2;
+    clearDropMarks(host());
+    el.classList.add(before ? "drop-before" : "drop-after");
+  });
+  el.addEventListener("dragleave", () => el.classList.remove("drop-before", "drop-after"));
+  el.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const before = el.classList.contains("drop-before");
+    clearDropMarks(host());
+    if (reorderDragId && reorderDragId !== id) onMove(reorderDragId, before, id);
+  });
 }

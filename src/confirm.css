@@ -1,38 +1,10 @@
 /* ---------------------------------------------------------------------------
-   The themed confirm (confirm.ts): panel + scrim in the host's palette and
-   the shared motion tokens. The scrim derives from --ink so it stays
-   palette-aware on any theme (the family's modal-scrim treatment). Requires
-   the host to supply --danger alongside the standard palette tokens.
+   The themed confirm (confirm.ts): what is confirm's own. The panel, the
+   scrim, the motion and the actions row are the dialog frame's (dialog.css);
+   the buttons are controls.css's `.btn` and `.btn.danger`. Import those two
+   beside this file. Requires the host to supply --danger alongside the
+   standard palette tokens.
    --------------------------------------------------------------------------- */
 
-.confirm-dialog {
-  background: var(--surface); color: var(--ink);
-  border: 1px solid var(--line); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-3); padding: 1.1rem 1.2rem; max-width: 24rem;
-  display: flex; flex-direction: column; gap: 0.5rem;
-  font-family: var(--font-ui);
-  animation: var(--anim-panel-in);
-}
-.confirm-dialog::backdrop {
-  background: var(--scrim);
-  backdrop-filter: blur(3px);
-  animation: var(--anim-backdrop-in);
-}
-.confirm-title { font: 700 0.95rem var(--font-ui); }
+.confirm-dialog { --dialog-width: 24rem; }
 .confirm-body { font: 0.82rem/1.45 var(--font-ui); color: var(--muted); }
-.confirm-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.4rem; }
-.confirm-btn {
-  border: 1px solid var(--line); border-radius: var(--radius-sm); cursor: pointer;
-  padding: 0.35rem 0.8rem; font: 600 0.78rem var(--font-ui);
-  background: var(--bg); color: var(--ink);
-  transition: background var(--dur-quick) var(--ease-standard),
-    filter var(--dur-quick) var(--ease-standard);
-}
-.confirm-btn.cancel:hover { background: color-mix(in oklab, var(--line) 30%, transparent); }
-.confirm-btn.danger { background: var(--danger); border-color: var(--danger); color: var(--surface); }
-.confirm-btn.danger:hover { filter: brightness(1.06); }
-
-/* Exit: .closing swaps enter keyframes for their reverse; the fading panel
-   must not catch a stray click. */
-.confirm-dialog.closing { animation: var(--anim-panel-out); pointer-events: none; }
-.confirm-dialog.closing::backdrop { animation: var(--anim-backdrop-out); }

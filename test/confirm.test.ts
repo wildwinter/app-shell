@@ -24,7 +24,10 @@ describe("confirmDialog", () => {
   it("resolves true on the danger button and removes the dialog", async () => {
     const { p, dlg } = open();
     expect(dlg).not.toBeNull();
-    expect(dlg.querySelector(".confirm-title")?.textContent).toBe("Delete it?");
+    // The title is the dialog frame's (dialog.ts); the body copy is confirm's own.
+    expect(dlg.querySelector(".shell-dialog-title")?.textContent).toBe("Delete it?");
+    expect(dlg.querySelector(".confirm-body")?.textContent).toBe("Gone (undo restores it).");
+    expect(dlg.classList.contains("shell-dialog")).toBe(true);
     (dlg.querySelector(".confirm-btn.danger") as HTMLButtonElement).click();
     await expect(p).resolves.toBe(true);
     expect(document.querySelector("dialog.confirm-dialog")).toBeNull();
@@ -55,9 +58,11 @@ describe("confirmDialog", () => {
     await expect(p).resolves.toBe(false);
   });
 
-  it("labels the destructive button from confirmLabel", () => {
+  it("labels the destructive button from confirmLabel, on the family's .btn", () => {
     const { p, dlg } = open();
-    expect(dlg.querySelector(".confirm-btn.danger")?.textContent).toBe("Delete");
+    const danger = dlg.querySelector(".confirm-btn.danger")!;
+    expect(danger.textContent).toBe("Delete");
+    expect(danger.classList.contains("btn")).toBe(true);
     (dlg.querySelector(".confirm-btn.cancel") as HTMLButtonElement).click();
     void p;
   });

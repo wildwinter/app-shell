@@ -78,6 +78,24 @@ export function revealRow(within: ParentNode, name: string): boolean {
   return true;
 }
 
+/**
+ * `revealRow`, retried over the next frames until the row exists or the tries
+ * run out: for a page that fills in on its own time after a navigation. Both
+ * apps hand-rolled this as `landOn` with the same twelve tries
+ * (ui-review-2026-09, finding 29). Resolves true when it landed, false when it
+ * gave up, and giving up is quiet: a name no page shows as a row is not a fault.
+ */
+export function revealRowWhenReady(within: ParentNode, name: string, tries = 12): Promise<boolean> {
+  return new Promise((resolve) => {
+    const attempt = (left: number): void => {
+      if (revealRow(within, name)) { resolve(true); return; }
+      if (left <= 0) { resolve(false); return; }
+      requestAnimationFrame(() => attempt(left - 1));
+    };
+    attempt(tries);
+  });
+}
+
 /** After a "+ Add" re-renders a list, bring the new (last) row into view and
  *  focus its name input (`.set-name`, else the first input). */
 export function focusNewRow(listEl: HTMLElement | null | undefined): void {
@@ -100,6 +118,8 @@ export interface DupGuard {
   firstDuplicate(): HTMLInputElement | null;
 }
 
+const DUP_MESSAGE = "Another row already has this name.";
+
 /** Case-insensitive duplicate-name detection: paints clashing inputs `.invalid`
  *  and lets a Save gate block + jump via `firstDuplicate()`. */
 export function dupGuard(): DupGuard {
@@ -112,8 +132,10 @@ export function dupGuard(): DupGuard {
       const k = it.key().trim().toLowerCase();
       const dup = !!k && (counts.get(k) ?? 0) > 1;
       it.input.classList.toggle("invalid", dup);
-      if (dup) { it.input.title = "Another row already has this name."; any = true; }
-      else if (it.input.title === "Another row already has this name.") it.input.removeAttribute("title");
+      // The reason rides `data-tip` (the themed rollover, and what the Save
+      // gate's message channel reads), never `title`.
+      if (dup) { it.input.dataset["tip"] = DUP_MESSAGE; any = true; }
+      else if (it.input.dataset["tip"] === DUP_MESSAGE) delete it.input.dataset["tip"];
     }
     return any;
   };
@@ -132,8 +154,12 @@ export function dupGuard(): DupGuard {
 // --- the settings dialog ------------------------------------------------------
 
 export interface SettingsSectionHandle {
-  /** The first invalid control to jump to, blocking Save (e.g. a duplicate name). */
-  firstInvalid?(): HTMLElement | null;
+  /** The first invalid control to jump to, blocking Save (e.g. a duplicate
+   *  name). Return `{ el, message }` to say WHICH fault in the error line;
+   *  a bare element says it through its own `data-tip` (the dup guard's, a
+   *  property-name field's), and the line falls back to a generic sentence
+   *  when it has neither. */
+  firstInvalid?(): HTMLElement | { el: HTMLElement; message?: string } | null;
 }
 
 export interface SettingsSection {
@@ -144,6 +170,11 @@ export interface SettingsSection {
   /** Build the section body into `host`; called fresh on each open so it reads
    *  the current data. Return a handle (for the Save gate). */
   mount(host: HTMLElement): SettingsSectionHandle;
+  /** Why this tab cannot be used right now, or null when it can. A reason
+   *  renders the tab dimmed and inert with the reason as its rollover
+   *  (Patterpad's Audio tab while the project is not voiced). Read on open
+   *  and on `refreshTabs()`, so a control inside the dialog can flip it. */
+  disabled?: () => string | null;
 }
 
 export interface SettingsDialogOptions {
@@ -158,6 +189,9 @@ export interface SettingsDialogOptions {
 export interface SettingsDialog {
   /** Open (optionally on a given tab id). Sections re-mount from current data. */
   open(tabId?: string): void;
+  /** Re-read every section's `disabled()`; a tab that has just become
+   *  disabled while showing hands over to the first usable one. */
+  refreshTabs(): void;
   destroy(): void;
 }
 
@@ -181,7 +215,10 @@ export function mountSettingsDialog(opts: SettingsDialogOptions): SettingsDialog
   for (const s of opts.sections) {
     if (s.group && s.group !== lastGroup) { tabs.append(el("div", "settings-group", s.group)); lastGroup = s.group; }
     const tab = el("button", "settings-tab", s.label); tab.type = "button"; tab.dataset["tab"] = s.id;
-    tab.addEventListener("click", () => showTab(s.id));
+    // A disabled tab is inert by class, not by the `disabled` attribute: a
+    // disabled button swallows the pointer, and the reason has to be readable
+    // on hover.
+    tab.addEventListener("click", () => { if (!tab.classList.contains("is-disabled")) showTab(s.id); });
     tabs.append(tab); tabFor.set(s.id, tab);
     const panel = el("section", "settings-panel"); panel.dataset["panel"] = s.id; panel.hidden = true;
     panels.append(panel); panelFor.set(s.id, panel);
@@ -191,6 +228,21 @@ export function mountSettingsDialog(opts: SettingsDialogOptions): SettingsDialog
     active = id;
     for (const [sid, t] of tabFor) t.classList.toggle("active", sid === id);
     for (const [sid, p] of panelFor) p.hidden = sid !== id;
+  }
+
+  const usable = (s: SettingsSection): boolean => !tabFor.get(s.id)?.classList.contains("is-disabled");
+  function refreshTabs(): void {
+    for (const s of opts.sections) {
+      const tab = tabFor.get(s.id)!;
+      const reason = s.disabled?.() ?? null;
+      tab.classList.toggle("is-disabled", reason !== null);
+      if (reason !== null) { tab.dataset["tip"] = reason; tab.setAttribute("aria-disabled", "true"); }
+      else { delete tab.dataset["tip"]; tab.removeAttribute("aria-disabled"); }
+    }
+    if (!opts.sections.some((s) => s.id === active && usable(s))) {
+      const first = opts.sections.find(usable);
+      if (first) showTab(first.id);
+    }
   }
 
   form.append(
@@ -211,8 +263,17 @@ export function mountSettingsDialog(opts: SettingsDialogOptions): SettingsDialog
     e.preventDefault();
     error.hidden = true;
     for (const s of opts.sections) {
-      const bad = handles.get(s.id)?.firstInvalid?.();
-      if (bad) { showTab(s.id); bad.focus(); error.textContent = "Fix the highlighted fields first."; error.hidden = false; return; }
+      const found = handles.get(s.id)?.firstInvalid?.();
+      if (!found) continue;
+      const bad = found instanceof HTMLElement ? found : found.el;
+      const message = (found instanceof HTMLElement ? undefined : found.message) ?? bad.dataset["tip"];
+      showTab(s.id);
+      bad.focus();
+      // The field's own rollover says which fault it is, so the line repeats it
+      // rather than inventing a summary; the generic sentence is the fallback.
+      error.textContent = message || "Fix the highlighted fields first.";
+      error.hidden = false;
+      return;
     }
     void (async () => { await opts.onSave(); dialog.close("save"); })();
   });
@@ -227,8 +288,10 @@ export function mountSettingsDialog(opts: SettingsDialogOptions): SettingsDialog
       }
       error.hidden = true;
       showTab(tabId ?? active ?? opts.sections[0]?.id ?? "");
+      refreshTabs();   // a disabled tab asked for by id hands over to the first usable one
       dialog.showModal();
     },
+    refreshTabs,
     destroy() { dialog.remove(); },
   };
 }

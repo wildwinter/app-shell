@@ -88,7 +88,56 @@ describe("mountPaneShell", () => {
     expect(navBtn.getAttribute("aria-pressed")).toBe("true");
     shell.togglePane("nav");
     expect(navBtn.textContent).toBe("›");
-    expect(navBtn.title).toContain("Show navigator");
-    expect(navBtn.title).toContain("Cmd+1");
+    // The rollover is the themed one (`data-tip`), never an OS `title`.
+    expect(navBtn.title).toBe("");
+    expect(navBtn.dataset["tip"]).toBe("Show navigator (Cmd+1)");
+    expect(navBtn.getAttribute("aria-label")).toBe("Show navigator (Cmd+1)");
+  });
+
+  it("takes the toggle rollover from tipFor when given", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shell = mountPaneShell(host, {
+      nav: { defaultWidth: "224px" }, inspector: { defaultWidth: "384px" },
+      tipFor: (side, open) => `${open ? "Hide" : "Show"} ${side === "nav" ? "scenes" : "inspector"} (⌘${side === "nav" ? 1 : 2})`,
+    });
+    const [navBtn, inspBtn] = host.querySelectorAll<HTMLButtonElement>(".pane-toggle");
+    expect(navBtn!.dataset["tip"]).toBe("Hide scenes (⌘1)");
+    expect(inspBtn!.dataset["tip"]).toBe("Hide inspector (⌘2)");
+    shell.togglePane("nav");
+    expect(navBtn!.dataset["tip"]).toBe("Show scenes (⌘1)");
+    expect(navBtn!.getAttribute("aria-label")).toBe("Show scenes (⌘1)");
+    expect(host.querySelector("[title]")).toBeNull();
+  });
+
+  it("collapseAlso toggles the app's own class beside the shell's, with the side's collapsed state", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shell = mountPaneShell(host, {
+      nav: { defaultWidth: "224px" }, inspector: { defaultWidth: "384px" },
+      collapseAlso: { inspector: "props-doc-open" },
+    });
+    const panes = host.querySelector(".panes")!;
+    expect(panes.classList.contains("props-doc-open")).toBe(false);
+    shell.togglePane("inspector");
+    expect(panes.classList.contains("no-inspector")).toBe(true);
+    expect(panes.classList.contains("props-doc-open")).toBe(true);
+    // The nav has no extra class, so nothing else appears when it collapses.
+    shell.togglePane("nav");
+    expect(panes.className).toBe("panes no-inspector props-doc-open no-nav");
+    shell.togglePane("inspector");
+    expect(panes.classList.contains("props-doc-open")).toBe(false);
+  });
+
+  it("holdClosed folds a side without touching the remembered state, and releasing restores it", () => {
+    const { shell, onChange, panes } = mount({ open: { nav: true, inspector: true }, width: {} });
+    shell.holdClosed("inspector", true);
+    expect(panes.classList.contains("no-inspector")).toBe(true);
+    expect(shell.isOpen("inspector")).toBe(false);
+    expect(shell.state().open.inspector).toBe(true);   // the person's choice, untouched
+    expect(onChange).not.toHaveBeenCalled();            // and not persisted
+    shell.holdClosed("inspector", false);
+    expect(panes.classList.contains("no-inspector")).toBe(false);
+    expect(shell.isOpen("inspector")).toBe(true);
   });
 });

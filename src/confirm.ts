@@ -1,18 +1,20 @@
 // ---------------------------------------------------------------------------
 // A themed in-app confirmation modal (design-language "coherent to the
 // edges": never a stock OS dialog). The promise API is Patterpad's surface
-// confirm; the build is native <dialog> + showModal() so the focus trap and
-// Esc handling come free. Two deliberate corrections over that original,
-// kept when Patterpad migrates here: the destructive button wears --danger
-// (a required host token - the surface one mistakenly used --accent), and
-// initial focus lands on Cancel so a stray Enter cannot destroy anything.
+// confirm; the build sits on the family's dialog frame (dialog.ts), so the
+// focus trap, Esc, the scrim and the exit motion are the frame's. Two
+// deliberate corrections over that original, kept when Patterpad migrates
+// here: the destructive button wears --danger (a required host token; the
+// surface one mistakenly used --accent), and initial focus lands on Cancel so
+// a stray Enter cannot destroy anything.
 //
-// Styles ship as confirm.css (import it beside tokens.css). Callers keep the
+// Styles: dialog.css + controls.css for the frame and the buttons, confirm.css
+// for what is confirm's own (its width, its body copy). Callers keep the
 // elide-the-dialog rule: when nothing is at stake, don't ask.
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
-import { closeWithExit } from "./exit.js";
+import { dialogFrame } from "./dialog.js";
 
 export interface ConfirmOptions {
   title: string;
@@ -24,39 +26,34 @@ export interface ConfirmOptions {
 /** Resolves true on confirm; false on Cancel / Esc / backdrop. */
 export function confirmDialog(opts: ConfirmOptions): Promise<boolean> {
   return new Promise((resolve) => {
-    const cancel = el("button", "confirm-btn cancel", "Cancel");
-    const danger = el("button", "confirm-btn danger", opts.confirmLabel);
-    cancel.type = "button";
-    danger.type = "button";
-    const dlg = el(
-      "dialog",
-      "confirm-dialog",
-      el("div", "confirm-title", opts.title),
-      el("div", "confirm-body", opts.body),
-      el("div", "confirm-actions", cancel, danger),
-    );
-    dlg.setAttribute("aria-label", opts.title);
-    document.body.append(dlg);
-
     let done = false;
+    // Resolve on the gesture, not after the exit motion: the caller acts on the
+    // answer at once, and the fade plays over whatever it does.
     const finish = (ok: boolean): void => {
       if (done) return;
       done = true;
       resolve(ok);
-      // Exit motion, shared with every other closing surface (exit.ts): .closing
-      // swaps the enter keyframes for their reverse, and teardown is instant
-      // under prefers-reduced-motion.
-      closeWithExit(dlg, () => { dlg.close(); dlg.remove(); });
+      frame.close();
     };
+    const frame = dialogFrame({
+      title: opts.title, className: "confirm-dialog",
+      onClose: () => finish(false),   // Esc, or closed by someone else
+    });
+    const cancel = el("button", "btn confirm-btn cancel", "Cancel");
+    const danger = el("button", "btn danger confirm-btn", opts.confirmLabel);
+    cancel.type = "button";
+    danger.type = "button";
+    frame.body.append(el("div", "confirm-body", opts.body));
+    frame.actions.append(cancel, danger);
 
     cancel.addEventListener("click", () => finish(false));
     danger.addEventListener("click", () => finish(true));
-    // Esc arrives as the dialog's cancel event; route it through the exit motion.
-    dlg.addEventListener("cancel", (e) => { e.preventDefault(); finish(false); });
-    // A mousedown that lands on the dialog element itself is the backdrop.
-    dlg.addEventListener("mousedown", (e) => { if (e.target === dlg) finish(false); });
+    // Esc arrives as the dialog's cancel event; the frame routes it through the
+    // exit motion and onClose. A mousedown that lands on the dialog element
+    // itself is the backdrop.
+    frame.dialog.addEventListener("mousedown", (e) => { if (e.target === frame.dialog) finish(false); });
 
-    dlg.showModal();
+    frame.open();
     cancel.focus();
   });
 }

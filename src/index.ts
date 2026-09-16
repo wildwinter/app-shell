@@ -14,12 +14,22 @@ export { mountPaneShell } from "./pane-shell.js";
 export type { PaneShell, PaneShellOptions, PaneShellState, PaneSide, PaneSideConfig } from "./pane-shell.js";
 export { PANE_MENU } from "./menu.js";
 export type { MenuLabel } from "./menu.js";
-export { iconBtn, labelled, moveItem, tagChips } from "./dom.js";
-export { expandableRow, focusNewRow, revealRow, dupGuard, mountSettingsDialog } from "./settings.js";
+export { iconBtn, labelled, moveItem, tagChips, stageChips, wireReorder } from "./dom.js";
+export { expandableRow, focusNewRow, revealRow, revealRowWhenReady, dupGuard, mountSettingsDialog } from "./settings.js";
 export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, SettingsDialogOptions } from "./settings.js";
 export { pinButton } from "./tool-window-web.js";
 export type { PinButtonOptions, PinButton } from "./tool-window-web.js";
 export { confirmDialog } from "./confirm.js";
+// The one modal skeleton (title, sub, body, actions, scrim, motion, focus
+// return) every dialog in the family sits on, the shell's own included.
+export { dialogFrame } from "./dialog.js";
+export type { DialogFrame, DialogFrameOptions } from "./dialog.js";
+// The floating-layer lifecycle popups and menus share (floating.ts), and the
+// right-click menu + anchored popover built on the same idea (context-menu.ts).
+export { createFloating } from "./floating.js";
+export type { Floating } from "./floating.js";
+export { openContextMenu, openPopover } from "./context-menu.js";
+export type { ContextItem } from "./context-menu.js";
 // The exit half of the panel motion vocabulary. Public because an app's own
 // surfaces have to close the same way the shell's do, or the two halves of one
 // window animate differently (exit.ts).

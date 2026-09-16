@@ -14,6 +14,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
+import { dialogFrame } from "./dialog.js";
 
 export interface Identity { name: string; email?: string }
 
@@ -29,26 +30,17 @@ export interface IdentityOptions {
 export function askIdentity(opts: IdentityOptions = {}): Promise<Identity | undefined> {
   return new Promise<Identity | undefined>((resolve) => {
     const seed = opts.current ?? opts.suggested;
-    const name = el("input", "shell-ident-input") as HTMLInputElement;
+    const name = el("input", "field shell-ident-input") as HTMLInputElement;
     name.placeholder = "Your name";
     name.value = seed?.name ?? "";
-    const email = el("input", "shell-ident-input") as HTMLInputElement;
+    const email = el("input", "field shell-ident-input") as HTMLInputElement;
     email.placeholder = "Email (optional)";
     email.type = "email";
     email.value = seed?.email ?? "";
 
-    const skip = el("button", "shell-ident-btn", "Skip");
-    const save = el("button", "shell-ident-btn primary", "Save");
+    const skip = el("button", "btn shell-ident-btn", "Skip");
+    const save = el("button", "btn primary shell-ident-btn", "Save");
     skip.type = "button"; save.type = "button";
-
-    const dialog = el("dialog", "shell-ident",
-      el("div", "shell-ident-title", "Who is working here?"),
-      el("p", "shell-ident-hint",
-        "Your name goes on the comments you write. It's kept in this app, not in the project. You can change it later."),
-      el("div", "shell-ident-fields", name, email),
-      el("div", "shell-ident-actions", skip, save),
-    );
-    document.body.append(dialog);
 
     let done = false;
     const finish = (keep: boolean): void => {
@@ -59,18 +51,28 @@ export function askIdentity(opts: IdentityOptions = {}): Promise<Identity | unde
       const answer: Identity | undefined = keep && typed !== ""
         ? (value === "" ? { name: typed } : { name: typed, email: value })
         : undefined;
-      dialog.close();
-      dialog.remove();
       resolve(answer);
+      frame.close();
     };
+
+    // The frame owns the panel, the scrim, Escape and the exit motion; this
+    // owns the two fields and the two answers.
+    const frame = dialogFrame({
+      title: "Who is working here?",
+      sub: "Your name goes on the comments you write. It's kept in this app, not in the project. You can change it later.",
+      className: "shell-ident",
+      onClose: () => finish(false),   // Escape, or closed by someone else: a skip
+    });
+    frame.body.append(el("div", "shell-ident-fields", name, email));
+    frame.actions.append(skip, save);
+
     skip.addEventListener("click", () => finish(false));
     save.addEventListener("click", () => finish(true));
     // Enter saves, Escape skips: the two answers the dialog has.
     name.addEventListener("keydown", (e) => { if (e.key === "Enter") finish(true); });
     email.addEventListener("keydown", (e) => { if (e.key === "Enter") finish(true); });
-    dialog.addEventListener("close", () => finish(false));
 
-    dialog.showModal();
+    frame.open();
     name.focus();
   });
 }

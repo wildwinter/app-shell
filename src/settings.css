@@ -12,7 +12,11 @@
   box-shadow: var(--shadow-3);
   font: 14px var(--font-ui, system-ui, sans-serif);
 }
-.settings-dialog::backdrop { background: var(--scrim); }
+/* Its own frame (the tab rail makes the generic dialog frame a poor fit), on
+   the same tokens as dialog.css: the one scrim, the one radius, the one panel
+   motion. */
+.settings-dialog { animation: var(--anim-panel-in); }
+.settings-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); animation: var(--anim-backdrop-in); }
 .settings-form { display: flex; flex-direction: column; max-height: 82vh; }
 .settings-title { margin: 0; padding: 16px 20px; font-family: var(--font-read, inherit); font-size: 1.15rem; font-weight: 600; border-bottom: 1px solid var(--line-soft, var(--line)); }
 
@@ -22,6 +26,10 @@
 .settings-tab { text-align: left; width: 100%; padding: 6px 10px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: inherit; font-size: 0.88rem; cursor: pointer; }
 .settings-tab:hover { background: var(--accent-soft, color-mix(in oklab, var(--accent) 12%, transparent)); }
 .settings-tab.active { background: var(--accent-soft, color-mix(in oklab, var(--accent) 16%, transparent)); color: var(--accent); font-weight: 500; }
+/* Dimmed and inert, with the reason on its rollover; it must not light up on
+   hover like a live tab. */
+.settings-tab.is-disabled { color: var(--muted); opacity: 0.5; cursor: default; }
+.settings-tab.is-disabled:hover { background: none; }
 
 .settings-panels { flex: 1; min-width: 0; overflow-y: auto; padding: 18px 22px; }
 .settings-panel { display: flex; flex-direction: column; gap: 14px; }
@@ -68,7 +76,7 @@
 .set-expand::before {
   content: ""; width: 0; height: 0;
   border-left: 6px solid currentColor; border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent;
-  transform-origin: 35% 50%; transition: transform 0.12s ease;
+  transform-origin: 35% 50%; transition: transform var(--dur-quick) var(--ease-standard);
 }
 .set-expand { color: var(--muted); }
 .set-expand:hover, .set-expand.open { color: var(--accent); }
@@ -102,5 +110,8 @@
 .shell-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .shell-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; padding: 2px 4px 2px 9px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink); }
 .shell-tag-x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 0.7rem; padding: 0 2px; }
-.shell-tag-x:hover { color: var(--danger); }
+.shell-tag-x:hover:not(:disabled) { color: var(--danger); }
+/* stageChips' move buttons at either end of the order. */
+.shell-tag-x:disabled { opacity: 0.35; cursor: default; }
+.shell-tag-move:hover:not(:disabled) { color: var(--accent); }
 .shell-tag-input { min-width: 8rem; }

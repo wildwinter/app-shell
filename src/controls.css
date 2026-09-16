@@ -1,0 +1,127 @@
+/* ============================================================================
+   The family's control grammar: one button, one field, one segmented control,
+   one pill, one empty-state line, one keycap. Class-scoped throughout, never
+   an element reset: a stylesheet that restyles every <button> in a window is a
+   blast radius, and the two apps had five spellings of "primary button" using
+   four foreground tokens between them (ui-review-2026-09, finding 20).
+
+   Reads the token grammar (tokens.css) and the app's palette (--surface,
+   --card, --ink, --muted, --line, --accent, --danger, --on-accent; optional
+   --accent-soft, --line-soft, --font-mono). The keyboard focus ring is the
+   family's one rule in tokens.css, so nothing here draws another.
+
+   "Controls have edges" (design-language.md, 2026-09-16): a button has a
+   border or a fill at rest, and text a person can read without hovering.
+   Ghost styling is ONLY for icon-only toolbar buttons in a bar that is itself
+   the affordance. And "Motion is interpolation", as amended: the only thing
+   that transitions on hover is colour, at --dur-quick. No lift, no shadow
+   change, no scale.
+   ============================================================================ */
+
+/* --- buttons ---------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.35em;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--ink);
+  font: 600 0.78rem var(--font-ui); letter-spacing: 0.02em; line-height: 1.2;
+  cursor: pointer; white-space: nowrap;
+  -webkit-user-select: none; user-select: none;
+  transition: color var(--dur-quick) var(--ease-standard),
+    background var(--dur-quick) var(--ease-standard),
+    border-color var(--dur-quick) var(--ease-standard);
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft, color-mix(in oklab, var(--accent) 10%, transparent));
+}
+.btn:disabled { opacity: 0.45; cursor: default; }
+
+/* The one action a dialog or a bar is for: accent fill, the palette's own ink
+   on it (never a raw white, which read white-on-tan on the dark palettes). */
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 88%, var(--ink));
+  border-color: color-mix(in oklab, var(--accent) 88%, var(--ink));
+  color: var(--on-accent);
+}
+
+/* The destructive action, and it names its object ("Delete scene"). */
+.btn.danger { background: var(--danger); border-color: var(--danger); color: var(--surface); }
+.btn.danger:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--danger) 88%, var(--ink));
+  border-color: color-mix(in oklab, var(--danger) 88%, var(--ink));
+  color: var(--surface);
+}
+
+/* ONLY for an icon-only button in a toolbar: borderless, muted, a wash on
+   hover. A text action drawn this way is the "bare muted text on the ground"
+   the design language rules out. */
+.btn.ghost { border-color: transparent; background: none; color: var(--muted); }
+.btn.ghost:hover:not(:disabled) {
+  border-color: transparent; color: var(--ink);
+  background: var(--accent-soft, color-mix(in oklab, var(--accent) 10%, transparent));
+}
+
+/* A square button holding one glyph, centred explicitly: a bare <button>
+   centres by the font's metrics plus UA padding, which parks an arrow up-left
+   of the square's visual centre. */
+.btn.icon { width: 1.75rem; height: 1.75rem; padding: 0; line-height: 1; font-size: 0.85rem; }
+
+/* --- fields ----------------------------------------------------------------- */
+.field {
+  font: inherit; font-size: 0.85rem; line-height: 1.4;
+  padding: 6px 9px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--ink);
+  -webkit-user-select: text; user-select: text;
+  transition: border-color var(--dur-quick) var(--ease-standard);
+}
+.field:focus-visible { border-color: var(--accent); outline-offset: 0; }
+/* A placeholder is a hint, not content: lighter and italic, its opacity
+   pinned so no engine fades an already-muted colour a second time. */
+.field::placeholder { color: var(--muted); font-style: italic; opacity: 1; }
+/* `.invalid` is the dup guard's (a value that clashes with another row);
+   `.illegal` is a value that breaks a rule. Both can be true at once, so they
+   are separate classes that draw the same. */
+.field.invalid, .field.illegal { border-color: var(--danger); }
+.field:disabled { opacity: 0.55; cursor: default; }
+textarea.field { resize: vertical; }
+
+/* --- segmented control ------------------------------------------------------ */
+/* One bordered strip, options divided by hairlines, the chosen one washed. Seven
+   hand-rolled copies across the two apps agreed on everything but the radius
+   (finding 21); this is the one they converge on. */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+.seg-opt {
+  background: none; border: 0; cursor: pointer;
+  color: var(--muted); font: 600 0.74rem var(--font-ui); padding: 0.2rem 0.6rem; white-space: nowrap;
+  transition: color var(--dur-quick) var(--ease-standard), background var(--dur-quick) var(--ease-standard);
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--line); }
+.seg-opt:hover:not(.on) { color: var(--ink); }
+.seg-opt.on {
+  color: var(--accent); cursor: default;
+  background: var(--accent-soft, color-mix(in oklab, var(--accent) 14%, transparent));
+}
+
+/* --- small things ----------------------------------------------------------- */
+/* A pill: a small bordered label (a class, a count, a state). */
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font: 0.72rem/1.3 var(--font-ui); color: var(--muted);
+  border: 1px solid var(--line-soft, var(--line)); border-radius: var(--radius-pill);
+  padding: 1px 7px; white-space: nowrap;
+}
+
+/* The inline empty state: one muted italic sentence where a list would be. */
+.empty { margin: 0; color: var(--muted); font: italic 0.82rem/1.45 var(--font-ui); }
+
+/* A keycap. A key hint is an element, never a typed "↑↓ move" string. */
+kbd {
+  display: inline-block;
+  font: 0.68rem/1.3 var(--font-mono, ui-monospace, monospace);
+  color: var(--muted);
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: var(--radius-sm);
+  padding: 1px 5px; vertical-align: baseline;
+}

@@ -1,0 +1,39 @@
+/* The right-click menu and the anchored popover (context-menu.ts), styled
+   beside the module that builds them so a tool window that imports the module
+   gets the look as well as the behaviour (Storyletter's Links window once got
+   an unstyled static div and a scrollbar). Tokens only, so both palettes come
+   out right wherever it lands. */
+
+.ctxmenu {
+  position: fixed; z-index: 300; min-width: 160px; padding: 4px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3); display: flex; flex-direction: column; gap: 1px;
+  /* The family's panel motion, so reduced motion applies here too. */
+  animation: var(--anim-panel-in);
+}
+/* The reset is spelled out here, not inherited from a host stylesheet's
+   `button` rule, for the same reason this file exists. */
+.ctxmenu-item {
+  text-align: left; width: 100%; padding: 6px 10px;
+  font: inherit; font-size: 0.85rem; color: var(--ink);
+  background: none; border: 0; border-radius: var(--radius-sm); cursor: pointer;
+  transition: background var(--dur-quick) var(--ease-standard), color var(--dur-quick) var(--ease-standard);
+}
+.ctxmenu-item:hover { background: var(--accent-soft, color-mix(in oklab, var(--accent) 10%, transparent)); color: var(--accent); }
+/* Greyed and inert, and it must not light up on hover like a live item. */
+.ctxmenu-item:disabled { color: var(--muted); opacity: 0.55; cursor: default; }
+.ctxmenu-item:disabled:hover { background: none; color: var(--muted); }
+.ctxmenu-item.danger { color: var(--danger); }
+.ctxmenu-item.danger:hover { background: var(--danger); color: var(--surface); }
+
+/* An anchored panel: the same floating shell as the menu, hosting content. */
+.popover {
+  position: fixed; z-index: 300; padding: 10px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3);
+  animation: var(--anim-panel-in);
+}
+
+/* Exit: .closing swaps the enter keyframes for their reverse (closeWithExit),
+   and a node on its way out takes no clicks. */
+.ctxmenu.closing, .popover.closing { animation: var(--anim-panel-out); pointer-events: none; }

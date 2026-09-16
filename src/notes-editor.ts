@@ -26,6 +26,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
+import { dialogFrame } from "./dialog.js";
 
 /** One line of documentation. `type` names its class; absent = editor-only. */
 export interface DocLine { type?: string; text: string }
@@ -124,7 +125,7 @@ export function openNotesEditor(opts: NotesEditorOptions): void {
     for (const cls of shown) {
       const block = el("div", { className: "shell-notes-class" },
         el("label", "shell-notes-caption", label(cls)));
-      const area = el("textarea", "shell-notes-text");
+      const area = el("textarea", "field shell-notes-text");
       area.value = areas.get(cls)?.value ?? seed.get(cls) ?? "";
       area.rows = 4;
       area.placeholder = placeholder(cls);
@@ -154,35 +155,29 @@ export function openNotesEditor(opts: NotesEditorOptions): void {
   };
   render();
 
-  const done = el("button", "shell-notes-btn primary", "Done");
-  const dialog = el("dialog", { className: "shell-notes" },
-    el("div", { className: "shell-notes-title", text: `Notes: ${opts.subject}` }),
-    body,
-    el("div", { className: "shell-notes-actions" }, done),
-  );
-  dialog.setAttribute("aria-label", `Notes: ${opts.subject}`);
-  document.body.append(dialog);
+  const done = el("button", "btn primary shell-notes-btn", "Done");
+  done.type = "button";
 
   const before = JSON.stringify(notes.own);
-  // Done and Escape both end up here (dialog.close() fires the close event), so
-  // the guard is what stops one gesture saving twice.
+  // Done and Escape both end up here (the frame's onClose runs for every way
+  // out), so the guard is what stops one gesture saving twice.
   let closed = false;
-  const close = (): void => {
+  const commit = (): void => {
     if (closed) return;
     closed = true;
     const next = value();
     // Only when something changed: opening a note to read it must not cost an
     // undo step, and must not touch the file (or the version control status).
     if (JSON.stringify(next) !== before) opts.save(next);
-    dialog.close();
-    dialog.remove();
   };
-  done.addEventListener("click", close);
-  // Escape closes a <dialog> by itself, and commits: this editor has no Cancel,
+  // Escape closes the dialog by itself, and commits: this editor has no Cancel,
   // because a note is prose and losing a paragraph to a stray key is worse than
   // an unwanted note somebody can delete.
-  dialog.addEventListener("close", close);
+  const frame = dialogFrame({ title: `Notes: ${opts.subject}`, className: "shell-notes", onClose: commit });
+  frame.body.append(body);
+  frame.actions.append(done);
+  done.addEventListener("click", () => { commit(); frame.close(); });
 
-  dialog.showModal();
+  frame.open();
   areas.get(shown[0] ?? EDITOR_ONLY)?.focus();
 }

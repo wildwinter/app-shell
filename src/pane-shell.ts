@@ -9,6 +9,9 @@
 // root). It reads the shared token grammar (tokens.css).
 // ---------------------------------------------------------------------------
 
+import { icon } from "./icons.js";
+import { ensureTooltipHost } from "./tooltip.js";
+
 export type PaneSide = "nav" | "inspector";
 
 export interface PaneSideConfig {
@@ -44,6 +47,17 @@ export interface PaneShellOptions {
   initial?: Partial<PaneShellState>;
   /** Persist state after any toggle or resize (host wires it to its store). */
   onChange?: (state: PaneShellState) => void;
+  /** The toggle's rollover for a side in a given state. Default: "Show
+   *  navigator" / "Hide navigator" from the side's `label`, with the
+   *  `shortcutHint` in brackets. Written as `data-tip` (the themed tooltip)
+   *  and as the accessible name; never as `title`. */
+  tipFor?: (side: PaneSide, open: boolean) => string;
+  /** An extra class per side, toggled on the `.panes` grid whenever that side
+   *  is collapsed, beside the shell's own `no-nav` / `no-inspector`. For an
+   *  app whose stylesheet already keys on its own name for the state
+   *  (Patterpad's `props-doc-open`), so its rules ride the shell's collapse
+   *  rather than a second copy of it. */
+  collapseAlso?: Partial<Record<PaneSide, string>>;
 }
 
 export interface PaneShell {
@@ -59,7 +73,13 @@ export interface PaneShell {
   readonly inspector: HTMLElement;
   togglePane(side: PaneSide): void;
   setPaneOpen(side: PaneSide, open: boolean): void;
+  /** Whether the pane is showing: open, and not held closed. */
   isOpen(side: PaneSide): boolean;
+  /** Fold a side away WITHOUT changing what the person chose: a mode that has
+   *  no use for the inspector (Patterpad's properties page) holds it closed,
+   *  and releasing the hold restores whatever was remembered. Not persisted;
+   *  the toggle keeps reporting the remembered state. */
+  holdClosed(side: PaneSide, held: boolean): void;
   /** Clear dragged widths back to the config defaults. */
   resetWidths(): void;
   /** A snapshot of the current state (open + widths). */
@@ -79,6 +99,8 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
     inspector: offered("inspector") && (opts.initial?.open?.inspector ?? true),
   };
   const width: Partial<Record<PaneSide, number>> = { ...(opts.initial?.width ?? {}) };
+  const held: Record<PaneSide, boolean> = { nav: false, inspector: false };
+  const showing = (side: PaneSide): boolean => open[side] && !held[side];
 
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string): HTMLElementTagNameMap[K] => {
     const n = document.createElement(tag);
@@ -119,20 +141,36 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
   if (!offered("inspector")) inspToggle.remove();
 
   // --- state application -----------------------------------------------------
+  const defaultTip = (side: PaneSide, isOpen: boolean): string => {
+    const noun = cfg[side].label ?? side;
+    const hint = cfg[side].shortcutHint ? ` (${cfg[side].shortcutHint})` : "";
+    return `${isOpen ? "Hide" : "Show"} ${noun}${hint}`;
+  };
+  const tipFor = opts.tipFor ?? defaultTip;
+
   function applyToggleGlyph(side: PaneSide, button: HTMLButtonElement): void {
     const isOpen = open[side];
     // Chevron points toward where the pane collapses to.
-    button.textContent = side === "nav" ? (isOpen ? "‹" : "›") : (isOpen ? "›" : "‹");
-    const noun = cfg[side].label ?? side;
-    const hint = cfg[side].shortcutHint ? ` (${cfg[side].shortcutHint})` : "";
-    button.title = `${isOpen ? "Hide" : "Show"} ${noun}${hint}`;
-    button.setAttribute("aria-label", button.title);
+    button.textContent = side === "nav" ? (isOpen ? icon.back : icon.forward) : (isOpen ? icon.forward : icon.back);
+    // `data-tip`, not `title`: the themed tooltip, never the OS bubble on the
+    // platform's own delay. The tip is also the accessible name, since the
+    // button has no text of its own.
+    const tip = tipFor(side, isOpen);
+    button.dataset["tip"] = tip;
+    button.setAttribute("aria-label", tip);
     button.setAttribute("aria-pressed", String(isOpen));
   }
+  // Writing data-tip mounts the renderer, as `el` does, so a window whose host
+  // never called initTooltips() still draws the rollover.
+  ensureTooltipHost();
 
   function apply(): void {
-    panes.classList.toggle(collapseClass.nav, !open.nav);
-    panes.classList.toggle(collapseClass.inspector, !open.inspector);
+    for (const side of ["nav", "inspector"] as const) {
+      const collapsed = !showing(side);
+      panes.classList.toggle(collapseClass[side], collapsed);
+      const also = opts.collapseAlso?.[side];
+      if (also) panes.classList.toggle(also, collapsed);
+    }
     // The open widths live on the grid: the track and each .pane-inner read them.
     panes.style.setProperty(openVar.nav, width.nav !== undefined ? `${width.nav}px` : cfg.nav.defaultWidth);
     panes.style.setProperty(openVar.inspector, width.inspector !== undefined ? `${width.inspector}px` : cfg.inspector.defaultWidth);
@@ -152,6 +190,11 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
     persist();
   }
   function togglePane(side: PaneSide): void { if (offered(side)) setPaneOpen(side, !open[side]); }
+  function holdClosed(side: PaneSide, next: boolean): void {
+    if (held[side] === next) return;
+    held[side] = next;
+    apply();   // not persisted: the hold is the mode's, the remembered state is the person's
+  }
   function resetWidths(): void { delete width.nav; delete width.inspector; apply(); persist(); }
 
   navToggle.addEventListener("click", () => togglePane("nav"));
@@ -159,9 +202,11 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
 
   // --- drag resize -----------------------------------------------------------
   function beginResize(side: PaneSide, startEvent: PointerEvent): void {
-    if (cfg[side].resizable === false || !open[side]) return;
+    if (cfg[side].resizable === false || !showing(side)) return;
     startEvent.preventDefault();
     const pane = side === "nav" ? navPane : inspPane;
+    const seam = side === "nav" ? navResizer : inspResizer;
+    seam.classList.add("dragging");
     const min = cfg[side].minWidth ?? 160;
     const max = cfg[side].maxWidth ?? DEFAULT_MAX;
     const startX = startEvent.clientX;
@@ -177,6 +222,7 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       document.body.classList.remove("pane-resizing");
+      seam.classList.remove("dragging");
       width[side] = latest;
       persist();
     };
@@ -193,7 +239,7 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
   return {
     root, topbar, topbarLead, topbarTrail,
     nav: navInner, centre, inspector: inspInner,
-    togglePane, setPaneOpen, isOpen: (s) => open[s], resetWidths, state: snapshot,
+    togglePane, setPaneOpen, isOpen: showing, holdClosed, resetWidths, state: snapshot,
     destroy: () => { root.remove(); },
   };
 }

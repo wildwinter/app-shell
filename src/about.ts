@@ -14,6 +14,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
+import { dialogFrame } from "./dialog.js";
 
 export interface AboutOptions {
   /** The product's name, large. */
@@ -34,18 +35,18 @@ export interface AboutOptions {
 /** Show the About dialog. Resolves when it closes. */
 export function showAbout(opts: AboutOptions): Promise<void> {
   return new Promise((resolve) => {
-    const dialog = el("dialog", "shell-about");
+    // On the family's frame: the product name is the frame's title, centred by
+    // about.css, and the wordmark sits above it.
+    const frame = dialogFrame({ title: opts.appName, className: "shell-about", onClose: () => resolve() });
+    frame.dialog.setAttribute("aria-label", `About ${opts.appName}`);
     if (opts.wordmark !== undefined) {
       const mark = el("div", "shell-about-mark");
       mark.innerHTML = opts.wordmark;
-      dialog.append(mark);
+      frame.dialog.prepend(mark);
     }
-    dialog.append(
-      el("div", "shell-about-name", opts.appName),
-      el("div", "shell-about-version", `Version ${opts.version}`),
-    );
-    if (opts.blurb !== undefined) dialog.append(el("p", "shell-about-blurb", opts.blurb));
-    if (opts.credits !== undefined) dialog.append(el("p", "shell-about-credits", opts.credits));
+    frame.body.append(el("div", "shell-about-version", `Version ${opts.version}`));
+    if (opts.blurb !== undefined) frame.body.append(el("p", "shell-about-blurb", opts.blurb));
+    if (opts.credits !== undefined) frame.body.append(el("p", "shell-about-credits", opts.credits));
 
     if (opts.links?.length) {
       const row = el("div", "shell-about-links");
@@ -56,26 +57,14 @@ export function showAbout(opts: AboutOptions): Promise<void> {
         a.addEventListener("click", () => opts.onOpenLink?.(link.url));
         row.append(a);
       }
-      dialog.append(row);
+      frame.body.append(row);
     }
 
-    const close = el("button", "shell-about-close", "Close");
+    const close = el("button", "btn shell-about-close", "Close");
     close.type = "button";
-    dialog.append(el("div", "shell-about-actions", close));
-    dialog.setAttribute("aria-label", `About ${opts.appName}`);
-    document.body.append(dialog);
-
-    let done = false;
-    const finish = (): void => {
-      if (done) return;
-      done = true;
-      dialog.close();
-      dialog.remove();
-      resolve();
-    };
-    close.addEventListener("click", finish);
-    dialog.addEventListener("close", finish);
-    dialog.showModal();
+    close.addEventListener("click", () => frame.close());
+    frame.actions.append(close);
+    frame.open();
     close.focus();
   });
 }

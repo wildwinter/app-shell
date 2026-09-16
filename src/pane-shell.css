@@ -58,8 +58,12 @@
 .panes > .pane { transition: opacity var(--dur-panel) var(--ease-standard); }
 .panes.no-nav > .pane-nav, .panes.no-inspector > .pane-inspector { opacity: 0; pointer-events: none; }
 
-/* Drag seams over each side pane's inner edge, tracking the grid columns. */
+/* Drag seams over each side pane's inner edge, tracking the grid columns. The
+   seam is invisible at rest and lights up under the pointer and while dragging
+   (quiet chrome, shown on hover): a colour change only, at --dur-quick. */
 .pane-resizer { position: absolute; top: 0; bottom: 0; width: 7px; z-index: 6; cursor: col-resize; touch-action: none; }
+.pane-resizer::after { content: ""; position: absolute; inset: 0 3px; background: transparent; transition: background var(--dur-quick) var(--ease-standard); }
+.pane-resizer:hover::after, .pane-resizer.dragging::after, body.pane-resizing .pane-resizer::after { background: color-mix(in oklab, var(--accent) 45%, transparent); }
 .pane-resizer-nav { left: calc(var(--nav-w) - 3px); }
 .pane-resizer-insp { right: calc(var(--insp-w) - 3px); }
 .panes.no-nav .pane-resizer-nav, .panes.no-inspector .pane-resizer-insp { display: none; }
