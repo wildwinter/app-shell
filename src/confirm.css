@@ -14,7 +14,7 @@
   animation: var(--anim-panel-in);
 }
 .confirm-dialog::backdrop {
-  background: color-mix(in oklab, var(--ink) 28%, transparent);
+  background: var(--scrim);
   backdrop-filter: blur(3px);
   animation: var(--anim-backdrop-in);
 }

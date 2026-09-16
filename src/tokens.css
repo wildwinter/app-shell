@@ -22,6 +22,17 @@
      other two: this is a floor, not a decision. */
   --ok: light-dark(#3f7d49, #79bd80);
 
+  /* The ink that sits ON the accent: a primary button's label, a selected
+     row's text. Every palette overrides it (a light tan accent on a dark
+     palette wants dark ink, not white); this floor only stops the shell's own
+     primary buttons from falling back to a raw #fff literal, which is what
+     they did until 0.39.0 and which read white-on-tan on Night and Slate. */
+  --on-accent: light-dark(#ffffff, #1b1916);
+
+  /* The one scrim behind every modal in the family (confirm, settings,
+     identity, about, notes). Four recipes had grown across five files. */
+  --scrim: color-mix(in oklab, var(--ink) 28%, transparent);
+
   /* Elevation: three tiers by how far a surface floats (resting cards,
      floating menus/popovers, full overlays). Theme-agnostic black so it
      deepens naturally on the dark palettes. */
@@ -54,6 +65,22 @@
   --scroll-thumb: color-mix(in oklab, var(--ink) 20%, transparent);
   --scroll-thumb-hover: color-mix(in oklab, var(--ink) 40%, transparent);
 }
+
+/* The family's keyboard focus ring: one rule, zero specificity (:where), so a
+   component may draw its own and win without !important. Until 0.39.0
+   Patterpad's main window had no ring at all and Storyletter carried five
+   copies of this line. Mouse focus stays quiet; only :focus-visible draws. */
+:where(button, [role="button"], input, select, textarea, summary, a[href], [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* The tracked uppercase caption, kept for exactly two jobs: table column heads
+   and screenplay character cues, where uppercase is the domain's own
+   convention (design-language.md, "Captions are words, not overlines"). A
+   section caption anywhere else is sentence-case text at label size, weight
+   600, in the UI face, which is what the shell's own captions now are. */
+.overline { font: 600 0.66rem/1 var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 
 * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 ::-webkit-scrollbar { width: 11px; height: 11px; }

@@ -47,7 +47,7 @@
   border-radius: var(--radius-sm); border: 1px solid var(--line);
   background: var(--card); color: var(--ink); cursor: pointer;
 }
-.shell-cmt-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.shell-cmt-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 /* The picker, when one thing has more than one thread. */
 .shell-cmt-row {
   display: flex; gap: 6px; align-items: baseline; width: 100%; text-align: left;

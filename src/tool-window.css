@@ -19,8 +19,7 @@
 }
 .swin-head button, .swin-head select, .swin-head input { -webkit-app-region: no-drag; }
 .swin-title {
-  font: 600 0.68rem/1 var(--font-ui);
-  text-transform: uppercase; letter-spacing: 0.07em;
+  font: 600 0.82rem/1.2 var(--font-ui);
   color: var(--muted);
 }
 .swin-spacer { flex: 1; }

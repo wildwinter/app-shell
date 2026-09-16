@@ -9,7 +9,7 @@
   box-shadow: var(--shadow-2, var(--shadow-1));
   text-align: center;
 }
-.shell-about::backdrop { background: rgba(0, 0, 0, 0.28); }
+.shell-about::backdrop { background: var(--scrim); }
 .shell-about-mark { margin-bottom: 12px; }
 .shell-about-mark svg { max-width: 220px; height: auto; }
 .shell-about-name { font: 600 1.15rem/1.2 var(--font-read, var(--font-ui)); }
