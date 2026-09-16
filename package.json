@@ -144,7 +144,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "LICENSES.md"
   ],
   "sideEffects": [
     "*.css"
