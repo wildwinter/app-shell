@@ -15,7 +15,7 @@
    `button` rule, for the same reason this file exists. */
 .ctxmenu-item {
   text-align: left; width: 100%; padding: 6px 10px;
-  font: inherit; font-size: 0.85rem; color: var(--ink);
+  font: inherit; font-size: 13.5px; color: var(--ink);
   background: none; border: 0; border-radius: var(--radius-sm); cursor: pointer;
   transition: background var(--dur-quick) var(--ease-standard), color var(--dur-quick) var(--ease-standard);
 }

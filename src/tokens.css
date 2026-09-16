@@ -5,6 +5,18 @@
    across the editor family - elevation, motion, radius, scrollbar chrome. Each
    app supplies its own colour + font VALUES (its palette) over this grammar in
    its own theme.css. Do not add app-specific colours here.
+
+   SCALE. Chrome is sized in px off a 14px base; the reading surface alone
+   scales with the root ("Chrome has its own scale", design-language.md
+   section 4, 2026-09-16). Every size in the shell's stylesheets (font-size,
+   padding, gap, margin, width, height) is a pixel value: the navigator, the
+   inspector, the bars, the dialogs and the controls in them read the same in
+   every app of the family whatever the reading size is. `em` survives only
+   where a rule deliberately scales with its own font; line-heights stay
+   unitless. The values are what Storyletter rendered at 0.39.0 (rem x 16, to
+   the nearest half pixel), so the conversion moved nothing there and brought
+   Patterpad, whose chrome had grown 7 to 10 percent with its reading root,
+   back to the same size. No `rem` in a chrome rule; the test suite greps.
    ============================================================================ */
 
 :root {
@@ -28,6 +40,12 @@
      primary buttons from falling back to a raw #fff literal, which is what
      they did until 0.39.0 and which read white-on-tan on Night and Slate. */
   --on-accent: light-dark(#ffffff, #1b1916);
+
+  /* The chrome base. `.shell-dialog`, `.pane-shell` and `.swin-head` set it as
+     their font-size, so unstyled text inside them lands at 14px regardless of
+     the app's root; a rule that wants the base by name reads it here. Not a
+     scale factor: the sizes below it are literal px, on purpose. */
+  --chrome-size: 14px;
 
   /* The one scrim behind every modal in the family (confirm, settings,
      identity, about, notes). Four recipes had grown across five files. */
@@ -90,7 +108,7 @@
    convention (design-language.md, "Captions are words, not overlines"). A
    section caption anywhere else is sentence-case text at label size, weight
    600, in the UI face, which is what the shell's own captions now are. */
-.overline { font: 600 0.66rem/1 var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.overline { font: 600 10.5px/1 var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 
 * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 ::-webkit-scrollbar { width: 11px; height: 11px; }

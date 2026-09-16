@@ -4,9 +4,9 @@
    palette without a tuned contrast pair. Tokens only, so it lands in any palette
    and any window (multi-window-rules.md). */
 .shell-toast {
-  position: fixed; right: 1rem; bottom: 2.2rem; z-index: 40; max-width: 26rem;
+  position: fixed; right: 16px; bottom: 35px; z-index: 40; max-width: 416px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
-  padding: 0.55rem 0.8rem; color: var(--ink); font: 0.8rem/1.4 var(--font-ui);
+  padding: 9px 13px; color: var(--ink); font: 13px/1.4 var(--font-ui);
   /* A long unbroken token (a file path) wraps INSIDE the card; a newline in the
      message is a line break. */
   overflow-wrap: anywhere; white-space: pre-line;

@@ -6,5 +6,5 @@
    standard palette tokens.
    --------------------------------------------------------------------------- */
 
-.confirm-dialog { --dialog-width: 24rem; }
-.confirm-body { font: 0.82rem/1.45 var(--font-ui); color: var(--muted); }
+.confirm-dialog { --dialog-width: 384px; }
+.confirm-body { font: 13px/1.45 var(--font-ui); color: var(--muted); }

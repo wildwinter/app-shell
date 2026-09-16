@@ -6,14 +6,14 @@
 .shell-notes-body { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; }
 /* A caption is sentence-case text at label size, weight 600, in the UI face. */
 .shell-notes-caption {
-  font: 600 0.78rem/1.2 var(--font-ui); color: var(--muted);
+  font: 600 12.5px/1.2 var(--font-ui); color: var(--muted);
 }
 .shell-notes-class { display: flex; flex-direction: column; gap: 4px; }
 /* Notes are prose, so the area is set in the reading face; the element
    selector out-specifies `.field`, whichever stylesheet loads first. */
 textarea.shell-notes-text {
   width: 100%; box-sizing: border-box; resize: vertical;
-  font: 0.85rem/1.45 var(--font-read, var(--font-ui));
+  font: 13.5px/1.45 var(--font-read, var(--font-ui));
 }
 /* Inherited notes read as CONTEXT rather than as fields: no box, no cursor. */
 .shell-notes-inherited {
@@ -21,12 +21,12 @@ textarea.shell-notes-text {
   padding-bottom: 4px; border-bottom: 1px solid var(--line-soft);
 }
 .shell-notes-level { display: flex; flex-direction: column; gap: 2px; }
-.shell-notes-level-label { font: 0.72rem/1 var(--font-ui); color: var(--muted); }
-.shell-notes-line { font: 0.82rem/1.4 var(--font-read, var(--font-ui)); color: var(--muted); }
+.shell-notes-level-label { font: 11.5px/1 var(--font-ui); color: var(--muted); }
+.shell-notes-line { font: 13px/1.4 var(--font-read, var(--font-ui)); color: var(--muted); }
 .shell-notes-cls {
-  font: 0.68rem/1 var(--font-ui); color: var(--muted);
+  font: 11px/1 var(--font-ui); color: var(--muted);
   border: 1px solid var(--line-soft); border-radius: var(--radius-pill);
   padding: 1px 6px; margin-right: 6px;
 }
-.shell-notes-hint { font: 0.72rem/1 var(--font-ui); color: var(--muted); margin: 0; }
-.shell-notes-add { font: 0.78rem/1 var(--font-ui); align-self: flex-start; }
+.shell-notes-hint { font: 11.5px/1 var(--font-ui); color: var(--muted); margin: 0; }
+.shell-notes-add { font: 12.5px/1 var(--font-ui); align-self: flex-start; }

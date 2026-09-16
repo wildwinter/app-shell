@@ -244,3 +244,67 @@ export function wireReorder(el: HTMLElement, id: string, axis: "x" | "y", onMove
     if (reorderDragId && reorderDragId !== id) onMove(reorderDragId, before, id);
   });
 }
+
+// --- metadata and breadcrumbs ---------------------------------------------------
+// "Icons are drawn, and so are separators" (design-language.md section 4,
+// 2026-09-16): metadata is never joined with "·" and a breadcrumb is never a
+// string with "›" in it. Both apps had been building exactly those strings
+// (ui-review-2026-09, marker A); these two helpers make the same lines as DOM,
+// with the separator drawn by CSS (controls.css) or by the icon vocabulary.
+
+/**
+ * A metadata line: `parts` as spans in a flex row, separated by a drawn
+ * 3px disc (a `::before` on every part after the first, in controls.css),
+ * so `metaLine(["6 runs", "200 max steps", "seed 4"])` is what
+ * "6 runs · 200 max steps · seed 4" used to be, without the typed dot.
+ * Empty, null and undefined parts are skipped, so a caller can pass an
+ * optional segment without branching.
+ */
+export function metaLine(parts: (string | Node | null | undefined)[]): HTMLElement {
+  const row = el("span", "shell-meta");
+  for (const part of parts) {
+    if (part === null || part === undefined || part === "") continue;
+    const seg = el("span", "shell-meta-part");
+    seg.append(part);
+    row.append(seg);
+  }
+  return row;
+}
+
+export interface Crumb {
+  label: string;
+  /** Makes the crumb a button. Ignored on the last crumb, which is where the
+   *  reader already is. */
+  onClick?: (event: MouseEvent) => void;
+}
+
+/**
+ * A breadcrumb trail: each crumb a span, or a button when it carries
+ * `onClick` and is not the last, with `iconNode("forward", 12)` drawn between
+ * them. `breadcrumb(["Box", "Deck", "Card"])` is what "Box › Deck › Card"
+ * used to be; the chevrons are the family's own drawing, not a symbol-font
+ * character.
+ */
+export function breadcrumb(parts: (string | Crumb)[]): HTMLElement {
+  const trail = el("nav", "shell-crumbs");
+  trail.setAttribute("aria-label", "Where this is");
+  parts.forEach((part, i) => {
+    const crumb: Crumb = typeof part === "string" ? { label: part } : part;
+    const last = i === parts.length - 1;
+    if (i > 0) {
+      const sep = iconNode("forward", 12);
+      sep.classList.add("shell-crumb-sep");
+      trail.append(sep);
+    }
+    if (crumb.onClick && !last) {
+      const b = el("button", { className: "shell-crumb shell-crumb-link", text: crumb.label, onClick: crumb.onClick });
+      b.type = "button";
+      trail.append(b);
+    } else {
+      const s = el("span", "shell-crumb", crumb.label);
+      if (last) s.setAttribute("aria-current", "location");
+      trail.append(s);
+    }
+  });
+  return trail;
+}

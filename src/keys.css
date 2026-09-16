@@ -1,0 +1,31 @@
+/* ============================================================================
+   Keycaps and hint bars (keys.ts): `keyHint`, `hintBar`. On the chrome scale
+   (px off the 14px base, tokens.css). Reads the palette (--surface, --line,
+   --muted, --ink, --font-ui). The element `kbd` rule in controls.css is the
+   floor for a hand-written keycap; these are the shell's own.
+   ============================================================================ */
+
+/* One keycap. The UI face, not mono: Apple's modifier glyphs sit on the text
+   baseline in the UI face and float in most monos. A 2px bottom edge is the
+   whole of the "key" drawing; nothing else lifts or shades. */
+.shell-kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; padding: 0 5px;
+  font: 500 11px/1.5 var(--font-ui); letter-spacing: 0.01em;
+  color: var(--muted); background: var(--surface);
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: var(--radius-sm);
+  white-space: nowrap; vertical-align: middle;
+}
+
+/* Several keycaps that mean "together" (Windows and Linux spell a chord as
+   one cap per key) or "either" (a move hint's up and down): side by side,
+   with a gap and no typed joiner. */
+.shell-keys { display: inline-flex; align-items: center; gap: 3px; vertical-align: middle; }
+
+/* The hint bar: items spaced by the row's gap, each a keycap then its label. */
+.shell-hintbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px;
+  font: 11.5px/1.4 var(--font-ui); color: var(--muted);
+}
+.shell-hint { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.shell-hint-label { color: var(--muted); }

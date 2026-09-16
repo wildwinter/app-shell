@@ -13,13 +13,14 @@
   display: flex; align-items: center; gap: 6px;
   padding: 7px 10px;
   background: var(--surface);
+  font-size: var(--chrome-size); /* the chrome base (tokens.css) */
   /* --line-soft is an optional host token (Storyletter defines it; Patterpad
      falls back to --line). */
   border-bottom: 1px solid var(--line-soft, var(--line));
 }
 .swin-head button, .swin-head select, .swin-head input { -webkit-app-region: no-drag; }
 .swin-title {
-  font: 600 0.82rem/1.2 var(--font-ui);
+  font: 600 13px/1.2 var(--font-ui);
   color: var(--muted);
 }
 .swin-spacer { flex: 1; }
@@ -39,7 +40,7 @@
   color: var(--accent); border-color: var(--accent);
   background: color-mix(in oklab, var(--accent) 12%, transparent);
 }
-.swin-close { font: 0.8rem var(--font-ui); padding: 2px 7px; }
+.swin-close { font: 13px var(--font-ui); padding: 2px 7px; }
 
 /* "Follow in the editor" (followButton): a `.btn` that lights like the pin
    while it is on, so the two controls that say how the window sits beside the

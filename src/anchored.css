@@ -25,7 +25,7 @@
   border-bottom: 1px solid var(--line-soft);
 }
 .shell-anchored-title {
-  font: 600 0.8rem/1.2 var(--font-ui);
+  font: 600 13px/1.2 var(--font-ui);
   color: var(--muted);
 }
 .shell-anchored-close {
@@ -44,20 +44,20 @@
    it has to LOOK refused: the hint reddens and Set goes flat. */
 .shell-id-editor .shell-anchored-body { display: flex; flex-direction: column; gap: 8px; }
 .shell-id-input {
-  font: 0.82rem var(--font-mono, monospace);
+  font: 13px var(--font-mono, monospace);
   padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--card); color: var(--ink);
 }
-.shell-id-hint { font: 0.74rem/1.4 var(--font-ui); color: var(--muted); }
+.shell-id-hint { font: 12px/1.4 var(--font-ui); color: var(--muted); }
 .shell-id-hint.bad { color: var(--danger, #b00); }
 .shell-id-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .shell-id-reset {
-  font: 0.74rem var(--font-ui); padding: 3px 10px; cursor: pointer;
+  font: 12px var(--font-ui); padding: 3px 10px; cursor: pointer;
   background: none; border: 1px dashed var(--line); border-radius: var(--radius-sm); color: var(--muted);
 }
 .shell-id-reset:hover { border-color: var(--accent); color: var(--accent); }
 .shell-id-set {
-  font: 0.78rem var(--font-ui); padding: 3px 12px; cursor: pointer;
+  font: 12.5px var(--font-ui); padding: 3px 12px; cursor: pointer;
   border: 1px solid var(--accent); border-radius: var(--radius-sm);
   background: var(--accent); color: var(--surface);
 }

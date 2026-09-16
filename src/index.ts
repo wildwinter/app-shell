@@ -16,6 +16,18 @@ export type { PaneShell, PaneShellOptions, PaneShellState, PaneSide, PaneSideCon
 export { PANE_MENU } from "./menu.js";
 export type { MenuLabel } from "./menu.js";
 export { iconBtn, labelled, moveItem, tagChips, stageChips, wireReorder } from "./dom.js";
+// Separators are drawn: a metadata line and a breadcrumb as DOM, never a "·"
+// or "›" in a string (dom.ts, controls.css).
+export { metaLine, breadcrumb } from "./dom.js";
+export type { Crumb } from "./dom.js";
+// Keyboard hints from one helper, "⌘" on a Mac and "Ctrl" elsewhere (keys.ts +
+// keys.css). Also its own entry, @wildwinter/app-shell/keys.
+export { keyLabel, keyLegends, keyHint, hintBar, tipWithKey, keyPlatform, setKeyPlatform } from "./keys.js";
+export type { KeyPlatform, KeyHintOptions, HintBarItem } from "./keys.js";
+// Problem copy through a table the app fills (problems.ts). Also its own
+// entry, @wildwinter/app-shell/problems.
+export { describeProblem, problemLine, problemName, defaultProblemCopy } from "./problems.js";
+export type { ProblemLike, ProblemCopy, ProblemCopyEntry, ProblemCopyTable } from "./problems.js";
 export { expandableRow, focusNewRow, revealRow, revealRowWhenReady, dupGuard, mountSettingsDialog } from "./settings.js";
 export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, SettingsDialogOptions } from "./settings.js";
 export { pinButton, toolWindowHead, followButton } from "./tool-window-web.js";

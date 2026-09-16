@@ -165,6 +165,20 @@
       "import": "./dist/util.js",
       "require": "./dist/util.cjs"
     },
+    "./keys": {
+      "types": "./dist/keys.d.ts",
+      "import": "./dist/keys.js",
+      "require": "./dist/keys.cjs"
+    },
+    "./keys.css": {
+      "import": "./dist/keys.css",
+      "require": "./dist/keys.css"
+    },
+    "./problems": {
+      "types": "./dist/problems.d.ts",
+      "import": "./dist/problems.js",
+      "require": "./dist/problems.cjs"
+    },
     "./updater.css": {
       "import": "./dist/updater.css",
       "require": "./dist/updater.css"

@@ -9,7 +9,7 @@
    controls.css, which is imported beside this file.
 
    Width is a per-dialog decision, so it is a custom property the content
-   class sets (`.confirm-dialog { --dialog-width: 24rem }`) rather than a rule
+   class sets (`.confirm-dialog { --dialog-width: 384px }`) rather than a rule
    the content class has to out-specify.
    ============================================================================ */
 
@@ -20,7 +20,9 @@
   border: 1px solid var(--line); border-radius: var(--radius-lg);
   background: var(--surface); color: var(--ink);
   box-shadow: var(--shadow-3);
-  font-family: var(--font-ui);
+  /* The chrome base (tokens.css): unstyled text in a dialog lands at 14px
+     whatever the app's reading root is. */
+  font-family: var(--font-ui); font-size: var(--chrome-size);
   display: flex; flex-direction: column; gap: 10px;
   animation: var(--anim-panel-in);
 }
@@ -38,8 +40,8 @@
 
 /* A heading is sentence-case text in the UI face, weight 600: how a group box
    reads on the platform, not an overline. */
-.shell-dialog-title { margin: 0; font: 600 1rem/1.3 var(--font-ui); }
-.shell-dialog-sub { margin: -4px 0 0; font: 0.82rem/1.45 var(--font-ui); color: var(--muted); }
+.shell-dialog-title { margin: 0; font: 600 16px/1.3 var(--font-ui); }
+.shell-dialog-sub { margin: -4px 0 0; font: 13px/1.45 var(--font-ui); color: var(--muted); }
 .shell-dialog-body { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
 .shell-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 .shell-dialog-actions:empty { display: none; }

@@ -7,7 +7,7 @@
   padding: 10px 14px;
   border: 1px solid var(--warn); border-radius: var(--radius-md);
   background: color-mix(in oklab, var(--warn) 12%, transparent);
-  color: var(--ink); font: 0.85rem var(--font-ui);
+  color: var(--ink); font: 13.5px var(--font-ui);
 }
 /* The sentence takes the room; the way out stays its own size at the end. */
 .stale-bar-msg { flex: 1; }

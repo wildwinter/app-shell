@@ -6,7 +6,10 @@
    lead/trail slots.
    ============================================================================ */
 
-.pane-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+/* The chrome base (tokens.css) is set here, so the bars and panes read at 14px
+   whatever the app's reading root is; the app's content surface inside the
+   centre pane sets its own size again. */
+.pane-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; font-size: var(--chrome-size); }
 
 .topbar {
   display: flex; align-items: center; gap: 10px;
@@ -39,7 +42,7 @@
 .topbar.titlebar-inset { padding-left: 84px; }
 
 .panes {
-  --nav-open-w: 14rem; --insp-open-w: 22rem;
+  --nav-open-w: 224px; --insp-open-w: 384px;
   --nav-w: var(--nav-open-w); --insp-w: var(--insp-open-w);
   position: relative; flex: 1; min-height: 0;
   display: grid; grid-template-columns: var(--nav-w) minmax(0, 1fr) var(--insp-w);

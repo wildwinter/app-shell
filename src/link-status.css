@@ -5,13 +5,13 @@
    --danger / --font-ui / --font-mono) over the shared tokens.
    --------------------------------------------------------------------------- */
 
-.linkstatus { position: fixed; right: 0.9rem; bottom: 0.32rem; z-index: 40; display: inline-flex; align-items: center; gap: 0.4rem; }
+.linkstatus { position: fixed; right: 14.5px; bottom: 5px; z-index: 40; display: inline-flex; align-items: center; gap: 6.5px; }
 .linkstatus[hidden] { display: none; }
-.linkstatus-word { font: 0.7rem var(--font-ui); color: var(--muted); user-select: none; }
+.linkstatus-word { font: 11px var(--font-ui); color: var(--muted); user-select: none; }
 
 .linkstatus-url {
-  font: 0.72rem var(--font-mono); color: var(--muted); background: var(--surface);
-  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.14rem 0.45rem; cursor: pointer;
+  font: 11.5px var(--font-mono); color: var(--muted); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer;
   transition: color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
 }
 .linkstatus-url:hover { border-color: var(--accent); color: var(--accent); }
@@ -20,7 +20,7 @@
 .linkstatus-url[hidden] { display: none; }
 
 .linkstatus-toggle {
-  flex: none; width: 1.4rem; height: 1.4rem; display: inline-flex; align-items: center; justify-content: center;
+  flex: none; width: 22.5px; height: 22.5px; display: inline-flex; align-items: center; justify-content: center;
   padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface);
   color: var(--muted); cursor: pointer;
   transition: color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);

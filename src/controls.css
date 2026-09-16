@@ -21,10 +21,10 @@
 /* --- buttons ---------------------------------------------------------------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.35em;
-  padding: 0.3rem 0.7rem;
+  padding: 5px 11px;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--ink);
-  font: 600 0.78rem var(--font-ui); letter-spacing: 0.02em; line-height: 1.2;
+  font: 600 12.5px var(--font-ui); letter-spacing: 0.02em; line-height: 1.2;
   cursor: pointer; white-space: nowrap;
   -webkit-user-select: none; user-select: none;
   transition: color var(--dur-quick) var(--ease-standard),
@@ -66,11 +66,11 @@
 /* A square button holding one glyph, centred explicitly: a bare <button>
    centres by the font's metrics plus UA padding, which parks an arrow up-left
    of the square's visual centre. */
-.btn.icon { width: 1.75rem; height: 1.75rem; padding: 0; line-height: 1; font-size: 0.85rem; }
+.btn.icon { width: 28px; height: 28px; padding: 0; line-height: 1; font-size: 13.5px; }
 
 /* --- fields ----------------------------------------------------------------- */
 .field {
-  font: inherit; font-size: 0.85rem; line-height: 1.4;
+  font: inherit; font-size: 13.5px; line-height: 1.4;
   padding: 6px 9px;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--card); color: var(--ink);
@@ -95,7 +95,7 @@ textarea.field { resize: vertical; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
 .seg-opt {
   background: none; border: 0; cursor: pointer;
-  color: var(--muted); font: 600 0.74rem var(--font-ui); padding: 0.2rem 0.6rem; white-space: nowrap;
+  color: var(--muted); font: 600 12px var(--font-ui); padding: 3px 9.5px; white-space: nowrap;
   transition: color var(--dur-quick) var(--ease-standard), background var(--dur-quick) var(--ease-standard);
 }
 .seg-opt + .seg-opt { border-left: 1px solid var(--line); }
@@ -109,19 +109,48 @@ textarea.field { resize: vertical; }
 /* A pill: a small bordered label (a class, a count, a state). */
 .pill {
   display: inline-flex; align-items: center; gap: 4px;
-  font: 0.72rem/1.3 var(--font-ui); color: var(--muted);
+  font: 11.5px/1.3 var(--font-ui); color: var(--muted);
   border: 1px solid var(--line-soft, var(--line)); border-radius: var(--radius-pill);
   padding: 1px 7px; white-space: nowrap;
 }
 
 /* The inline empty state: one muted italic sentence where a list would be. */
-.empty { margin: 0; color: var(--muted); font: italic 0.82rem/1.45 var(--font-ui); }
+.empty { margin: 0; color: var(--muted); font: italic 13px/1.45 var(--font-ui); }
 
-/* A keycap. A key hint is an element, never a typed "↑↓ move" string. */
+/* A keycap. A key hint is an element, never a typed "↑↓ move" string. The
+   element rule is the floor for a hand-written <kbd>; the shell's own hint
+   helpers (keys.ts) stamp `.shell-kbd`, drawn in keys.css. */
 kbd {
   display: inline-block;
-  font: 0.68rem/1.3 var(--font-mono, ui-monospace, monospace);
+  font: 11px/1.3 var(--font-mono, ui-monospace, monospace);
   color: var(--muted);
   border: 1px solid var(--line); border-bottom-width: 2px; border-radius: var(--radius-sm);
   padding: 1px 5px; vertical-align: baseline;
 }
+
+/* --- metadata and breadcrumbs ---------------------------------------------- */
+/* A metadata line (`metaLine` in dom.ts): parts in a row, each after the first
+   led by a DRAWN 3px disc. Never a "·" character: that is a typed separator,
+   and it renders at whatever weight and height the symbol font has. The disc
+   is the muted ink, the row inherits its size from wherever it sits. */
+.shell-meta { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; min-width: 0; }
+.shell-meta-part { display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; }
+.shell-meta-part + .shell-meta-part::before {
+  content: ""; flex: none; width: 3px; height: 3px;
+  border-radius: var(--radius-pill); background: var(--muted);
+}
+
+/* A breadcrumb trail (`breadcrumb` in dom.ts): crumbs with the vocabulary's
+   `forward` chevron drawn between them. A crumb that goes somewhere is a
+   button coloured as a link (it reads as a control with the pointer parked);
+   the last crumb is where the reader is, in the ink. */
+.shell-crumbs { display: inline-flex; align-items: center; gap: 2px; min-width: 0; font: 12.5px/1.3 var(--font-ui); }
+.shell-crumb { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.shell-crumb[aria-current] { color: var(--ink); }
+.shell-crumb-sep { flex: none; color: var(--muted); opacity: 0.7; }
+.shell-crumb-link {
+  font: inherit; background: none; border: 0; padding: 0 2px; margin: 0;
+  border-radius: var(--radius-sm); color: var(--accent); cursor: pointer;
+  transition: color var(--dur-quick) var(--ease-standard);
+}
+.shell-crumb-link:hover { color: var(--ink); text-decoration: underline; }

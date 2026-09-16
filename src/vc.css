@@ -21,6 +21,6 @@
   border: 1px solid var(--line); border-left: 3px solid var(--danger);
   border-radius: var(--radius-sm);
   background: var(--card);
-  font: 0.8rem/1.4 var(--font-ui); color: var(--ink);
+  font: 13px/1.4 var(--font-ui); color: var(--ink);
 }
 .vc-lock-glyph { display: inline-flex; color: var(--danger); }

@@ -7,7 +7,7 @@
    in colour rather than by the absence of anything. */
 .savestat {
   display: inline-flex; align-items: center; gap: 5px;
-  font: 0.72rem var(--font-ui); color: var(--muted);
+  font: 11.5px var(--font-ui); color: var(--muted);
   -webkit-app-region: no-drag;   /* a draggable titlebar must not swallow it */
 }
 .savestat::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-pill); background: currentColor; }
