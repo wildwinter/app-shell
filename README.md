@@ -131,6 +131,13 @@ needing and never had.
   revealRow(document, "mood");
   ```
 
+- **`--linkstatus-reserve`** - how much of the window's bottom-right corner the
+  live-link chip takes, published on the document while the chip is visible (`0px`
+  while hidden) and re-measured as its address comes and goes. The chip floats over
+  that corner, and both apps had things drawn under it. The stepper bar leaves the
+  room itself; a host strip that can end in the corner opts in with
+  `padding-right: calc(<its own> + var(--linkstatus-reserve, 0px))`.
+
 - **`--ok`** joins `--danger` and `--warn` in `tokens.css`, with a `light-dark()`
   default every palette should override in its own `theme.css`. It is the only
   colour in the grammar layer, and it is there because it kept not being

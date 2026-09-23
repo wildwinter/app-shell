@@ -84,6 +84,12 @@ export function linkAddress(s: LinkStatus): string | undefined {
   return s.address ?? `ws://127.0.0.1:${s.port}`;
 }
 
+/** Where the chip sits, which link-status.css says too: its right inset, and the
+ *  breathing room anything beside it keeps. Kept beside the reserve that uses
+ *  them, since the reserve is a promise about the CSS. */
+const CORNER_INSET = 14.5;
+const CORNER_GAP = 12;
+
 /** Mount the chip into `host` (document.body in both apps: it is fixed to the
  *  window's corner). Hidden until `setVisible(true)`. */
 export function mountLinkStatus(host: HTMLElement, opts: LinkStatusOptions): LinkStatusChip {
@@ -95,6 +101,22 @@ export function mountLinkStatus(host: HTMLElement, opts: LinkStatusOptions): Lin
   host.append(wrap);
 
   let status: LinkStatus = { state: "off" };
+
+  // The corner the chip floats over belongs to whatever the host put there: a
+  // problems bar's error link and its buttons, a canvas strip's last control.
+  // Both apps had it drawn under the chip (2026-09-17). So the chip publishes
+  // how much of the corner it takes, as --linkstatus-reserve on the document,
+  // and the things that can sit there leave that much room (the stepper bar
+  // does, in stepper.css; a host's own strips opt in). 0px while hidden.
+  // Re-measured on every render, because the address comes and goes, and on a
+  // resize where the platform offers one, because a web font landing moves it.
+  const root = host.ownerDocument.documentElement;
+  const publishReserve = (): void => {
+    const width = wrap.hidden ? 0 : wrap.getBoundingClientRect().width;
+    root.style.setProperty("--linkstatus-reserve",
+      width > 0 ? `${Math.ceil(width + CORNER_INSET + CORNER_GAP)}px` : "0px");
+  };
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(publishReserve).observe(wrap);
 
   const render = (): void => {
     toggle.className = `linkstatus-toggle ${linkStatusClass(status)}`;
@@ -108,6 +130,7 @@ export function mountLinkStatus(host: HTMLElement, opts: LinkStatusOptions): Lin
       url.dataset["tip"] = "Click to copy the live link address";
       url.hidden = false;
     } else url.hidden = true;
+    publishReserve();
   };
   const apply = (s: LinkStatus): void => { status = s; render(); };
   render();
@@ -126,7 +149,7 @@ export function mountLinkStatus(host: HTMLElement, opts: LinkStatusOptions): Lin
   return {
     el: wrap, apply,
     status: () => status,
-    setVisible(on: boolean): void { wrap.hidden = !on; },
+    setVisible(on: boolean): void { wrap.hidden = !on; publishReserve(); },
     toggle(): void { toggle.click(); },
   };
 }

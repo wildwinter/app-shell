@@ -8,6 +8,11 @@
   display: flex; align-items: center; gap: 10px;
   border-top: 1px solid var(--line-soft); background: var(--surface);
   font: 13px var(--font-ui); padding: 6px 16px; min-height: 34px;
+  /* The live-link chip floats over the window's bottom-right corner, which is
+     where this bar keeps its fix chip and its close. It publishes how much of
+     the corner it takes (link-status.ts), 0px while hidden, and the bar stops
+     short of it. Both apps had the error link running under the chip. */
+  padding-right: calc(16px + var(--linkstatus-reserve, 0px));
 }
 .stepbar[hidden] { display: none; }
 

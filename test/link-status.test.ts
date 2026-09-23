@@ -91,3 +91,38 @@ describe("mountLinkStatus", () => {
     expect(url.classList.contains("copied")).toBe(false);
   });
 });
+
+// The corner the chip floats over belongs to what the host put there: the
+// problems bar's error link and buttons, a canvas strip's last control. Both
+// apps drew those under the chip (2026-09-17), so the chip says how much of the
+// corner it takes and they leave room.
+describe("the corner the chip takes", () => {
+  const reserve = (): string => document.documentElement.style.getPropertyValue("--linkstatus-reserve");
+  afterEach(() => { document.documentElement.style.removeProperty("--linkstatus-reserve"); });
+
+  it("is nothing while the chip is hidden", () => {
+    const chip = mountLinkStatus(document.body, { label: "Live link", onToggle: () => {} });
+    vi.spyOn(chip.el, "getBoundingClientRect").mockReturnValue({ width: 90 } as DOMRect);
+    chip.apply({ state: "off" });
+    expect(reserve()).toBe("0px");
+  });
+
+  it("is the chip's width plus its inset and a gap once shown, and nothing again once hidden", () => {
+    const chip = mountLinkStatus(document.body, { label: "Live link", onToggle: () => {} });
+    vi.spyOn(chip.el, "getBoundingClientRect").mockReturnValue({ width: 90 } as DOMRect);
+    chip.setVisible(true);
+    expect(reserve()).toBe("117px");   // ceil(90 + 14.5 + 12)
+    chip.setVisible(false);
+    expect(reserve()).toBe("0px");
+  });
+
+  it("follows the chip as the address appears, since that is what widens it", () => {
+    const chip = mountLinkStatus(document.body, { label: "Live link", onToggle: () => {} });
+    const rect = vi.spyOn(chip.el, "getBoundingClientRect").mockReturnValue({ width: 90 } as DOMRect);
+    chip.setVisible(true);
+    expect(reserve()).toBe("117px");
+    rect.mockReturnValue({ width: 240 } as DOMRect);
+    chip.apply({ state: "listening", port: 7331 });
+    expect(reserve()).toBe("267px");   // ceil(240 + 14.5 + 12)
+  });
+});
