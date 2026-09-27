@@ -1,0 +1,93 @@
+/* ---------------------------------------------------------------------------
+   The kit gallery (kit-gallery.ts): tiles on the left, a details panel on the
+   right, on the dialog frame (dialog.css) with `.btn` from controls.css and
+   `.field` for the name. Reads the palette (--surface, --ink, --muted,
+   --line, --accent) over the shared tokens.
+
+   Pictures are masks: the image's opaque pixels are drawn in --kit-art-ink on
+   --kit-art-plate. The defaults suit a light theme (ink on the tile). A dark
+   theme should NOT invert an engraving, which turns it into a photographic
+   negative; it sets a paper-toned plate and a dark ink instead, so the
+   picture is always dark on light and only its frame follows the theme.
+   --------------------------------------------------------------------------- */
+
+.kit-gallery {
+  --dialog-width: 880px;
+  --kit-art-ink: var(--ink);
+  --kit-art-plate: transparent;
+}
+.kit-gallery .shell-dialog-body { overflow: hidden; }
+
+.kit-gallery-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 288px; gap: 18px;
+  min-height: 0; max-height: 64vh;
+}
+.kit-gallery-shelves { overflow-y: auto; min-height: 0; padding: 2px; }
+.kit-gallery-panel {
+  overflow-y: auto; min-height: 0;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 2px 2px 2px 18px; border-left: 1px solid var(--line);
+}
+
+/* A shelf per job (start / learn), captioned like the welcome's groups:
+   sentence-case label text, never an overline. */
+.kit-gallery-shelf + .kit-gallery-shelf { margin-top: 18px; }
+.kit-gallery-caption { margin: 0 0 6px; color: var(--muted); font: 600 13px/1.3 var(--font-ui); }
+.kit-gallery-shelf-note { margin: -2px 0 8px; color: var(--muted); font: 12.5px/1.45 var(--font-ui); }
+
+.kit-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 8px; }
+.kit-gallery-tile {
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  padding: 8px; text-align: left; cursor: pointer;
+  background: none; color: var(--ink); font: inherit;
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  transition: background var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
+}
+.kit-gallery-tile:hover { background: color-mix(in oklab, var(--accent) 6%, transparent); }
+.kit-gallery-tile[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+.kit-gallery-tile-head { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.kit-gallery-tile-name { font: 600 14px/1.3 var(--font-ui); }
+/* Three lines on the tile; the panel says the rest. */
+.kit-gallery-tile-blurb {
+  color: var(--muted); font: 12.5px/1.4 var(--font-ui);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
+}
+.kit-gallery-badge {
+  padding: 1px 6px; border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 16%, transparent); color: var(--ink);
+  font: 600 11px/1.5 var(--font-ui);
+}
+
+/* The picture: a plate, and the ink drawn through the image as a mask. */
+.kit-gallery-art {
+  position: relative; aspect-ratio: 5 / 3; overflow: hidden;
+  border-radius: var(--radius-sm); background: var(--kit-art-plate);
+}
+.kit-gallery-art[hidden] { display: none; }
+.kit-gallery-ink {
+  position: absolute; inset: 0; background: var(--kit-art-ink);
+  -webkit-mask: var(--kit-art) center / cover no-repeat;
+  mask: var(--kit-art) center / cover no-repeat;
+}
+
+/* The details panel: the chosen kit said in full, then the app's fields. */
+.kit-gallery-panel-name { margin: 2px 0 0; font: 600 16px/1.3 var(--font-ui); }
+.kit-gallery-panel-blurb, .kit-gallery-panel-detail { margin: 0; font: 13.5px/1.5 var(--font-ui); color: var(--ink); }
+.kit-gallery-play { margin: 0; font: 13.5px/1.5 var(--font-ui); color: var(--ink); }
+.kit-gallery-shows, .kit-gallery-note { margin: 0; font: 12.5px/1.45 var(--font-ui); color: var(--muted); }
+.kit-gallery-lands-caption { margin: 6px 0 0; font: 600 13px/1.3 var(--font-ui); color: var(--muted); }
+.kit-gallery-lands { margin: 0; padding-left: 18px; font: 13px/1.5 var(--font-ui); color: var(--ink); }
+.kit-gallery-panel [hidden] { display: none; }
+.kit-gallery-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.kit-gallery-label { font: 600 13px/1.3 var(--font-ui); color: var(--ink); }
+.kit-gallery-name.kit-gallery-missing { border-color: var(--danger); }
+
+/* Narrow windows: the panel goes under the tiles. */
+@media (max-width: 760px) {
+  .kit-gallery-layout { grid-template-columns: minmax(0, 1fr); max-height: none; overflow-y: auto; }
+  .kit-gallery-panel { border-left: none; border-top: 1px solid var(--line); padding: 12px 2px 2px; overflow: visible; }
+  .kit-gallery-shelves { overflow: visible; }
+}

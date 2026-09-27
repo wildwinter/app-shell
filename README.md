@@ -144,6 +144,43 @@ needing and never had.
   anywhere: "all is well" was being met with raw green literals that could not
   theme-shift.
 
+## v0.41 (the kit gallery)
+
+The new-thing moment (New Project, New Box, New Scene), drawn once: tiles on
+the left, the chosen kit said in full on the right, one screen, on the dialog
+frame. Shelves say what their button does, so a kit ("Create") and a worked
+example ("Open a Copy") can sit side by side.
+
+```ts
+import { openKitGallery } from "@wildwinter/app-shell";
+import "@wildwinter/app-shell/kit-gallery.css";
+
+openKitGallery({
+  title: "New project",
+  what: "A project is one game's worth of storylets.",
+  namePlaceholder: "The Village",
+  details: vcsFields,                       // the app's own fields, under the name
+  sections: [
+    { caption: "Start from a kit", items: [
+      { id: "starter", name: "Starter project", blurb: "Two cards that already work together.",
+        play: "Press Play: one card opens the next.", lands: ["One box", "Two cards"] },
+    ] },
+    { caption: "Learn from a finished project", action: "Open a Copy", usesDetails: false,
+      items: [{ id: "hamlet", name: "The Hamlet", blurb: "Small.", badge: "Start here" }] },
+  ],
+  onPick: (id, { name }) => { /* the app makes it */ },
+});
+```
+
+- **What a kit is made of stays in the app.** The shell knows names, words and
+  pictures, never boxes or scenes.
+- **Pictures are masks.** `image` is a transparent file whose opaque pixels are
+  the ink, drawn in `--kit-art-ink` on `--kit-art-plate`. A dark theme sets a
+  paper-toned plate and a dark ink rather than inverting, which turns an
+  engraving into a photographic negative.
+- Single click chooses, double-click chooses and goes, Enter in the name field
+  creates; the name is required when asked for.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

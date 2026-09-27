@@ -109,6 +109,9 @@ export type { UpdaterDownloadProgress, UpdaterPromptOptions } from "./updater.js
 // No project open: the welcome (welcome.ts + welcome.css).
 export { mountWelcome } from "./welcome.js";
 export type { Welcome, WelcomeOptions, WelcomeAction, WelcomeRecent, WelcomeGroup, WelcomeGroupItem } from "./welcome.js";
+// The new-thing moment: pick a starting point by what you want to make (kit-gallery.ts + .css).
+export { openKitGallery } from "./kit-gallery.js";
+export type { KitGallery, KitGalleryOptions, KitGallerySection, KitGalleryItem, KitGalleryChoice } from "./kit-gallery.js";
 // The live-link chip (link-status.ts + link-status.css).
 export { mountLinkStatus, linkStatusClass, linkStatusTip, linkAddress } from "./link-status.js";
 export type { LinkStatus, LinkStatusClass, LinkStatusOptions, LinkStatusChip } from "./link-status.js";

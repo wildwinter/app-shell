@@ -150,6 +150,11 @@
       "import": "./dist/welcome.js",
       "require": "./dist/welcome.cjs"
     },
+    "./kit-gallery": {
+      "types": "./dist/kit-gallery.d.ts",
+      "import": "./dist/kit-gallery.js",
+      "require": "./dist/kit-gallery.cjs"
+    },
     "./link-status": {
       "types": "./dist/link-status.d.ts",
       "import": "./dist/link-status.js",
@@ -186,6 +191,10 @@
     "./welcome.css": {
       "import": "./dist/welcome.css",
       "require": "./dist/welcome.css"
+    },
+    "./kit-gallery.css": {
+      "import": "./dist/kit-gallery.css",
+      "require": "./dist/kit-gallery.css"
     },
     "./link-status.css": {
       "import": "./dist/link-status.css",
