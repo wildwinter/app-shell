@@ -191,6 +191,9 @@ openKitGallery({
 - **v0.44:** `onChoose` runs whenever an item is chosen, so an app can show or
   hide its own fields per kit; `validate` holds the pick until the app's own
   field is filled, marking and focusing it the way an empty name is.
+- **v0.45:** the picture colours are read with fallbacks and never set by the
+  gallery, so an app's `--kit-art-ink` and `--kit-art-plate` on `:root` reach
+  both the dialog and the welcome's tiles.
 
 ## Roadmap
 

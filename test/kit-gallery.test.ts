@@ -205,8 +205,10 @@ describe("openKitGallery", () => {
 
   it("styles: the picture is a mask over a plate the app can set, and the panel folds under on narrow windows", () => {
     const css = readFileSync(join(process.cwd(), "src/kit-gallery.css"), "utf8");
-    expect(css).toMatch(/--kit-art-ink:/);
-    expect(css).toMatch(/--kit-art-plate:/);
+    // Read with fallbacks, never set by the gallery: an app's :root values must reach the dialog AND the welcome.
+    expect(css).toMatch(/var\(--kit-art-ink, var\(--ink\)\)/);
+    expect(css).toMatch(/var\(--kit-art-plate, transparent\)/);
+    expect(css).not.toMatch(/--kit-art-(ink|plate):/);
     expect(css).toMatch(/mask: var\(--kit-art\)/);
     expect(css).toMatch(/@media \(max-width: 760px\)/);
   });

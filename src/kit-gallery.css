@@ -5,17 +5,14 @@
    --line, --accent) over the shared tokens.
 
    Pictures are masks: the image's opaque pixels are drawn in --kit-art-ink on
-   --kit-art-plate. The defaults suit a light theme (ink on the tile). A dark
-   theme should NOT invert an engraving, which turns it into a photographic
+   --kit-art-plate, which an app sets on :root (the welcome's tiles sit outside
+   the dialog, so the gallery never sets them itself). The defaults, the app's
+   --ink on no plate, suit a light theme. A dark theme should NOT invert an engraving, which turns it into a photographic
    negative; it sets a paper-toned plate and a dark ink instead, so the
    picture is always dark on light and only its frame follows the theme.
    --------------------------------------------------------------------------- */
 
-.kit-gallery {
-  --dialog-width: 880px;
-  --kit-art-ink: var(--ink);
-  --kit-art-plate: transparent;
-}
+.kit-gallery { --dialog-width: 880px; }
 .kit-gallery .shell-dialog-body { overflow: hidden; }
 
 .kit-gallery-layout {
@@ -64,11 +61,11 @@
 /* The picture: a plate, and the ink drawn through the image as a mask. */
 .kit-gallery-art {
   position: relative; aspect-ratio: 5 / 3; overflow: hidden;
-  border-radius: var(--radius-sm); background: var(--kit-art-plate);
+  border-radius: var(--radius-sm); background: var(--kit-art-plate, transparent);
 }
 .kit-gallery-art[hidden] { display: none; }
 .kit-gallery-ink {
-  position: absolute; inset: 0; background: var(--kit-art-ink);
+  position: absolute; inset: 0; background: var(--kit-art-ink, var(--ink));
   -webkit-mask: var(--kit-art) center / cover no-repeat;
   mask: var(--kit-art) center / cover no-repeat;
 }
