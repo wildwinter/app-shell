@@ -60,12 +60,15 @@
 .kit-gallery-lands-caption { margin: 6px 0 0; font: 600 13px/1.3 var(--font-ui); color: var(--muted); }
 .kit-gallery-lands { margin: 0; padding-left: 18px; font: 13px/1.5 var(--font-ui); color: var(--ink); }
 .kit-gallery-panel [hidden] { display: none; }
-/* Features: pills, quieter than the words. On the tile they sit under the blurb;
-   in the panel, under the name. */
-.kit-gallery-features { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+/* Features: tags, quieter than the words. Flat on purpose: a faint fill and no
+   edge, because a bordered chip inside a clickable tile reads as a second button
+   (the author, 2026-09-27). On the tile they sit under the blurb; in the panel,
+   under the name. */
+.kit-gallery-features { display: flex; flex-wrap: wrap; gap: 3px 4px; margin-top: 2px; }
 .kit-gallery-feature {
-  padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line);
-  color: var(--muted); font: 500 11.5px/1.5 var(--font-ui); white-space: nowrap;
+  padding: 0 5px; border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--ink) 7%, transparent);
+  color: var(--muted); font: 500 11px/1.6 var(--font-ui); white-space: nowrap;
 }
 .kit-gallery-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
 .kit-gallery-label { font: 600 13px/1.3 var(--font-ui); color: var(--ink); }
