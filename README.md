@@ -185,6 +185,9 @@ openKitGallery({
   welcome as in New Project; import `kit-gallery.css` beside `welcome.css`. An
   item's `tile` is a shorter line for the tile when its blurb runs past the
   three lines a tile shows.
+- **v0.43:** `onNameInput` runs as the name is typed (and once on open), so an
+  app's own fields can follow it: Patterpad's "Saved as" preview and its
+  default publish path.
 
 ## Roadmap
 

@@ -157,6 +157,16 @@ describe("openKitGallery", () => {
     expect(fields.querySelector(".kit-gallery-name")).not.toBeNull();
   });
 
+  it("tells the app as the name is typed, so its own fields can follow", () => {
+    const onNameInput = vi.fn();
+    openKitGallery(project({ onNameInput }));
+    expect(onNameInput).toHaveBeenLastCalledWith("");
+    const name = q<HTMLInputElement>(".kit-gallery-name");
+    name.value = "The Docks";
+    name.dispatchEvent(new Event("input"));
+    expect(onNameInput).toHaveBeenLastCalledWith("The Docks");
+  });
+
   it("cancels without picking, and runs onClose", () => {
     const onPick = vi.fn(), onClose = vi.fn();
     openKitGallery(project({ onPick, onClose }));

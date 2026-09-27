@@ -78,6 +78,9 @@ export interface KitGalleryOptions<T extends string> {
   nameLabel?: string;
   /** The app's own fields, below the name (version control, a build path). */
   details?: HTMLElement;
+  /** Runs as the name is typed (and once on open, with ""), so the app's own
+   *  fields can follow it: Patterpad's folder preview and default publish path. */
+  onNameInput?: (name: string) => void;
   /** The item chosen when the gallery opens. Default: the first. */
   initial?: T;
   onPick: (id: T, choice: KitGalleryChoice) => void;
@@ -211,7 +214,11 @@ export function openKitGallery<T extends string>(opts: KitGalleryOptions<T>): Ki
   };
 
   if (nameInput) {
-    nameInput.addEventListener("input", () => nameInput.classList.remove("kit-gallery-missing"));
+    nameInput.addEventListener("input", () => {
+      nameInput.classList.remove("kit-gallery-missing");
+      opts.onNameInput?.(nameInput.value);
+    });
+    opts.onNameInput?.("");
     // Enter creates with what is chosen: the author has said what it should be
     // called, and the tile they are looking at is the one they meant.
     nameInput.addEventListener("keydown", (e) => {
