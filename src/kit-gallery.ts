@@ -35,16 +35,14 @@ export interface KitGalleryItem<T extends string> {
   detail?: string;
   /** What pressing Play (or Run) shows, said as a promise. */
   play?: string;
-  /** The model's parts it puts to work, second and quieter ("Shows: ..."). */
-  shows?: string;
+  /** What it has, in a word or two each ("Drawn map", "Copies"): pills on the tile and in the
+   *  panel, so kits compare at a glance before any is chosen. The author's ask, 2026-09-27, in
+   *  place of pictures, which were ruled out the same day. */
+  features?: string[];
   /** What lands, in the concrete, as a short list in the panel. */
   lands?: string[];
   /** A word or two on the tile ("Start here"). */
   badge?: string;
-  /** An illustration: a transparent image whose opaque pixels are the ink.
-   *  Drawn as a mask in `--kit-art-ink` on `--kit-art-plate`, so one file
-   *  serves both themes and the app chooses the colours. */
-  image?: string;
 }
 
 export interface KitGallerySection<T extends string> {
@@ -99,28 +97,22 @@ export interface KitGallery {
   close(): void;
 }
 
-/** Draw `image` into an art box as a mask (see kit-gallery.css), or hide the box. */
-function setArt(host: HTMLElement, image: string | undefined): void {
-  host.replaceChildren();
-  host.hidden = image === undefined;
-  if (image === undefined) return;
-  const ink = el("span", "kit-gallery-ink");
-  ink.style.setProperty("--kit-art", `url("${image.replace(/"/g, "%22")}")`);
-  host.append(ink);
+/** A kit's features as pills, or null when it lists none. */
+function featurePills(features: string[] | undefined): HTMLElement | null {
+  if (!features || features.length === 0) return null;
+  return el("span", "kit-gallery-features", ...features.map((f) => el("span", "kit-gallery-feature", f)));
 }
 
-/** One tile: the picture, the name with its badge, the blurb. The gallery's
+/** One tile: the name with its badge, the blurb, the feature pills. The gallery's
  *  own, and the welcome screen's, so a kit looks the same wherever it is met
  *  (welcome.ts draws a tiled group with it; import kit-gallery.css there too). */
-export function kitTile(item: { name: string; blurb: string; badge?: string; image?: string }, onClick: () => void): HTMLButtonElement {
-  const art = el("div", "kit-gallery-art");
-  setArt(art, item.image);
+export function kitTile(item: { name: string; blurb: string; badge?: string; features?: string[] }, onClick: () => void): HTMLButtonElement {
   const tile = el("button", { className: "kit-gallery-tile", onClick },
-    art,
     el("span", "kit-gallery-tile-head",
       el("span", "kit-gallery-tile-name", item.name),
       item.badge !== undefined ? el("span", "kit-gallery-badge", item.badge) : null),
-    el("span", "kit-gallery-tile-blurb", item.blurb)) as HTMLButtonElement;
+    el("span", "kit-gallery-tile-blurb", item.blurb),
+    featurePills(item.features)) as HTMLButtonElement;
   tile.type = "button";
   return tile;
 }
@@ -144,17 +136,16 @@ export function openKitGallery<T extends string>(opts: KitGalleryOptions<T>): Ki
     ...(nameInput ? [el("label", "kit-gallery-label", opts.nameLabel ?? "Name"), nameInput] : []),
     ...(opts.details ? [opts.details] : []));
 
-  const panelArt = el("div", "kit-gallery-art kit-gallery-panel-art");
   const panelName = el("h3", "kit-gallery-panel-name");
   const panelBlurb = el("p", "kit-gallery-panel-blurb");
   const panelDetail = el("p", "kit-gallery-panel-detail");
   const panelPlay = el("p", "kit-gallery-play");
-  const panelShows = el("p", "kit-gallery-shows");
+  const panelFeatures = el("div", "kit-gallery-panel-features");
   const panelLands = el("ul", "kit-gallery-lands");
   const panelLandsCaption = el("p", "kit-gallery-lands-caption", "What you get");
   const panelNote = el("p", "kit-gallery-note");
   const panel = el("div", "kit-gallery-panel",
-    panelArt, panelName, panelBlurb, panelDetail, panelPlay, panelShows, panelLandsCaption, panelLands, panelNote, fields);
+    panelName, panelFeatures, panelBlurb, panelDetail, panelPlay, panelLandsCaption, panelLands, panelNote, fields);
 
   const primary = el("button", { className: "btn primary", onClick: () => commit() }) as HTMLButtonElement;
   primary.type = "button";
@@ -190,12 +181,13 @@ export function openKitGallery<T extends string>(opts: KitGalleryOptions<T>): Ki
     chosen = next;
     for (const [tid, tile] of tiles) tile.setAttribute("aria-pressed", String(tid === id));
     const { item, section } = chosen;
-    setArt(panelArt, item.image);
     panelName.textContent = item.name;
     setText(panelBlurb, item.blurb);
     setText(panelDetail, item.detail);
     setText(panelPlay, item.play);
-    setText(panelShows, item.shows !== undefined ? `Shows: ${item.shows}` : undefined);
+    const pills = featurePills(item.features);
+    panelFeatures.replaceChildren(...(pills ? [pills] : []));
+    panelFeatures.hidden = pills === null;
     panelLands.replaceChildren(...(item.lands ?? []).map((l) => el("li", undefined, l)));
     panelLands.hidden = (item.lands ?? []).length === 0;
     panelLandsCaption.hidden = panelLands.hidden;

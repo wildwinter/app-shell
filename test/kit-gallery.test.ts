@@ -24,8 +24,8 @@ const project = (over: Partial<KitGalleryOptions<Id>> = {}): KitGalleryOptions<I
   namePlaceholder: "The Village",
   sections: [
     { caption: "Start from a kit", items: [
-      { id: "starter", name: "Starter project", blurb: "Two cards that work together.", play: "Press Play: one card opens the next.", shows: "boxes and hands.", lands: ["One box", "Two cards"] },
-      { id: "paired", name: "Starter with Patter", blurb: "The starter, paired, with a scene for each card.", tile: "The starter, paired.", image: "art/paired.png" },
+      { id: "starter", name: "Starter project", blurb: "Two cards that work together.", play: "Press Play: one card opens the next.", features: ["One box", "Playable at once"], lands: ["One box", "Two cards"] },
+      { id: "paired", name: "Starter with Patter", blurb: "The starter, paired, with a scene for each card.", tile: "The starter, paired." },
     ] },
     { caption: "Learn from a finished project", note: "Each opens as your own copy, in a folder you choose.", action: "Open a copy", usesDetails: false,
       items: [{ id: "hamlet", name: "The Hamlet", blurb: "Small.", badge: "Start here" }] },
@@ -59,7 +59,8 @@ describe("openKitGallery", () => {
     expect(q(".kit-gallery-panel-name").textContent).toBe("Starter project");
     expect(q(".kit-gallery-panel-blurb").textContent).toBe("Two cards that work together.");
     expect(q(".kit-gallery-play").textContent).toBe("Press Play: one card opens the next.");
-    expect(q(".kit-gallery-shows").textContent).toBe("Shows: boxes and hands.");
+    expect([...document.querySelectorAll(".kit-gallery-panel .kit-gallery-feature")].map((f) => f.textContent)).toEqual(["One box", "Playable at once"]);
+    expect([...tile("starter").querySelectorAll(".kit-gallery-feature")].map((f) => f.textContent)).toEqual(["One box", "Playable at once"]);
     expect(q(".kit-gallery-lands-caption").textContent).toBe("What you get");
     expect([...document.querySelectorAll(".kit-gallery-lands li")].map((l) => l.textContent)).toEqual(["One box", "Two cards"]);
     expect(q(".kit-gallery-panel-detail").hidden).toBe(true);
@@ -68,16 +69,10 @@ describe("openKitGallery", () => {
     expect(q(".kit-gallery-panel-name").textContent).toBe("Starter with Patter");
     expect(q(".kit-gallery-panel-blurb").textContent).toBe("The starter, paired, with a scene for each card.");
     expect(q(".kit-gallery-play").hidden).toBe(true);
-    expect(q(".kit-gallery-shows").hidden).toBe(true);
+    expect(q(".kit-gallery-panel-features").hidden).toBe(true);
+    expect(tile("paired").querySelector(".kit-gallery-features")).toBeNull();
     expect(q(".kit-gallery-lands").hidden).toBe(true);
     expect(q(".kit-gallery-lands-caption").hidden).toBe(true);
-  });
-
-  it("draws a picture as a mask variable, and no art box without one", () => {
-    openKitGallery(project());
-    expect(tile("starter").querySelector<HTMLElement>(".kit-gallery-art")!.hidden).toBe(true);
-    const ink = tile("paired").querySelector<HTMLElement>(".kit-gallery-ink")!;
-    expect(ink.style.getPropertyValue("--kit-art")).toBe('url("art/paired.png")');
   });
 
   it("requires the name, then hands back the choice and the trimmed name", () => {
@@ -203,13 +198,9 @@ describe("openKitGallery", () => {
     expect(() => openKitGallery({ title: "T", sections: [{ items: [] }], onPick: () => {} })).toThrow(/no items/);
   });
 
-  it("styles: the picture is a mask over a plate the app can set, and the panel folds under on narrow windows", () => {
+  it("styles: the panel folds under on narrow windows, and features are pills", () => {
     const css = readFileSync(join(process.cwd(), "src/kit-gallery.css"), "utf8");
-    // Read with fallbacks, never set by the gallery: an app's :root values must reach the dialog AND the welcome.
-    expect(css).toMatch(/var\(--kit-art-ink, var\(--ink\)\)/);
-    expect(css).toMatch(/var\(--kit-art-plate, transparent\)/);
-    expect(css).not.toMatch(/--kit-art-(ink|plate):/);
-    expect(css).toMatch(/mask: var\(--kit-art\)/);
     expect(css).toMatch(/@media \(max-width: 760px\)/);
+    expect(css).toMatch(/\.kit-gallery-feature \{/);
   });
 });

@@ -80,7 +80,7 @@ describe("mountWelcome", () => {
     const w = mountWelcome(document.createElement("div"), {
       title: "T", sub: "S", actions: [], recents: [],
       groups: [{ caption: "Learn from a finished project", tiles: true,
-        items: [{ name: "The Hamlet", hint: "Small.", badge: "Start here", onOpen: open }, { name: "The Village", hint: "Full size.", onOpen: () => {} }] }],
+        items: [{ name: "The Hamlet", hint: "Small.", badge: "Start here", features: ["Places", "Hands"], onOpen: open }, { name: "The Village", hint: "Full size.", onOpen: () => {} }] }],
     });
     expect(w.el.querySelector(".welcome-list")).toBeNull();
     const tiles = [...w.el.querySelectorAll<HTMLButtonElement>(".welcome-tiles .kit-gallery-tile")];
@@ -88,6 +88,7 @@ describe("mountWelcome", () => {
     expect(tiles[0]?.querySelector(".kit-gallery-badge")?.textContent).toBe("Start here");
     expect(tiles[1]?.querySelector(".kit-gallery-badge")).toBeNull();
     expect(tiles[0]?.querySelector(".kit-gallery-tile-blurb")?.textContent).toBe("Small.");
+    expect([...tiles[0]!.querySelectorAll(".kit-gallery-feature")].map((f) => f.textContent)).toEqual(["Places", "Hands"]);
     tiles[0]!.click();
     expect(open).toHaveBeenCalledOnce();
   });

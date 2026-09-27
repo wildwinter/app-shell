@@ -3,13 +3,6 @@
    right, on the dialog frame (dialog.css) with `.btn` from controls.css and
    `.field` for the name. Reads the palette (--surface, --ink, --muted,
    --line, --accent) over the shared tokens.
-
-   Pictures are masks: the image's opaque pixels are drawn in --kit-art-ink on
-   --kit-art-plate, which an app sets on :root (the welcome's tiles sit outside
-   the dialog, so the gallery never sets them itself). The defaults, the app's
-   --ink on no plate, suit a light theme. A dark theme should NOT invert an engraving, which turns it into a photographic
-   negative; it sets a paper-toned plate and a dark ink instead, so the
-   picture is always dark on light and only its frame follows the theme.
    --------------------------------------------------------------------------- */
 
 .kit-gallery { --dialog-width: 880px; }
@@ -58,26 +51,22 @@
   font: 600 11px/1.5 var(--font-ui);
 }
 
-/* The picture: a plate, and the ink drawn through the image as a mask. */
-.kit-gallery-art {
-  position: relative; aspect-ratio: 5 / 3; overflow: hidden;
-  border-radius: var(--radius-sm); background: var(--kit-art-plate, transparent);
-}
-.kit-gallery-art[hidden] { display: none; }
-.kit-gallery-ink {
-  position: absolute; inset: 0; background: var(--kit-art-ink, var(--ink));
-  -webkit-mask: var(--kit-art) center / cover no-repeat;
-  mask: var(--kit-art) center / cover no-repeat;
-}
 
 /* The details panel: the chosen kit said in full, then the app's fields. */
 .kit-gallery-panel-name { margin: 2px 0 0; font: 600 16px/1.3 var(--font-ui); }
 .kit-gallery-panel-blurb, .kit-gallery-panel-detail { margin: 0; font: 13.5px/1.5 var(--font-ui); color: var(--ink); }
 .kit-gallery-play { margin: 0; font: 13.5px/1.5 var(--font-ui); color: var(--ink); }
-.kit-gallery-shows, .kit-gallery-note { margin: 0; font: 12.5px/1.45 var(--font-ui); color: var(--muted); }
+.kit-gallery-note { margin: 0; font: 12.5px/1.45 var(--font-ui); color: var(--muted); }
 .kit-gallery-lands-caption { margin: 6px 0 0; font: 600 13px/1.3 var(--font-ui); color: var(--muted); }
 .kit-gallery-lands { margin: 0; padding-left: 18px; font: 13px/1.5 var(--font-ui); color: var(--ink); }
 .kit-gallery-panel [hidden] { display: none; }
+/* Features: pills, quieter than the words. On the tile they sit under the blurb;
+   in the panel, under the name. */
+.kit-gallery-features { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.kit-gallery-feature {
+  padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line);
+  color: var(--muted); font: 500 11.5px/1.5 var(--font-ui); white-space: nowrap;
+}
 .kit-gallery-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
 .kit-gallery-label { font: 600 13px/1.3 var(--font-ui); color: var(--ink); }
 .kit-gallery .kit-gallery-missing { border-color: var(--danger); }

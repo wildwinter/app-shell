@@ -37,8 +37,8 @@ export interface WelcomeGroupItem {
   hint?: string;
   /** Tiled groups only: a word or two beside the name ("Start here"). */
   badge?: string;
-  /** Tiled groups only: the picture, as the kit gallery draws it. */
-  image?: string;
+  /** Tiled groups only: the kit's feature pills, as the gallery draws them. */
+  features?: string[];
   onOpen: () => void;
 }
 
@@ -99,7 +99,7 @@ export function mountWelcome(host: HTMLElement, opts: WelcomeOptions): Welcome {
       ? el("div", "kit-gallery-grid welcome-tiles", ...g.items.map((item) => kitTile({
         name: item.name, blurb: item.hint ?? "",
         ...(item.badge !== undefined ? { badge: item.badge } : {}),
-        ...(item.image !== undefined ? { image: item.image } : {}),
+        ...(item.features !== undefined ? { features: item.features } : {}),
       }, item.onOpen)))
       : el("div", "welcome-list", ...g.items.map((item) => {
         const b = el("button", { className: "welcome-item", onClick: item.onOpen },

@@ -163,7 +163,8 @@ openKitGallery({
   sections: [
     { caption: "Start from a kit", items: [
       { id: "starter", name: "Starter project", blurb: "Two cards that already work together.",
-        play: "Press Play: one card opens the next.", lands: ["One box", "Two cards"] },
+        play: "Press Play: one card opens the next.", features: ["One box", "Playable at once"],
+        lands: ["One box", "Two cards"] },
     ] },
     { caption: "Learn from a finished project", action: "Open a Copy", usesDetails: false,
       items: [{ id: "hamlet", name: "The Hamlet", blurb: "Small.", badge: "Start here" }] },
@@ -174,10 +175,6 @@ openKitGallery({
 
 - **What a kit is made of stays in the app.** The shell knows names, words and
   pictures, never boxes or scenes.
-- **Pictures are masks.** `image` is a transparent file whose opaque pixels are
-  the ink, drawn in `--kit-art-ink` on `--kit-art-plate`. A dark theme sets a
-  paper-toned plate and a dark ink rather than inverting, which turns an
-  engraving into a photographic negative.
 - Single click chooses, double-click chooses and goes, Enter in the name field
   creates; the name is required when asked for.
 - **v0.42: on the welcome too.** A welcome group with `tiles: true` draws its
@@ -191,9 +188,10 @@ openKitGallery({
 - **v0.44:** `onChoose` runs whenever an item is chosen, so an app can show or
   hide its own fields per kit; `validate` holds the pick until the app's own
   field is filled, marking and focusing it the way an empty name is.
-- **v0.45:** the picture colours are read with fallbacks and never set by the
-  gallery, so an app's `--kit-art-ink` and `--kit-art-plate` on `:root` reach
-  both the dialog and the welcome's tiles.
+- **v0.46:** `features`, a kit's features as pills on its tile (the welcome's
+  too) and in the panel, replace both `shows` and pictures. Pictures were tried
+  in 0.41 to 0.45 and ruled out by the author; `image` and the `--kit-art-*`
+  tokens are gone.
 
 ## Roadmap
 
