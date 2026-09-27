@@ -26,8 +26,11 @@ export interface KitGalleryItem<T extends string> {
   id: T;
   /** What you are making, in the author's terms, not the model's. */
   name: string;
-  /** What it is FOR: one line on the tile, and the panel's first line. */
+  /** What it is FOR: the panel's first line, and the tile's unless `tile` says otherwise. */
   blurb: string;
+  /** The tile's line, when the blurb is longer than a tile holds (three
+   *  lines). A whole short sentence reads better than a long one cut off. */
+  tile?: string;
   /** More, for the panel only. */
   detail?: string;
   /** What pressing Play (or Run) shows, said as a promise. */
@@ -87,6 +90,32 @@ export interface KitGallery {
   close(): void;
 }
 
+/** Draw `image` into an art box as a mask (see kit-gallery.css), or hide the box. */
+function setArt(host: HTMLElement, image: string | undefined): void {
+  host.replaceChildren();
+  host.hidden = image === undefined;
+  if (image === undefined) return;
+  const ink = el("span", "kit-gallery-ink");
+  ink.style.setProperty("--kit-art", `url("${image.replace(/"/g, "%22")}")`);
+  host.append(ink);
+}
+
+/** One tile: the picture, the name with its badge, the blurb. The gallery's
+ *  own, and the welcome screen's, so a kit looks the same wherever it is met
+ *  (welcome.ts draws a tiled group with it; import kit-gallery.css there too). */
+export function kitTile(item: { name: string; blurb: string; badge?: string; image?: string }, onClick: () => void): HTMLButtonElement {
+  const art = el("div", "kit-gallery-art");
+  setArt(art, item.image);
+  const tile = el("button", { className: "kit-gallery-tile", onClick },
+    art,
+    el("span", "kit-gallery-tile-head",
+      el("span", "kit-gallery-tile-name", item.name),
+      item.badge !== undefined ? el("span", "kit-gallery-badge", item.badge) : null),
+    el("span", "kit-gallery-tile-blurb", item.blurb)) as HTMLButtonElement;
+  tile.type = "button";
+  return tile;
+}
+
 /** Open the gallery as a modal dialog on the family's frame. */
 export function openKitGallery<T extends string>(opts: KitGalleryOptions<T>): KitGallery {
   const frame = dialogFrame({ title: opts.title, ...(opts.what !== undefined ? { sub: opts.what } : {}), className: "kit-gallery", ...(opts.onClose ? { onClose: opts.onClose } : {}) });
@@ -123,14 +152,6 @@ export function openKitGallery<T extends string>(opts: KitGalleryOptions<T>): Ki
   const cancel = el("button", { className: "btn", text: "Cancel", onClick: () => frame.close() }) as HTMLButtonElement;
   cancel.type = "button";
 
-  const setArt = (host: HTMLElement, image: string | undefined): void => {
-    host.replaceChildren();
-    host.hidden = image === undefined;
-    if (image === undefined) return;
-    const ink = el("span", "kit-gallery-ink");
-    ink.style.setProperty("--kit-art", `url("${image.replace(/"/g, "%22")}")`);
-    host.append(ink);
-  };
   const setText = (node: HTMLElement, text: string | undefined): void => {
     node.textContent = text ?? "";
     node.hidden = text === undefined || text === "";
@@ -140,15 +161,7 @@ export function openKitGallery<T extends string>(opts: KitGalleryOptions<T>): Ki
   const tiles = new Map<T, HTMLButtonElement>();
   const shelves = opts.sections.map((section) => {
     const grid = el("div", "kit-gallery-grid", ...section.items.map((item) => {
-      const art = el("div", "kit-gallery-art");
-      setArt(art, item.image);
-      const tile = el("button", { className: "kit-gallery-tile", onClick: () => choose(item.id) },
-        art,
-        el("span", "kit-gallery-tile-head",
-          el("span", "kit-gallery-tile-name", item.name),
-          item.badge !== undefined ? el("span", "kit-gallery-badge", item.badge) : null),
-        el("span", "kit-gallery-tile-blurb", item.blurb)) as HTMLButtonElement;
-      tile.type = "button";
+      const tile = kitTile({ ...item, blurb: item.tile ?? item.blurb }, () => choose(item.id));
       tile.dataset.kit = item.id;
       // Double-click is the desktop's "choose and go"; a single click only chooses,
       // so a tile can be read in the panel before anything is made.

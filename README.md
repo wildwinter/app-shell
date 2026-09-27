@@ -180,6 +180,11 @@ openKitGallery({
   engraving into a photographic negative.
 - Single click chooses, double-click chooses and goes, Enter in the name field
   creates; the name is required when asked for.
+- **v0.42: on the welcome too.** A welcome group with `tiles: true` draws its
+  items with the gallery's own tile (`kitTile`), so a kit looks the same on the
+  welcome as in New Project; import `kit-gallery.css` beside `welcome.css`. An
+  item's `tile` is a shorter line for the tile when its blurb runs past the
+  three lines a tile shows.
 
 ## Roadmap
 

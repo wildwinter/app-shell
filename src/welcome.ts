@@ -13,6 +13,7 @@
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
+import { kitTile } from "./kit-gallery.js";
 
 export interface WelcomeAction {
   label: string;
@@ -34,6 +35,10 @@ export interface WelcomeGroupItem {
   name: string;
   /** What choosing it gets you, said before the click. */
   hint?: string;
+  /** Tiled groups only: a word or two beside the name ("Start here"). */
+  badge?: string;
+  /** Tiled groups only: the picture, as the kit gallery draws it. */
+  image?: string;
   onOpen: () => void;
 }
 
@@ -44,6 +49,10 @@ export interface WelcomeGroup {
    *  own copy, in a folder you choose."). */
   note?: string;
   items: WelcomeGroupItem[];
+  /** Draw the items as the kit gallery's tiles rather than rows (the kit
+   *  gallery brief, section 6: the welcome shows the kits and the examples as
+   *  the gallery shows them). Needs kit-gallery.css beside welcome.css. */
+  tiles?: boolean;
 }
 
 export interface WelcomeOptions {
@@ -86,13 +95,19 @@ export function mountWelcome(host: HTMLElement, opts: WelcomeOptions): Welcome {
 
   const groups = (opts.groups ?? []).map((g) => group(g.caption,
     g.note !== undefined ? el("p", "welcome-note", g.note) : null,
-    el("div", "welcome-list", ...g.items.map((item) => {
-      const b = el("button", { className: "welcome-item", onClick: item.onOpen },
-        el("span", "welcome-item-name", item.name),
-        item.hint !== undefined ? el("span", "welcome-item-hint", item.hint) : null);
-      b.type = "button";
-      return b;
-    })),
+    g.tiles
+      ? el("div", "kit-gallery-grid welcome-tiles", ...g.items.map((item) => kitTile({
+        name: item.name, blurb: item.hint ?? "",
+        ...(item.badge !== undefined ? { badge: item.badge } : {}),
+        ...(item.image !== undefined ? { image: item.image } : {}),
+      }, item.onOpen)))
+      : el("div", "welcome-list", ...g.items.map((item) => {
+        const b = el("button", { className: "welcome-item", onClick: item.onOpen },
+          el("span", "welcome-item-name", item.name),
+          item.hint !== undefined ? el("span", "welcome-item-hint", item.hint) : null);
+        b.type = "button";
+        return b;
+      })),
   ));
 
   const recentsHost = el("div", "welcome-recents-slot");

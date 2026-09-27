@@ -75,6 +75,23 @@ describe("mountWelcome", () => {
     expect(pick).toHaveBeenCalledOnce();
   });
 
+  it("draws a tiled group as the kit gallery's tiles, with badges, and opens on click", () => {
+    const open = vi.fn();
+    const w = mountWelcome(document.createElement("div"), {
+      title: "T", sub: "S", actions: [], recents: [],
+      groups: [{ caption: "Learn from a finished project", tiles: true,
+        items: [{ name: "The Hamlet", hint: "Small.", badge: "Start here", onOpen: open }, { name: "The Village", hint: "Full size.", onOpen: () => {} }] }],
+    });
+    expect(w.el.querySelector(".welcome-list")).toBeNull();
+    const tiles = [...w.el.querySelectorAll<HTMLButtonElement>(".welcome-tiles .kit-gallery-tile")];
+    expect(tiles.map((t) => t.querySelector(".kit-gallery-tile-name")?.textContent)).toEqual(["The Hamlet", "The Village"]);
+    expect(tiles[0]?.querySelector(".kit-gallery-badge")?.textContent).toBe("Start here");
+    expect(tiles[1]?.querySelector(".kit-gallery-badge")).toBeNull();
+    expect(tiles[0]?.querySelector(".kit-gallery-tile-blurb")?.textContent).toBe("Small.");
+    tiles[0]!.click();
+    expect(open).toHaveBeenCalledOnce();
+  });
+
   it("shows and clears the error line", () => {
     const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", actions: [], recents: [], error: "It moved." });
     const err = w.el.querySelector<HTMLElement>(".welcome-error")!;

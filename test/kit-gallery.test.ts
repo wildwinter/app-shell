@@ -25,7 +25,7 @@ const project = (over: Partial<KitGalleryOptions<Id>> = {}): KitGalleryOptions<I
   sections: [
     { caption: "Start from a kit", items: [
       { id: "starter", name: "Starter project", blurb: "Two cards that work together.", play: "Press Play: one card opens the next.", shows: "boxes and hands.", lands: ["One box", "Two cards"] },
-      { id: "paired", name: "Starter with Patter", blurb: "The starter, paired.", image: "art/paired.png" },
+      { id: "paired", name: "Starter with Patter", blurb: "The starter, paired, with a scene for each card.", tile: "The starter, paired.", image: "art/paired.png" },
     ] },
     { caption: "Learn from a finished project", note: "Each opens as your own copy, in a folder you choose.", action: "Open a copy", usesDetails: false,
       items: [{ id: "hamlet", name: "The Hamlet", blurb: "Small.", badge: "Start here" }] },
@@ -63,8 +63,10 @@ describe("openKitGallery", () => {
     expect(q(".kit-gallery-lands-caption").textContent).toBe("What you get");
     expect([...document.querySelectorAll(".kit-gallery-lands li")].map((l) => l.textContent)).toEqual(["One box", "Two cards"]);
     expect(q(".kit-gallery-panel-detail").hidden).toBe(true);
+    expect(tile("paired").querySelector(".kit-gallery-tile-blurb")?.textContent).toBe("The starter, paired.");
     tile("paired").click();
     expect(q(".kit-gallery-panel-name").textContent).toBe("Starter with Patter");
+    expect(q(".kit-gallery-panel-blurb").textContent).toBe("The starter, paired, with a scene for each card.");
     expect(q(".kit-gallery-play").hidden).toBe(true);
     expect(q(".kit-gallery-shows").hidden).toBe(true);
     expect(q(".kit-gallery-lands").hidden).toBe(true);
