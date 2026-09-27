@@ -167,6 +167,30 @@ describe("openKitGallery", () => {
     expect(onNameInput).toHaveBeenLastCalledWith("The Docks");
   });
 
+  it("tells the app what is chosen, the opening item included", () => {
+    const onChoose = vi.fn();
+    openKitGallery(project({ onChoose }));
+    expect(onChoose).toHaveBeenLastCalledWith("starter");
+    tile("hamlet").click();
+    expect(onChoose).toHaveBeenLastCalledWith("hamlet");
+  });
+
+  it("lets the app hold the pick until its own field is filled", () => {
+    const onPick = vi.fn();
+    const speaker = document.createElement("input");
+    openKitGallery(project({ onPick, details: speaker, validate: () => (speaker.value === "" ? speaker : null) }));
+    q<HTMLInputElement>(".kit-gallery-name").value = "Tavern";
+    primary().click();
+    expect(onPick).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(speaker);
+    expect(speaker.classList.contains("kit-gallery-missing")).toBe(true);
+    speaker.value = "Gareth";
+    speaker.dispatchEvent(new Event("input"));
+    expect(speaker.classList.contains("kit-gallery-missing")).toBe(false);
+    primary().click();
+    expect(onPick).toHaveBeenCalledWith("starter", { name: "Tavern" });
+  });
+
   it("cancels without picking, and runs onClose", () => {
     const onPick = vi.fn(), onClose = vi.fn();
     openKitGallery(project({ onPick, onClose }));

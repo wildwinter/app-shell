@@ -83,7 +83,7 @@
 .kit-gallery-panel [hidden] { display: none; }
 .kit-gallery-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
 .kit-gallery-label { font: 600 13px/1.3 var(--font-ui); color: var(--ink); }
-.kit-gallery-name.kit-gallery-missing { border-color: var(--danger); }
+.kit-gallery .kit-gallery-missing { border-color: var(--danger); }
 
 /* Narrow windows: the panel goes under the tiles. */
 @media (max-width: 760px) {

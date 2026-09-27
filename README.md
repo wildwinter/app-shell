@@ -188,6 +188,9 @@ openKitGallery({
 - **v0.43:** `onNameInput` runs as the name is typed (and once on open), so an
   app's own fields can follow it: Patterpad's "Saved as" preview and its
   default publish path.
+- **v0.44:** `onChoose` runs whenever an item is chosen, so an app can show or
+  hide its own fields per kit; `validate` holds the pick until the app's own
+  field is filled, marking and focusing it the way an empty name is.
 
 ## Roadmap
 

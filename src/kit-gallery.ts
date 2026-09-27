@@ -78,6 +78,12 @@ export interface KitGalleryOptions<T extends string> {
   nameLabel?: string;
   /** The app's own fields, below the name (version control, a build path). */
   details?: HTMLElement;
+  /** Runs whenever an item is chosen, the opening one included, so the app can show or hide its
+   *  own fields for it (New Scene's Speaker, for a kit with lines). */
+  onChoose?: (id: T) => void;
+  /** Checked before `onPick`, after the name: return the app's field that still needs filling (it
+   *  is focused and marked, and nothing is made), or null when all is well. */
+  validate?: (id: T) => HTMLElement | null;
   /** Runs as the name is typed (and once on open, with ""), so the app's own
    *  fields can follow it: Patterpad's folder preview and default publish path. */
   onNameInput?: (name: string) => void;
@@ -199,6 +205,7 @@ export function openKitGallery<T extends string>(opts: KitGalleryOptions<T>): Ki
     // ("a folder you choose"), so the panel repeats it beside the button.
     setText(panelNote, details ? undefined : section.note);
     primary.textContent = section.action ?? "Create";
+    opts.onChoose?.(item.id);
   };
 
   const commit = (): void => {
@@ -208,6 +215,13 @@ export function openKitGallery<T extends string>(opts: KitGalleryOptions<T>): Ki
     if (details && nameInput) {
       name = nameInput.value.trim();
       if (name === "") { nameInput.focus(); nameInput.classList.add("kit-gallery-missing"); return; }
+    }
+    const missing = opts.validate?.(item.id) ?? null;
+    if (missing) {
+      missing.classList.add("kit-gallery-missing");
+      missing.addEventListener("input", () => missing.classList.remove("kit-gallery-missing"), { once: true });
+      missing.focus();
+      return;
     }
     frame.close();
     opts.onPick(item.id, name !== undefined ? { name } : {});
