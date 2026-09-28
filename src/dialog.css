@@ -38,6 +38,14 @@
 .shell-dialog.closing { animation: var(--anim-panel-out); pointer-events: none; }
 .shell-dialog.closing::backdrop { animation: var(--anim-backdrop-out); }
 
+/* Never a window-drag region, even where it lies over one. Electron hands a click inside a
+   `-webkit-app-region: drag` area to the OS as a window drag before the page sees it, and a modal
+   making the page behind it inert does not change that, so a layer drawn over the welcome
+   screen's whole-window drag region lost every click while the keyboard still worked
+   (2026-09-28: the first-run identity's Continue and About's Close). Reproduced in a real
+   Electron window; `no-drag` on the layer itself is the fix. */
+.shell-dialog, .shell-dialog * { -webkit-app-region: no-drag; }
+
 /* A heading is sentence-case text in the UI face, weight 600: how a group box
    reads on the platform, not an overline. */
 .shell-dialog-title { margin: 0; font: 600 16px/1.3 var(--font-ui); }

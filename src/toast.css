@@ -18,3 +18,6 @@
 /* The eased dismiss (closeWithExit), mirroring the enter. */
 .shell-toast.closing { animation: var(--anim-panel-out); }
 .shell-toast[hidden] { display: none; }
+
+/* Never a window-drag region, even over one (dialog.css says why). */
+.shell-toast, .shell-toast * { -webkit-app-region: no-drag; }

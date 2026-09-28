@@ -129,3 +129,8 @@
     --anim-panel-out: none; --anim-backdrop-out: none; --anim-job-band: none;
   }
 }
+
+/* A floating layer from createFloating (floating.ts) carries this attribute, because its class is
+   the caller's. Never a window-drag region, even over one: Electron gives a click in a drag area to
+   the OS before the page sees it (dialog.css has the whole story, 2026-09-28). */
+[data-shell-layer], [data-shell-layer] * { -webkit-app-region: no-drag; }

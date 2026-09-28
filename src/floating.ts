@@ -51,6 +51,7 @@ export interface FloatingOptions {
 
 export function createFloating(className: string, opts: FloatingOptions = {}): Floating {
   const el = document.createElement("div"); el.className = className; el.style.display = "none";
+  el.dataset["shellLayer"] = "";   // tokens.css: never a window-drag region, even over one
   (opts.host ?? document.body).appendChild(el);
   let open = false;
   let detach: (() => void) | null = null;

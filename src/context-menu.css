@@ -37,3 +37,6 @@
 /* Exit: .closing swaps the enter keyframes for their reverse (closeWithExit),
    and a node on its way out takes no clicks. */
 .ctxmenu.closing, .popover.closing { animation: var(--anim-panel-out); pointer-events: none; }
+
+/* Never a window-drag region, even over one (dialog.css says why). */
+.ctxmenu, .ctxmenu *, .popover, .popover * { -webkit-app-region: no-drag; }

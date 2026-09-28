@@ -122,3 +122,11 @@
 .set-flagnote { flex: 1; color: var(--muted); font-size: 13px; font-style: italic; }
 .set-details input.set-purpose { flex: 1; }
 .set-add { align-self: flex-start; margin-top: 6px; }
+
+/* Never a window-drag region, even where it lies over one. Electron hands a click inside a
+   `-webkit-app-region: drag` area to the OS as a window drag before the page sees it, and a modal
+   making the page behind it inert does not change that, so a layer drawn over the welcome
+   screen's whole-window drag region lost every click while the keyboard still worked
+   (2026-09-28: first seen on the identity dialog and About). Reproduced in a real
+   Electron window; `no-drag` on the layer itself is the fix. */
+.settings-dialog, .settings-dialog * { -webkit-app-region: no-drag; }
