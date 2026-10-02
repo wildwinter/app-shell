@@ -29,6 +29,20 @@ describe("showUpdaterDialog", () => {
     expect(document.querySelector("dialog.updater-dialog")).toBeNull();
   });
 
+  it("focuses the default button, or the cancel button when nobody asked for the prompt", async () => {
+    const p = showUpdaterDialog({ message: "Update available", buttons: ["OK"] });
+    await Promise.resolve();
+    expect(document.activeElement).toBe(buttons()[0]);
+    buttons()[0]!.click();
+    await p;
+    const q = showUpdaterDialog({ message: "Update ready to install", buttons: ["Restart now", "Later"], defaultId: 0, cancelId: 1, unasked: true });
+    await Promise.resolve();
+    expect(document.activeElement).toBe(buttons()[1]);
+    expect(buttons()[0]?.classList.contains("primary")).toBe(true);   // still the affirmative, just not focused
+    buttons()[1]!.click();
+    await expect(q).resolves.toBe(1);
+  });
+
   it("Esc resolves cancelId, which defaults to the last button", async () => {
     const p = showUpdaterDialog({ message: "You have unsaved changes.", buttons: ["Save and restart", "Discard and restart", "Cancel"] });
     dlg().dispatchEvent(new Event("cancel", { cancelable: true }));

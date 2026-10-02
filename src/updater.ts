@@ -18,6 +18,13 @@
 //     Save / Discard / Cancel. "Restart Now" must never silently drop an
 //     author's afternoon.
 //   - Every prompt is THEMED, in the renderer, never a stock OS dialog.
+//   - Every prompt brings its window to the FRONT, past pinned tool windows,
+//     for as long as it is open. It used to open under the Play window, so
+//     the editor blurred behind a prompt nobody could see. A prompt that
+//     arrives while the app is in the background waits for the app to come
+//     back before it takes the front, and one nobody asked for puts focus on
+//     its safe button, so a keystroke meant for the window it covered cannot
+//     answer it.
 //
 // Only runs in a packaged build; in development the manual check says so rather
 // than failing obscurely.
@@ -32,6 +39,7 @@ import { appendFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from "electron-updater";
 import electronUpdater from "electron-updater";
+import { frontForModal } from "./tool-window.js";
 
 /** Download progress, broadcast to every window so a live dialog can show it. */
 export interface UpdaterDownloadProgress {
@@ -53,6 +61,10 @@ export interface UpdaterPromptOptions {
   cancelId?: number;
   /** Show live download progress in the dialog. */
   progress?: boolean;
+  /** Nobody asked for this prompt: it arrived on its own (an update finished
+   *  downloading). Focus starts on the cancel button, so a keystroke meant for
+   *  whatever the prompt covered dismisses it rather than answering yes. */
+  unasked?: boolean;
 }
 
 /** The channels the app's renderer must answer. Named here so both sides agree. */
@@ -244,12 +256,30 @@ function themedPrompt(win: BrowserWindow | null, opts: UpdaterPromptOptions): Pr
   return new Promise((resolve) => {
     const fallback = opts.cancelId ?? opts.defaultId ?? 0;
     if (!win || win.isDestroyed() || win.webContents.isDestroyed()) { resolve(fallback); return; }
-    const onReply = (_e: unknown, idx: number) => { clearTimeout(timeout); resolve(typeof idx === "number" ? idx : fallback); };
+    const release = frontWhileOpen(win);
+    const done = (idx: number): void => { release(); resolve(idx); };
+    const onReply = (_e: unknown, idx: number) => { clearTimeout(timeout); done(typeof idx === "number" ? idx : fallback); };
     ipcMain.once(UPDATER_CHANNELS.promptReply, onReply);
     // Generous: these are user-facing prompts. If the renderer never answers (gone / hung), fall back safely.
-    const timeout = setTimeout(() => { ipcMain.removeListener(UPDATER_CHANNELS.promptReply, onReply); resolve(fallback); }, 300000);
+    const timeout = setTimeout(() => { ipcMain.removeListener(UPDATER_CHANNELS.promptReply, onReply); done(fallback); }, 300000);
     win.webContents.send(UPDATER_CHANNELS.prompt, opts);
   });
+}
+
+/** Keep `win` in front of the app's other windows, pinned tool windows included, while a prompt is open
+ *  on it, and return the release. If the app is in the background the fronting waits until one of its
+ *  windows takes focus again: a prompt is no reason to pull an app over whatever the user went to. */
+function frontWhileOpen(win: BrowserWindow): () => void {
+  let release: (() => void) | null = null;
+  let finished = false;
+  const front = (): void => { if (!finished && !win.isDestroyed()) release = frontForModal(win); };
+  if (BrowserWindow.getFocusedWindow()) front();
+  else app.once("browser-window-focus", front);
+  return () => {
+    finished = true;
+    app.removeListener("browser-window-focus", front);
+    release?.();
+  };
 }
 
 /** quitAndInstall, guarded by the unsaved-edits check. autoInstallOnAppQuit routes through the normal
@@ -295,6 +325,7 @@ autoUpdater.on("update-downloaded", (info: UpdateDownloadedEvent) => {
     cancelId: 1,
     message: "Update ready to install",
     detail: `${appName} ${info.version} has been downloaded. Restart now to install it, or it installs the next time you quit.`,
+    unasked: true,
   }).then((response) => { if (response === 0) void quitAndInstallSafely(); });
 });
 

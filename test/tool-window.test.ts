@@ -7,10 +7,12 @@ const displays = [{ workArea: { x: 0, y: 0, width: 1440, height: 900 } }];
 const shared = vi.hoisted(() => ({
   focused: {} as unknown,
   appHandlers: new Map<string, (() => void)[]>(),
+  all: [] as unknown[],
 }));
 vi.mock("electron", () => ({
   BrowserWindow: class {
     static getFocusedWindow(): unknown { return shared.focused; }
+    static getAllWindows(): unknown[] { return shared.all; }
   },
   app: {
     on: (event: string, fn: () => void) => {
@@ -23,7 +25,7 @@ vi.mock("electron", () => ({
   },
 }));
 
-const { savedWindowRect, centeredOnPrimary, rescueToolWindow, pinToolWindow } = await import("../src/tool-window.js");
+const { savedWindowRect, centeredOnPrimary, rescueToolWindow, pinToolWindow, frontForModal } = await import("../src/tool-window.js");
 const fireApp = (event: string): void => { for (const fn of shared.appHandlers.get(event) ?? []) fn(); };
 
 const DEF = { width: 500, height: 400 };
@@ -171,5 +173,112 @@ describe("pinToolWindow", () => {
     calls.length = 0;
     fireApp("did-become-active");
     expect(calls).toEqual([]);
+  });
+});
+
+describe("frontForModal", () => {
+  // A window that logs what is done to it, and knows its own parent.
+  const fake = (name: string, opts: { minimized?: boolean } = {}) => {
+    const calls: string[] = [];
+    let parent: unknown = null;
+    const w = {
+      name, calls,
+      isDestroyed: () => false,
+      isMinimized: () => opts.minimized ?? false,
+      restore: () => calls.push("restore"),
+      show: () => calls.push("show"),
+      focus: () => calls.push("focus"),
+      setAlwaysOnTop: (on: boolean, level?: string) => calls.push(`aot:${on}${level !== undefined ? `:${level}` : ""}`),
+      getParentWindow: () => parent,
+      setParentWindow: (p: { name: string } | null) => { parent = p; calls.push(`parent:${p === null ? "none" : p.name}`); },
+      once: () => {},
+    };
+    return w;
+  };
+
+  it("macOS: the pins step aside, the editor comes forward, and the release floats them again", () => {
+    const main = fake("main", { minimized: true });
+    const play = fake("play");
+    pinToolWindow(play as never, main as never, true, "darwin");
+    play.calls.length = 0;
+    const release = frontForModal(main as never, "darwin");
+    expect(play.calls).toEqual(["aot:false"]);
+    expect(main.calls).toEqual(["restore", "show", "focus"]);
+    release();
+    expect(play.calls).toEqual(["aot:false", "aot:true:floating"]);
+    pinToolWindow(play as never, main as never, false, "darwin");
+  });
+
+  it("macOS: coming back to the app does not re-float the pins over an open modal", () => {
+    const main = fake("main");
+    const play = fake("play");
+    pinToolWindow(play as never, main as never, true, "darwin");
+    const release = frontForModal(main as never, "darwin");
+    play.calls.length = 0;
+    fireApp("did-resign-active");
+    fireApp("did-become-active");
+    expect(play.calls).toEqual(["aot:false"]);
+    release();
+    expect(play.calls).toEqual(["aot:false", "aot:true:floating"]);
+    pinToolWindow(play as never, main as never, false, "darwin");
+  });
+
+  it("macOS: a window pinned during the hold floats at the release, not before", () => {
+    const main = fake("main");
+    const board = fake("board");
+    const release = frontForModal(main as never, "darwin");
+    pinToolWindow(board as never, main as never, true, "darwin");
+    expect(board.calls).toEqual(["parent:none", "aot:false:floating"]);
+    release();
+    expect(board.calls.at(-1)).toBe("aot:true:floating");
+    pinToolWindow(board as never, main as never, false, "darwin");
+  });
+
+  it("Windows: the editor's child windows are unparented for the hold and parented again after", () => {
+    const main = fake("main");
+    const play = fake("play");
+    const loose = fake("loose");
+    pinToolWindow(play as never, main as never, true, "win32");
+    shared.all = [main, play, loose];
+    play.calls.length = 0;
+    const release = frontForModal(main as never, "win32");
+    expect(play.calls).toEqual(["parent:none"]);
+    expect(loose.calls).toEqual([]);
+    expect(main.calls).toEqual(["show", "focus"]);
+    release();
+    expect(play.calls).toEqual(["parent:none", "parent:main"]);
+    expect(loose.calls).toEqual([]);
+    shared.all = [];
+  });
+
+  it("Windows: a pin changed during the hold is applied at the release", () => {
+    const main = fake("main");
+    const play = fake("play");
+    const search = fake("search");
+    pinToolWindow(play as never, main as never, true, "win32");
+    shared.all = [main, play, search];
+    const release = frontForModal(main as never, "win32");
+    pinToolWindow(play as never, main as never, false, "win32");   // unpinned mid-hold: stays loose
+    pinToolWindow(search as never, main as never, true, "win32");  // pinned mid-hold: waits
+    expect(search.getParentWindow()).toBeNull();
+    release();
+    expect(play.getParentWindow()).toBeNull();
+    expect(search.getParentWindow()).toBe(main);
+    shared.all = [];
+  });
+
+  it("holds nest: the pins return only when the last modal closes, and a release is idempotent", () => {
+    const main = fake("main");
+    const play = fake("play");
+    pinToolWindow(play as never, main as never, true, "win32");
+    shared.all = [main, play];
+    const first = frontForModal(main as never, "win32");
+    const second = frontForModal(main as never, "win32");
+    first();
+    first();
+    expect(play.getParentWindow()).toBeNull();
+    second();
+    expect(play.getParentWindow()).toBe(main);
+    shared.all = [];
   });
 });

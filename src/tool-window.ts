@@ -103,7 +103,9 @@ function wireMacActivation(): void {
   // the pinned window would sit over that app too - the exact 2026-08-25
   // complaint. Scoping it to our app's active state keeps the pin meaning
   // "above my editor" and nothing more.
-  app.on("did-become-active", () => { for (const w of macPinned) if (!w.isDestroyed()) w.setAlwaysOnTop(true, "floating"); });
+  // Not while a modal has the pins held (frontForModal): the editor is in
+  // front for it, and coming back to the app must not cover it again.
+  app.on("did-become-active", () => { if (pinsHeld > 0) return; for (const w of macPinned) if (!w.isDestroyed()) w.setAlwaysOnTop(true, "floating"); });
   app.on("did-resign-active", () => { for (const w of macPinned) if (!w.isDestroyed()) w.setAlwaysOnTop(false); });
 }
 
@@ -141,9 +143,9 @@ export function pinToolWindow(
         w.once("closed", () => macPinned.delete(w));
       }
       wireMacActivation();
-      // Raise only when the app is active now; otherwise the next
-      // did-become-active raises it.
-      w.setAlwaysOnTop(BrowserWindow.getFocusedWindow() !== null, "floating");
+      // Raise only when the app is active now and no modal has the pins
+      // held; otherwise the next did-become-active, or the release, raises it.
+      w.setAlwaysOnTop(pinsHeld === 0 && BrowserWindow.getFocusedWindow() !== null, "floating");
     } else {
       macPinned.delete(w);
       w.setAlwaysOnTop(false);
@@ -151,7 +153,74 @@ export function pinToolWindow(
     return;
   }
   w.setAlwaysOnTop(false);
-  w.setParentWindow(on && parent && !parent.isDestroyed() ? parent : null);
+  const owner = on && parent && !parent.isDestroyed() ? parent : null;
+  // While a modal has the pins held, remember the choice and apply it at the
+  // release, so the editor stays in front until the modal closes.
+  if (pinsHeld > 0) {
+    if (owner) heldChildren.set(w, owner); else heldChildren.delete(w);
+    w.setParentWindow(null);
+    return;
+  }
+  w.setParentWindow(owner);
+}
+
+// ---------------------------------------------------------------------------
+// Fronting the main window for a modal. A pinned tool window rides above the
+// editor by design, so a modal the EDITOR shows (the updater's prompts) opened
+// underneath one: the editor blurred behind its scrim and the prompt was
+// hidden, with nothing on screen to say why (both apps, 2026-10-02, the Play
+// window over the editor). While such a modal is up the pins step aside and
+// the editor comes forward; when it closes, every pin goes back as it was.
+// ---------------------------------------------------------------------------
+
+/** How many modals are holding the pins down. The pins return at zero. */
+let pinsHeld = 0;
+/** Windows and Linux: the tool windows unparented by the hold, and the window
+ *  each goes back to. */
+const heldChildren = new Map<BrowserWindow, BrowserWindow>();
+
+/**
+ * Bring `main` in front of every tool window, pinned ones included, for as
+ * long as a modal it shows is open: un-minimise, show, focus, with the pins
+ * set aside. Returns the release, which puts the pins back (idempotent; holds
+ * nest, and the pins return when the last is released). Call it only while
+ * the app is active: focusing a window of an inactive app is the focus steal
+ * the platforms forbid. `platform` is a seam for the tests.
+ */
+export function frontForModal(main: BrowserWindow, platform: NodeJS.Platform = process.platform): () => void {
+  if (main.isDestroyed()) return () => {};
+  pinsHeld++;
+  if (platform === "darwin") {
+    for (const w of macPinned) if (!w.isDestroyed()) w.setAlwaysOnTop(false);
+  } else {
+    for (const w of BrowserWindow.getAllWindows()) {
+      if (w === main || w.isDestroyed()) continue;
+      const owner = w.getParentWindow();
+      if (owner !== main) continue;
+      heldChildren.set(w, main);
+      w.setParentWindow(null);
+    }
+  }
+  if (main.isMinimized()) main.restore();
+  main.show();
+  main.focus();
+
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    if (--pinsHeld > 0) return;
+    if (platform === "darwin") {
+      // Only float again if the app is active; otherwise did-become-active does.
+      const active = BrowserWindow.getFocusedWindow() !== null;
+      if (active) for (const w of macPinned) if (!w.isDestroyed()) w.setAlwaysOnTop(true, "floating");
+    } else {
+      for (const [w, owner] of heldChildren) {
+        if (!w.isDestroyed() && !owner.isDestroyed()) w.setParentWindow(owner);
+      }
+      heldChildren.clear();
+    }
+  };
 }
 
 export interface ToolWindowOptions {

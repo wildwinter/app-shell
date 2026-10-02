@@ -91,7 +91,9 @@ export function showUpdaterDialog(opts: UpdaterViewOptions): Promise<number> {
       b.type = "button";
       b.addEventListener("click", () => finish(i));
       frame.actions.append(b);
-      if (i === defaultId) queueMicrotask(() => b.focus());
+      // Focus the default, unless nobody asked for this prompt: then the
+      // cancel button, so a stray Enter or Space dismisses it, never says yes.
+      if (i === (opts.unasked ? cancelId : defaultId)) queueMicrotask(() => b.focus());
     });
 
     frame.open();
