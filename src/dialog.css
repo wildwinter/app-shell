@@ -13,8 +13,14 @@
    the content class has to out-specify.
    ============================================================================ */
 
+/* The frame's default width, inside :where() so it weighs nothing. A content class names the same
+   element, so at equal weight whichever sheet LOADED LAST won: a bundler that moved dialog.css into a
+   shared chunk loaded after the app's own CSS put the frame's 420px over the kit gallery's 880px, and
+   Patterpad 0.24's New Project opened narrow (2026-10-06). At zero weight any content class wins, in
+   any order. */
+:where(.shell-dialog) { --dialog-width: 420px; }
+
 .shell-dialog {
-  --dialog-width: 420px;
   width: min(var(--dialog-width), 92vw); max-height: 82vh;
   padding: 18px 20px;
   border: 1px solid var(--line); border-radius: var(--radius-lg);
