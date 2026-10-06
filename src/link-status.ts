@@ -34,7 +34,7 @@ export type LinkStatus =
 export type LinkStatusClass = "off" | "listening" | "live" | "stale";
 
 export interface LinkStatusOptions {
-  /** A word beside the chip ("Live link"), so a bottom-corner plug is not a
+  /** A word beside the chip ("Live Link"), so a bottom-corner plug is not a
    *  mystery. Omitted draws none. */
   label?: string;
   /** Start when off or failed, stop otherwise. A returned status is applied;
@@ -65,15 +65,15 @@ export function linkStatusClass(s: LinkStatus): LinkStatusClass {
 /** The tooltip, spelling the state out. One wording for the family. */
 export function linkStatusTip(s: LinkStatus): string {
   switch (s.state) {
-    case "off": return "Live link is off. Click to start listening.";
-    case "error": return `Live link failed (${s.message}). Click to retry.`;
-    case "listening": return "Live link is listening for a game. Click to stop.";
+    case "off": return "Live Link is off. Click to start listening.";
+    case "error": return `Live Link failed (${s.message}). Click to retry.`;
+    case "listening": return "Live Link is listening for a game. Click to stop.";
     case "connected": {
       const who = s.project !== undefined ? ` to ${s.project}` : "";
       const build = s.build === "stale" ? " on a different build, so save or rebuild to re-sync"
         : s.build === "match" ? " and in sync" : "";
       const note = s.note ? ` ${s.note}` : "";
-      return `Live link is connected${who}${build}.${note} Click to stop.`;
+      return `Live Link is connected${who}${build}.${note} Click to stop.`;
     }
   }
 }
@@ -127,7 +127,7 @@ export function mountLinkStatus(host: HTMLElement, opts: LinkStatusOptions): Lin
     const addr = linkAddress(status);
     if (addr !== undefined) {
       url.textContent = addr;
-      url.dataset["tip"] = "Click to copy the live link address";
+      url.dataset["tip"] = "Click to copy the Live Link address";
       url.hidden = false;
     } else url.hidden = true;
     publishReserve();

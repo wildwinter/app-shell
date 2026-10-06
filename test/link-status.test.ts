@@ -18,15 +18,15 @@ describe("the state table", () => {
   });
 
   it("spells the tips one way, capitalised", () => {
-    expect(linkStatusTip({ state: "off" })).toBe("Live link is off. Click to start listening.");
-    expect(linkStatusTip({ state: "error", message: "port busy" })).toBe("Live link failed (port busy). Click to retry.");
-    expect(linkStatusTip({ state: "listening", port: 1 })).toBe("Live link is listening for a game. Click to stop.");
+    expect(linkStatusTip({ state: "off" })).toBe("Live Link is off. Click to start listening.");
+    expect(linkStatusTip({ state: "error", message: "port busy" })).toBe("Live Link failed (port busy). Click to retry.");
+    expect(linkStatusTip({ state: "listening", port: 1 })).toBe("Live Link is listening for a game. Click to stop.");
     expect(linkStatusTip({ state: "connected", port: 1, project: "Tavern", build: "match" }))
-      .toBe("Live link is connected to Tavern and in sync. Click to stop.");
+      .toBe("Live Link is connected to Tavern and in sync. Click to stop.");
     expect(linkStatusTip({ state: "connected", port: 1, build: "stale" }))
-      .toBe("Live link is connected on a different build, so save or rebuild to re-sync. Click to stop.");
+      .toBe("Live Link is connected on a different build, so save or rebuild to re-sync. Click to stop.");
     expect(linkStatusTip({ state: "connected", port: 1, note: "Boxes: inn, road." }))
-      .toBe("Live link is connected. Boxes: inn, road. Click to stop.");
+      .toBe("Live Link is connected. Boxes: inn, road. Click to stop.");
   });
 
   it("derives the address from the port, or takes the one given", () => {
@@ -38,9 +38,9 @@ describe("the state table", () => {
 
 describe("mountLinkStatus", () => {
   it("mounts hidden, draws the word and the plug, and reflects each state", () => {
-    const chip = mountLinkStatus(document.body, { label: "Live link", onToggle: () => {} });
+    const chip = mountLinkStatus(document.body, { label: "Live Link", onToggle: () => {} });
     expect(chip.el.hidden).toBe(true);
-    expect(chip.el.querySelector(".linkstatus-word")?.textContent).toBe("Live link");
+    expect(chip.el.querySelector(".linkstatus-word")?.textContent).toBe("Live Link");
     const toggle = chip.el.querySelector<HTMLButtonElement>(".linkstatus-toggle")!;
     expect(toggle.querySelector("svg[data-icon=connect]")).not.toBeNull();
     const url = chip.el.querySelector<HTMLButtonElement>(".linkstatus-url")!;
@@ -52,7 +52,7 @@ describe("mountLinkStatus", () => {
     expect(toggle.className).toBe("linkstatus-toggle listening");
     expect(url.hidden).toBe(false);
     expect(url.textContent).toBe("ws://127.0.0.1:7331");
-    expect(url.dataset["tip"]).toBe("Click to copy the live link address");
+    expect(url.dataset["tip"]).toBe("Click to copy the Live Link address");
     chip.apply({ state: "connected", port: 7331, build: "stale" });
     expect(toggle.className).toBe("linkstatus-toggle stale");
     expect(toggle.getAttribute("aria-label")).toBe(linkStatusTip(chip.status()));
@@ -101,14 +101,14 @@ describe("the corner the chip takes", () => {
   afterEach(() => { document.documentElement.style.removeProperty("--linkstatus-reserve"); });
 
   it("is nothing while the chip is hidden", () => {
-    const chip = mountLinkStatus(document.body, { label: "Live link", onToggle: () => {} });
+    const chip = mountLinkStatus(document.body, { label: "Live Link", onToggle: () => {} });
     vi.spyOn(chip.el, "getBoundingClientRect").mockReturnValue({ width: 90 } as DOMRect);
     chip.apply({ state: "off" });
     expect(reserve()).toBe("0px");
   });
 
   it("is the chip's width plus its inset and a gap once shown, and nothing again once hidden", () => {
-    const chip = mountLinkStatus(document.body, { label: "Live link", onToggle: () => {} });
+    const chip = mountLinkStatus(document.body, { label: "Live Link", onToggle: () => {} });
     vi.spyOn(chip.el, "getBoundingClientRect").mockReturnValue({ width: 90 } as DOMRect);
     chip.setVisible(true);
     expect(reserve()).toBe("117px");   // ceil(90 + 14.5 + 12)
@@ -117,7 +117,7 @@ describe("the corner the chip takes", () => {
   });
 
   it("follows the chip as the address appears, since that is what widens it", () => {
-    const chip = mountLinkStatus(document.body, { label: "Live link", onToggle: () => {} });
+    const chip = mountLinkStatus(document.body, { label: "Live Link", onToggle: () => {} });
     const rect = vi.spyOn(chip.el, "getBoundingClientRect").mockReturnValue({ width: 90 } as DOMRect);
     chip.setVisible(true);
     expect(reserve()).toBe("117px");
