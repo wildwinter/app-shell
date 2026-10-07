@@ -30,6 +30,12 @@ export interface StaleBarOptions {
    * scene". Written into "<subject> changed in the editor."
    */
   subject: string;
+  /**
+   * The whole first sentence, for when "changed in the editor" is not what
+   * happened: another project was opened, or the project was closed. Replaces
+   * "<subject> changed in the editor."; the advice still follows it.
+   */
+  message?: string;
   /** Start again from the current source. */
   onRestart: () => void;
   /** The button, when "Restart" is not the app's word for it. */
@@ -45,7 +51,7 @@ export function staleBar(opts: StaleBarOptions): HTMLElement {
   const label = opts.restartLabel ?? "Restart";
   return el("div", { className: "stale-bar" },
     el("span", { className: "stale-bar-msg",
-      text: `${opts.subject} changed in the editor. ${opts.advice ?? "Restart to play the new version."}` }),
+      text: `${opts.message ?? `${opts.subject} changed in the editor.`} ${opts.advice ?? "Restart to play the new version."}` }),
     // The icon is a node beside the word, not a character inside it; the
     // button's flex gap sets the space (stale.css).
     el("button", { className: "stale-bar-go", onClick: () => opts.onRestart() },

@@ -1,7 +1,7 @@
 // The small idioms (util.ts).
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { plural, debounce, isEditableTarget, formatCount, copyWithFeedback, relativeTime } from "../src/util.js";
+import { plural, debounce, isEditableTarget, formatCount, copyWithFeedback, relativeTime, isLocalOrigin } from "../src/util.js";
 
 describe("plural", () => {
   it("adds an s except for one, or takes the irregular form", () => {
@@ -107,5 +107,27 @@ describe("relativeTime", () => {
     expect(relativeTime(ago(30 * DAY), now)).toBe(new Date(ago(30 * DAY)).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }));
     expect(relativeTime(now + HOUR, now)).toBe("just now");
     expect(relativeTime("not a date", now)).toBe("");
+  });
+});
+
+// A web page could dial a live link's loopback port, take the slot and receive
+// every compiled bundle; browsers always send Origin (Storyletter review 2026-10).
+describe("isLocalOrigin", () => {
+  it("accepts no Origin, and a loopback one with or without a scheme", () => {
+    expect(isLocalOrigin(undefined)).toBe(true);                  // Unity, Godot, Node
+    expect(isLocalOrigin("")).toBe(true);
+    expect(isLocalOrigin("127.0.0.1")).toBe(true);                // Unreal's libwebsockets sends the bare address
+    expect(isLocalOrigin("localhost:5173")).toBe(true);
+    expect(isLocalOrigin("http://localhost:5173")).toBe(true);    // a browser game on a local dev server
+    expect(isLocalOrigin("http://127.0.0.1:8080")).toBe(true);
+    expect(isLocalOrigin("http://[::1]:3000")).toBe(true);
+  });
+
+  it("refuses every other site, a sandboxed frame's null, and a name that only resolves to loopback", () => {
+    expect(isLocalOrigin("https://example.com")).toBe(false);
+    expect(isLocalOrigin("null")).toBe(false);
+    expect(isLocalOrigin("http://localhost.example.com")).toBe(false);
+    expect(isLocalOrigin("http://127.0.0.1.nip.io")).toBe(false);
+    expect(isLocalOrigin("not a url at all")).toBe(false);
   });
 });

@@ -35,6 +35,11 @@ describe("staleBar", () => {
       .toBe("The project changed in the editor. Restart to play the new version.");
   });
 
+  it("takes a whole first sentence when the source did not change in the editor", () => {
+    const bar = staleBar({ subject: "The project", message: "Another project was opened.", advice: "Restart to play it.", onRestart: () => {} });
+    expect(bar.querySelector(".stale-bar-msg")?.textContent).toBe("Another project was opened. Restart to play it.");
+  });
+
   it("restarts, with the app's own word for it", () => {
     const onRestart = vi.fn();
     const bar = staleBar({ subject: "The scene", restartLabel: "Start again", onRestart });

@@ -3,7 +3,8 @@
 // suffix (about forty sites), the debounce (eight copies), "is the focus in a
 // field" (four copies that disagreed about <select>), the count with grouping
 // separators, clipboard copy with the `.copied` revert (three timings), and
-// relative time (two wordings). One answer each, here.
+// relative time (two wordings), and which connection to a live link is this
+// machine's own (isLocalOrigin, two copies). One answer each, here.
 //
 // DOM-free except where the idiom is about the DOM (isEditableTarget,
 // copyWithFeedback), so main-process code can import the rest.
@@ -101,4 +102,30 @@ export function relativeTime(date: Date | number | string, now: number = Date.no
   if (days === 1) return "yesterday";
   if (days < 7) return `${days} days ago`;
   return new Date(then).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+/**
+ * Whether a WebSocket upgrade's Origin is this machine, so a game may take a
+ * live link's slot (Patterpad's Live Link and Storyletter's, which listen on
+ * loopback). A web page in any browser can open a socket to localhost, and the
+ * browser stamps the upgrade with the page's Origin, so the Origin is the check:
+ *
+ * - no Origin: Unity's ClientWebSocket, Godot and Node send none;
+ * - a loopback host, literally `localhost`, `127.0.0.1` or `[::1]`, with or
+ *   without a scheme and port: Unreal's libwebsockets sends the bare address
+ *   (`127.0.0.1`), and a browser game on a local dev server sends
+ *   `http://localhost:5173`;
+ * - anything else is refused: another site, `null` (a file:// page sends it,
+ *   but so does a sandboxed frame on any site), and a name that only resolves
+ *   to loopback (`127.0.0.1.nip.io`), since the Origin names the domain, not
+ *   the address.
+ */
+export function isLocalOrigin(origin: string | undefined): boolean {
+  if (origin === undefined || origin === "") return true;
+  let host: string;
+  try {
+    // A browser sends scheme://host[:port]; Unreal sends a bare host, which URL would misread as a scheme.
+    host = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(origin) ? origin : `http://${origin}`).hostname;
+  } catch { return false; }
+  return host === "localhost" || host === "127.0.0.1" || host === "[::1]";
 }

@@ -119,7 +119,7 @@ export type { LinkStatus, LinkStatusClass, LinkStatusOptions, LinkStatusChip } f
 export { mountPropertyList, defaultControl, PROPERTY_TYPES } from "./property-list.js";
 export type { PropertyDeclLike, PropertyListType, PropertyListOptions, PropertyListHandle, DefaultControlOptions } from "./property-list.js";
 // The small idioms (util.ts).
-export { plural, debounce, isEditableTarget, formatCount, copyWithFeedback, relativeTime } from "./util.js";
+export { plural, debounce, isEditableTarget, formatCount, copyWithFeedback, relativeTime, isLocalOrigin } from "./util.js";
 export type { Debounced } from "./util.js";
 export { createNavHistory, historyNav } from "./nav-history.js";
 export type { NavHistory, NavHistoryOptions } from "./nav-history.js";
