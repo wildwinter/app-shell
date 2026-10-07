@@ -18,7 +18,7 @@ const WORDS: IconName[] = [
   "back", "forward", "up", "down", "arrowLeft", "arrowRight",
   "tick", "locked", "readOnly", "checkedOut", "modified", "untracked", "warning", "dot", "play", "restart",
   "viewCards", "viewTable", "viewNode", "record",
-  "grip", "add", "connect", "search", "pin", "settings",
+  "grip", "add", "copy", "connect", "search", "pin", "settings", "speaker",
   "note", "comment",
 ];
 
@@ -51,6 +51,21 @@ describe("the drawn vocabulary", () => {
   it("keeps the inner width/height that a rect needs (the lock body, the grid cells)", () => {
     expect(iconSvg.locked).toContain('<rect width="18" height="11"');
     expect(iconSvg.viewCards).toContain('<rect width="7" height="7"');
+    expect(iconSvg.copy).toContain('<rect width="14" height="14"');
+  });
+
+  it("draws copy and speaker on the family's stroke, where Patterpad drew its own at 1.8", () => {
+    for (const n of ["copy", "speaker"] as const) {
+      expect(isIconName(n)).toBe(true);
+      expect(iconSvg[n]).toContain('stroke-width="2.571"');
+      expect(iconSvg[n]).not.toContain('stroke-width="1.8"');
+      const node = iconNode(n, 12);
+      expect(node.getAttribute("data-icon")).toBe(n);
+      expect(node.getAttribute("width")).toBe("12");
+    }
+    // Neither is in the deprecated glyph table: they arrived drawn.
+    expect("copy" in icon).toBe(false);
+    expect("speaker" in icon).toBe(false);
   });
 
   it("iconNode returns a fresh, sized SVG each time, stamped with the word", () => {

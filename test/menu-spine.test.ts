@@ -12,12 +12,14 @@ describe("the tables", () => {
     expect(FILE_MENU.projectSettings.accelerator).toBe("CmdOrCtrl+,");
     expect(PUBLISH_MENU.bundle.accelerator).toBe("Shift+CmdOrCtrl+B");
     expect(EDIT_MENU.replace).toEqual({ label: "Replace…", acceleratorMac: "Cmd+Alt+F", acceleratorOther: "Ctrl+H" });
-    // App-keyed on purpose: the play surface is not in the spine.
-    expect(PLAY_MENU).toEqual({ liveLink: { label: "Live Link" } });
+    // App-NAMED, family-KEYED (ruling O): the play surface's key is in the
+    // spine, its label is not.
+    expect(PLAY_MENU).toEqual({ play: { accelerator: "CmdOrCtrl+P" }, liveLink: { label: "Live Link" } });
+    expect("label" in PLAY_MENU.play).toBe(false);
   });
 
   it("is Title Case throughout, with the command ellipsis on what opens something", () => {
-    const all = [FILE_MENU, PLAY_MENU, REVIEW_MENU, PUBLISH_MENU, VIEW_MENU].flatMap((t) => Object.values(t).map((i) => i.label));
+    const all = [FILE_MENU, PLAY_MENU, REVIEW_MENU, PUBLISH_MENU, VIEW_MENU].flatMap((t) => Object.values(t).flatMap((i) => ("label" in i ? [i.label] : [])));
     for (const label of all) {
       expect(label).not.toContain("...");
       // Every word capitalised but the small ones.

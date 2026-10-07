@@ -49,6 +49,12 @@ export interface NavHistory<Place> {
    *  is validating the whole stack on every paint). */
   canBack(): boolean;
   canForward(): boolean;
+  /** Forget both sides, for when the places stop meaning anything: a
+   *  different project opened, or the welcome screen with none. Without it
+   *  Back walks into the project just closed (Patterpad, 2026-10-07: on the
+   *  welcome screen the arrows looked live and did nothing). The caller
+   *  re-`set`s its arrows afterwards, as after any other change. */
+  clear(): void;
 }
 
 export function createNavHistory<Place>(opts: NavHistoryOptions<Place>): NavHistory<Place> {
@@ -82,6 +88,7 @@ export function createNavHistory<Place>(opts: NavHistoryOptions<Place>): NavHist
     forward(current) { return step(ahead, past, current); },
     canBack() { return past.length > 0; },
     canForward() { return ahead.length > 0; },
+    clear() { past = []; ahead = []; },
   };
 }
 

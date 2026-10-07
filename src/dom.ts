@@ -76,8 +76,14 @@ export function iconBtn(name: IconName | (string & {}), title: string, onClick: 
   return b;
 }
 
+/** The sentence under a settings row: plain text, or nodes when it carries
+ *  markup (a `code` for a file name, a `b` for an option's name). */
+export type FieldHint = string | Node | Array<string | Node>;
+
 /**
- * A captioned field: `<label class="shell-labelled"><span class="shell-fieldcap">…</span>control</label>`.
+ * A captioned field, the family's settings row (the 2026-10 review, ruling C):
+ * the caption on the left and the control inline beside it,
+ * `<label class="shell-labelled"><span class="shell-fieldcap">…</span>control</label>`.
  *
  * The label is pointed at the field it captions, EXPLICITLY, and never at a button. A `<label>` with no
  * `for` forwards a click to its first labelable descendant, and buttons are labelable - so a caption
@@ -85,22 +91,75 @@ export function iconBtn(name: IconName | (string & {}), title: string, onClick: 
  * turns every click on the row's dead space into a press of the FIRST button in it. That shipped:
  * patterkit/patter#44, where clicking a Game Data list value anywhere but its ✕ deleted the first value
  * in the list. Reported as "clicking a value removes the wrong one", which is not a wrong-index bug at
- * all - the click never reached the chip.
+ * all - the click never reached the chip. The same rule makes a control GROUP safe to caption: a field
+ * with its own Choose… or Import… button beside it (`.shell-inline`) captions the field, and the button
+ * stays a button.
  *
  * When the control holds no labelable field (a chips editor with the add input removed, say), this is a
  * plain `<div>`: no caption behaviour is better than a caption that presses something.
+ *
+ * With a `hint`, the row and the sentence under it come back together in a `.shell-field`, the hint as
+ * the field's description (`aria-describedby`) rather than inside the label, where it would become part
+ * of the field's NAME and be read out every time it takes focus. Without one, the row is exactly what it
+ * always was.
  */
-export function labelled(label: string, control: HTMLElement): HTMLElement {
+export function labelled(label: string, control: HTMLElement, hint?: FieldHint): HTMLElement {
   const target = control.matches("input, select, textarea")
     ? control
     : control.querySelector<HTMLElement>("input:not([type=button]):not([type=submit]), select, textarea");
   const w = el(target ? "label" : "div", "shell-labelled");
   w.append(el("span", "shell-fieldcap", label), control);
   if (target) {
-    if (!target.id) target.id = `shell-f-${Math.random().toString(36).slice(2, 9)}`;
+    if (!target.id) target.id = uid();
     (w as HTMLLabelElement).htmlFor = target.id;
   }
-  return w;
+  if (hint === undefined) return w;
+  const note = el("p", "shell-fieldhint");
+  note.append(...(Array.isArray(hint) ? hint : [hint]));
+  note.id = uid();
+  if (target) {
+    const by = target.getAttribute("aria-describedby");
+    target.setAttribute("aria-describedby", by ? `${by} ${note.id}` : note.id);
+  }
+  return el("div", "shell-field", w, note);
+}
+
+const uid = (): string => `shell-f-${Math.random().toString(36).slice(2, 9)}`;
+
+export interface LabelledToggleOptions {
+  checked?: boolean;
+  /** The sentence under the row: what turning it on does. */
+  hint?: FieldHint;
+  /** An option that only means something while the row above it is set (Patterpad's "Embed source
+   *  language for debug" under an IDs-only build): indented under that row with a rule, so it reads as
+   *  belonging to it rather than as a peer. */
+  sub?: boolean;
+  disabled?: boolean;
+  /** Fired on every flip, with the new state. The input is handed back too, for a caller that reads it
+   *  on Save instead. */
+  onChange?: (checked: boolean) => void;
+}
+
+/**
+ * The settings toggle, `labelled`'s partner (ruling C): the caption on the left, the checkbox beside it
+ * where any other row has its control, and the optional hint under the row. One shape in both apps, so
+ * a switch in one app's settings looks like a switch in the other's. Clicking the caption flips it, as
+ * the label is the checkbox's.
+ *
+ * Returns the outermost row (to append, hide, or indent) and the input (to read or listen to).
+ */
+export function labelledToggle(label: string, opts: LabelledToggleOptions = {}): { row: HTMLElement; input: HTMLInputElement } {
+  const input = el("input", "shell-toggle-input");
+  input.type = "checkbox";
+  input.checked = opts.checked ?? false;
+  input.disabled = opts.disabled ?? false;
+  const { onChange } = opts;
+  if (onChange) input.addEventListener("change", () => onChange(input.checked));
+  const row = labelled(label, input, opts.hint);
+  // On the caption-and-box line itself, whether or not a hint wraps it.
+  (row.matches(".shell-labelled") ? row : row.querySelector(".shell-labelled"))?.classList.add("shell-toggle");
+  if (opts.sub) row.classList.add("shell-suboption");
+  return { row, input };
 }
 
 /** Swap item `i` with its neighbour `i + delta` IN PLACE (the up/down reorder list editors share);

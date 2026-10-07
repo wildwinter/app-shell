@@ -180,14 +180,17 @@ export const FILE_MENU: {
 };
 
 /**
- * The Play menu's shared item. The play SURFACE itself (Patterpad's "Play
- * Scene" on Cmd+P, Storyletter's "The Board" on Cmd+T) is app-named and
- * app-keyed on purpose: the two are not the same act, so the family reserves
- * neither key.
+ * The Play menu's shared items. The play SURFACE is app-NAMED (Patterpad's
+ * "Play Scene", Storyletter's "The Board": the two are not the same act), but
+ * the family KEYS it the same in both, Cmd+P (ruling O, 2026-10), so `play`
+ * carries the accelerator and no label: spread it beside the app's own,
+ * `{ label: "Play Scene", ...PLAY_MENU.play }`.
  */
 export const PLAY_MENU: {
+  play: { accelerator: string };
   liveLink: MenuLabel;
 } = {
+  play: { accelerator: "CmdOrCtrl+P" },
   liveLink: { label: "Live Link" },
 };
 

@@ -15,7 +15,8 @@ export { mountPaneShell } from "./pane-shell.js";
 export type { PaneShell, PaneShellOptions, PaneShellState, PaneSide, PaneSideConfig } from "./pane-shell.js";
 export { PANE_MENU } from "./menu.js";
 export type { MenuLabel } from "./menu.js";
-export { iconBtn, labelled, moveItem, tagChips, stageChips, wireReorder } from "./dom.js";
+export { iconBtn, labelled, labelledToggle, moveItem, tagChips, stageChips, wireReorder } from "./dom.js";
+export type { FieldHint, LabelledToggleOptions } from "./dom.js";
 // Separators are drawn: a metadata line and a breadcrumb as DOM, never a "·"
 // or "›" in a string (dom.ts, controls.css).
 export { metaLine, breadcrumb } from "./dom.js";

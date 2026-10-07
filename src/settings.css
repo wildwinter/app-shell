@@ -103,8 +103,36 @@
 .shell-icon:disabled { opacity: 0.4; cursor: default; }
 .shell-icon.danger:hover:not(:disabled) { color: var(--surface); background: var(--danger); border-color: var(--danger); }
 
+/* The family's settings row (`labelled`, ruling C of the 2026-10 Patterpad
+   review): the caption on the left, the control inline beside it. */
 .shell-labelled { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
 .shell-fieldcap { color: var(--muted); min-width: 80px; }
+/* A row with a sentence under it: the pair is one block, so the panel's gap
+   falls between rows and not between a row and its own hint. Quiet text,
+   kept to a reading measure. */
+.shell-field { display: flex; flex-direction: column; gap: 3px; }
+.shell-field[hidden] { display: none; }   /* see .settings-panel[hidden] */
+.shell-fieldhint { margin: 0; font: 12px/1.4 var(--font-ui); color: var(--muted); max-width: 60ch; }
+.shell-fieldhint code { font: 11.5px var(--font-mono, monospace); color: var(--ink); }
+/* The toggle (`labelledToggle`): the box sits where any other row's control
+   does. A disabled one dims its caption too, or the row reads as live with
+   only a grey square to say otherwise. */
+.shell-toggle { cursor: pointer; }
+.shell-toggle-input { flex: none; margin: 0; accent-color: var(--accent); cursor: inherit; }
+.shell-toggle:has(> .shell-toggle-input:disabled) { cursor: default; }
+.shell-toggle:has(> .shell-toggle-input:disabled) .shell-fieldcap { opacity: 0.55; }
+/* An option hanging off the row above it: indented, with a rule. */
+.shell-suboption { margin-left: 14px; padding-left: 12px; border-left: 2px solid var(--line); }
+/* A control group in one row: a field and its own button (Choose…, Import…).
+   The field takes the room; the button keeps its width. */
+.shell-inline { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.shell-inline > input, .shell-inline > select { flex: 1; min-width: 0; }
+/* A text field behind a list row's expander (Purpose, on every list) fills its
+   line instead of sitting at the browser's default twenty characters: a
+   purpose is a sentence. Checkboxes and selects keep their own width.
+   Storyletter's rule, taken here because `labelled` and `.set-details` are
+   both the shell's. */
+.set-details .shell-labelled > input:not([type=checkbox]):not([type=radio]) { flex: 1; min-width: 0; }
 
 .shell-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .shell-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 4px 2px 9px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink); }

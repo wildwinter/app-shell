@@ -148,7 +148,9 @@ export const icon = {
 
 /**
  * Every word in the vocabulary. The 26 the glyph table had, plus the seven the
- * 2026-09 review found the apps drawing by hand with nothing to check against.
+ * 2026-09 review found the apps drawing by hand with nothing to check against,
+ * and the two the 2026-10 Patterpad review found the same way (`copy`,
+ * `speaker`).
  */
 export type IconName =
   | keyof typeof icon
@@ -169,7 +171,13 @@ export type IconName =
   | "settings"
   /** Record. The icon is the DISC; painting it in the danger colour while
    *  recording is the caller's job, through the button's own colour. */
-  | "record";
+  | "record"
+  /** Copy this to the clipboard. The confirmation is `tick`, shown by the
+   *  caller while `copyWithFeedback` holds `.copied` on the button. */
+  | "copy"
+  /** Sound: play with audio, a table read. The act of hearing, not a volume
+   *  control. */
+  | "speaker";
 
 // The two roots every drawing shares. Kept as constants so the table below is
 // the inner elements only, which is what a reader compares against lucide.dev.
@@ -260,12 +268,19 @@ const DRAWN: Record<IconName, string> = {
   viewNode: stroked('<path d="m10.586 5.414-5.172 5.172"/><path d="m18.586 13.414-5.172 5.172"/><path d="M6 12h12"/><circle cx="12" cy="20" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="12" r="2"/>'),
   /** Record: the disc, in whatever colour the button is. (a disc; see DISC_LARGE) */
   record: DISC_LARGE,
+  /** Sound: play with audio. (volume-2: the cone and two waves. Patterpad's
+   *  hand-drawn one had a single wave, which at 14px reads as quiet rather
+   *  than as sound.) */
+  speaker: stroked('<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>'),
 
   // --- handling -------------------------------------------------------------
   /** The drag grip on a reorderable row. (grip-vertical) */
   grip: stroked('<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>'),
   /** Add one of whatever this list holds. (plus) */
   add: stroked('<path d="M5 12h14"/><path d="M12 5v14"/>'),
+  /** Copy this to the clipboard. (copy: the front sheet whole, the back
+   *  sheet showing round two of its sides) */
+  copy: stroked('<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'),
   /** Connect: to a server, a live link, a running game. (plug) */
   connect: stroked('<path d="M12 22v-5"/><path d="M15 8V2"/><path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"/><path d="M9 8V2"/>'),
   /** Search. (search) */

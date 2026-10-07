@@ -23,6 +23,13 @@
 // the family: Patterpad deferred it because its stacked inspector already shows
 // each ancestor's Notes row, but an app whose editor has no such stack must show
 // them somewhere or an author will write the box's note again on the card.
+//
+// Patterpad moves back onto this one (the 2026-10 review, ruling I). Its own
+// copy had kept two things this had lost, the "editor" class (notes for an
+// outside editor, carried by the editable script) and the "Needs re-record"
+// prompt that opens straight on the Voice class, so both are here
+// (`focus`). It committed on every keystroke; this commits once, on close,
+// and the ruling takes that: opening a note to read it costs nothing.
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
@@ -36,7 +43,9 @@ export interface DocLine { type?: string; text: string }
  *  what stops a note being copied down and then disagreeing with itself. */
 export interface Notes {
   own: DocLine[];
-  inherited: { id: string; label: string; lines: DocLine[] }[];
+  /** Outermost first. Absent or empty in an app whose own UI already shows
+   *  each ancestor's notes (Patterpad's stacked inspector). */
+  inherited?: { id: string; label: string; lines: DocLine[] }[];
   /** The classes this app offers, in the order they should appear. */
   classes: string[];
 }
@@ -45,9 +54,11 @@ const EDITOR_ONLY = "";
 const UNTYPED_KEY = "__untyped";
 
 /** The classes the family already has words for; anything else is Title Cased,
- *  so a studio can add one without touching this. Patterpad's labels. */
+ *  so a studio can add one without touching this. Patterpad's labels. A class
+ *  is named for who READS the note, so "editor" is "Editors": the outside
+ *  editor the editable script goes to, not this app. */
 const CLASS_LABEL: Record<string, string> = {
-  everyone: "Everyone", writing: "Writing", vo: "Voice (VO)", loc: "Localisers",
+  everyone: "Everyone", writing: "Writing", vo: "Voice (VO)", loc: "Localisers", editor: "Editors",
 };
 const label = (cls: string): string =>
   cls === EDITOR_ONLY ? "Note (editor-only)"
@@ -56,22 +67,36 @@ const label = (cls: string): string =>
 const PLACEHOLDER: Record<string, string> = {
   vo: "Direction for the voice actor or director",
   loc: "Context for translators",
+  editor: "Context for an outside editor",
 };
 const placeholder = (cls: string): string =>
   cls === EDITOR_ONLY ? "An internal note, never exported"
     : PLACEHOLDER[cls] ?? "Why this is here";
 
 export interface NotesEditorOptions {
-  /** What this is about, for the dialog's title ("Notes: Arrive at the gate"). */
-  subject: string;
+  /** What this is about, for the dialog's title ("Notes: Arrive at the gate").
+   *  Absent, the title is "Notes". */
+  subject?: string;
+  /** One line under the title, for what the classes are FOR in this app
+   *  (Patterpad's "A VO note travels with the voice script…"): the dialog
+   *  frame's own sub line. */
+  sub?: string;
   notes: Notes;
+  /** Open on this class: its text area is shown even when empty, and the
+   *  caret is in it. Patterpad's "Needs re-record" asks why the line needs
+   *  another take, and the answer is a VO note, so it opens on "vo". Ignored
+   *  when the class is neither offered (`notes.classes`) nor already written
+   *  on, so a prompt cannot add a class the thing does not take. "" is the
+   *  editor-only bucket. */
+  focus?: string;
   /** Commit. Called once, on close, and only when something changed. */
   save: (lines: DocLine[]) => void;
 }
 
-/** Open the notes modal. Resolves when it closes. */
+/** Open the notes modal. Returns at once; `save` runs when it closes. */
 export function openNotesEditor(opts: NotesEditorOptions): void {
   const { notes } = opts;
+  const inherited = notes.inherited ?? [];
 
   // Seed one text area per class that already has notes; a fresh thing gets the
   // first class in the vocabulary, so the commonest act (write a note) is typing
@@ -82,6 +107,10 @@ export function openNotesEditor(opts: NotesEditorOptions): void {
     seed.set(key, seed.has(key) ? `${seed.get(key)!}\n${line.text}` : line.text);
   }
   const shown: string[] = [...seed.keys()];
+  const focus = opts.focus !== undefined
+    && (opts.focus === EDITOR_ONLY || notes.classes.includes(opts.focus) || seed.has(opts.focus))
+    ? opts.focus : undefined;
+  if (focus !== undefined && !shown.includes(focus)) shown.push(focus);
   if (shown.length === 0) shown.push(notes.classes[0] ?? EDITOR_ONLY);
   const areas = new Map<string, HTMLTextAreaElement>();
 
@@ -107,10 +136,10 @@ export function openNotesEditor(opts: NotesEditorOptions): void {
     // deciding whether to write anything: outermost first, muted, and labelled
     // with where it lives so the answer to "why can I not edit this" is on
     // screen.
-    if (notes.inherited.length > 0) {
+    if (inherited.length > 0) {
       const from = el("div", { className: "shell-notes-inherited" },
         el("div", "shell-notes-caption", "Inherited"));
-      for (const level of notes.inherited) {
+      for (const level of inherited) {
         from.append(el("div", { className: "shell-notes-level" },
           el("span", "shell-notes-level-label", level.label),
           ...level.lines.map((line) => el("div", { className: "shell-notes-line" },
@@ -173,11 +202,15 @@ export function openNotesEditor(opts: NotesEditorOptions): void {
   // Escape closes the dialog by itself, and commits: this editor has no Cancel,
   // because a note is prose and losing a paragraph to a stray key is worse than
   // an unwanted note somebody can delete.
-  const frame = dialogFrame({ title: `Notes: ${opts.subject}`, className: "shell-notes", onClose: commit });
+  const frame = dialogFrame({
+    title: opts.subject !== undefined ? `Notes: ${opts.subject}` : "Notes",
+    ...(opts.sub !== undefined ? { sub: opts.sub } : {}),
+    className: "shell-notes", onClose: commit,
+  });
   frame.body.append(body);
   frame.actions.append(done);
   done.addEventListener("click", () => { commit(); frame.close(); });
 
   frame.open();
-  areas.get(shown[0] ?? EDITOR_ONLY)?.focus();
+  areas.get(focus ?? shown[0] ?? EDITOR_ONLY)?.focus();
 }

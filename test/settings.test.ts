@@ -149,6 +149,59 @@ describe("mountSettingsDialog: disabled tabs and the message channel", () => {
   });
 });
 
+describe("mountSettingsDialog: a refused save keeps the dialog open", () => {
+  // The dialog used to close whatever onSave did, so a save refused under a
+  // version-control lock took the author's edits away with it.
+  const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
+  const mount = (onSave: () => unknown) => {
+    const dlg = mountSettingsDialog({
+      title: "Project settings",
+      sections: [{ id: "general", label: "General", mount: (h) => { h.append(document.createElement("input")); return {}; } }],
+      onSave: onSave as () => void,
+    });
+    dlg.open();
+    const dialog = document.querySelector<HTMLDialogElement>("dialog.settings-dialog:last-of-type")!;
+    return { dlg, dialog, save: dialog.querySelector<HTMLButtonElement>(".settings-save")! };
+  };
+
+  it("stays open on false, sync or async, and Save works again", async () => {
+    for (const refuse of [() => false, async () => false]) {
+      const { dlg, dialog, save } = mount(refuse);
+      save.click();
+      expect(save.disabled).toBe(true);   // no second save while one is in flight
+      await settle();
+      expect(dialog.open).toBe(true);
+      expect(save.disabled).toBe(false);
+      dlg.destroy();
+    }
+  });
+
+  it("stays open on a throw or a rejection, without an unhandled rejection", async () => {
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+    for (const fail of [() => { throw new Error("locked"); }, async () => { throw new Error("locked"); }]) {
+      const { dlg, dialog, save } = mount(fail);
+      save.click();
+      await settle();
+      expect(dialog.open).toBe(true);
+      expect(save.disabled).toBe(false);
+      dlg.destroy();
+    }
+    expect(quiet).toHaveBeenCalledTimes(2);
+    quiet.mockRestore();
+  });
+
+  it("closes on anything else, as it always has", async () => {
+    for (const ok of [() => {}, async () => {}, () => true, async () => true]) {
+      const { dlg, dialog, save } = mount(ok);
+      save.click();
+      await settle();
+      expect(dialog.open).toBe(false);
+      expect(dialog.returnValue).toBe("save");
+      dlg.destroy();
+    }
+  });
+});
+
 describe("revealRowWhenReady", () => {
   it("resolves true once the row appears on a later frame, and false when it never does", async () => {
     Element.prototype.scrollIntoView = vi.fn();

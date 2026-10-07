@@ -4,15 +4,16 @@ This package is MIT (see `LICENSE`). The following is vendored inside it.
 
 ## Lucide
 
-The icon vocabulary in `src/icons.ts` vendors 30 drawings from
-[Lucide](https://lucide.dev) 1.46.0 (`lucide-static`), fetched 2026-09-16 from
+The icon vocabulary in `src/icons.ts` vendors 32 drawings from
+[Lucide](https://lucide.dev) 1.46.0 (`lucide-static`), fetched 2026-09-16 (copy
+and volume-2 on 2026-10-07) from
 `https://cdn.jsdelivr.net/npm/lucide-static@1.46.0/icons/<name>.svg`, with the
 root attributes normalised (no `xmlns`, `class`, `width` or `height`; the stroke
 width set to 2.571 so a 14px rendering strokes at 1.5px). The drawings used:
 arrow-down, arrow-left, arrow-right, arrow-up, check, chevron-down, chevron-left,
-chevron-right, ellipsis, file-text, grip-vertical, layout-grid, lock, lock-open,
+chevron-right, copy, ellipsis, file-text, grip-vertical, layout-grid, lock, lock-open,
 message-square, pencil, pin, play, plug, plus, rotate-ccw, rows-3, search,
-settings, triangle-alert, waypoints, x. The three filled discs (`modified`,
+settings, triangle-alert, volume-2, waypoints, x. The three filled discs (`modified`,
 `dot`, `record`) are this package's own circle elements.
 
 ```

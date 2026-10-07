@@ -77,6 +77,24 @@ describe("the stack", () => {
     expect(nav.back({ doc: "d" })).toEqual({ doc: "c" });
     expect(nav.back({ doc: "c" })).toBeUndefined();   // a and b aged off
   });
+
+  it("clear() forgets both sides, for a different project or none", () => {
+    // Patterpad, 2026-10-07: Back and Forward carried over to the next
+    // project, and on the welcome screen the arrows looked live and did nothing.
+    const nav = h();
+    nav.visit({ doc: "a" });
+    nav.visit({ doc: "b" });
+    nav.back({ doc: "c" });                      // one on each side
+    expect(nav.canBack() && nav.canForward()).toBe(true);
+    nav.clear();
+    expect(nav.canBack()).toBe(false);
+    expect(nav.canForward()).toBe(false);
+    expect(nav.back({ doc: "x" })).toBeUndefined();
+    expect(nav.forward({ doc: "x" })).toBeUndefined();
+    // and it is a fresh stack afterwards, not a broken one
+    nav.visit({ doc: "x" });
+    expect(nav.back({ doc: "y" })).toEqual({ doc: "x" });
+  });
 });
 
 describe("the arrows", () => {

@@ -182,8 +182,14 @@ export interface SettingsDialogOptions {
   sections: SettingsSection[];
   /** Fired when Save is clicked and every section validates. The app reads its
    *  own section state and persists. May be async; the dialog stays open until
-   *  it resolves, then closes. */
-  onSave: () => void | Promise<void>;
+   *  it resolves, then closes.
+   *
+   *  Return `false` (or a Promise of it) when the save was REFUSED, a version
+   *  control lock say, and the dialog stays open with the author's edits in it
+   *  for another try; saying why is the app's (a toast, usually). A throw, or a
+   *  rejected Promise, is treated the same way rather than surfacing as an
+   *  unhandled rejection. Anything else closes the dialog, as it always has. */
+  onSave: () => void | boolean | Promise<void | boolean>;
 }
 
 export interface SettingsDialog {
@@ -275,7 +281,17 @@ export function mountSettingsDialog(opts: SettingsDialogOptions): SettingsDialog
       error.hidden = false;
       return;
     }
-    void (async () => { await opts.onSave(); dialog.close("save"); })();
+    // The dialog closes only on a save that went through. It used to close
+    // whatever happened, so a save refused under a lock took the author's edits
+    // away with it. Save is off while one is in flight, so a second click
+    // cannot start a second save.
+    save.disabled = true;
+    void (async () => {
+      let saved: unknown;
+      try { saved = await opts.onSave(); } catch (err) { saved = false; console.error("Settings save failed:", err); }
+      save.disabled = false;
+      if (saved !== false) dialog.close("save");
+    })();
   });
 
   return {
