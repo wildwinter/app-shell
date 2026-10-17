@@ -55,6 +55,81 @@ describe("stageChips", () => {
     expect(holder.stages).toEqual(["two"]);
     expect(chipLabels(w)).toEqual(["1. two"]);
   });
+
+  // A stage is renamed in place: values are stored by stage NAME, so a rename
+  // is the one edit that has to reach every value naming it, and the caller
+  // that knows where those are is told which name became which.
+  describe("rename", () => {
+    const labelOf = (w: HTMLElement, stage: string): HTMLElement =>
+      [...w.querySelectorAll<HTMLElement>(".shell-tag")].find((c) => c.dataset["stage"] === stage)!
+        .querySelector<HTMLElement>(".shell-tag-label")!;
+    const editTo = (w: HTMLElement, stage: string, text: string, key = "Enter"): void => {
+      labelOf(w, stage).click();
+      const input = w.querySelector<HTMLInputElement>(".shell-stage-rename")!;
+      input.value = text;
+      input.dispatchEvent(new KeyboardEvent("keydown", { key }));
+    };
+
+    it("offers a rename on the stage's name, with a tip and no OS title", () => {
+      const w = stageChips({ stages: ["seed", "bloom"] });
+      const label = labelOf(w, "seed");
+      expect(label.dataset["tip"]).toBe("Rename seed");
+      expect(label.getAttribute("role")).toBe("button");
+      expect(w.querySelector("[title]")).toBeNull();
+    });
+
+    it("renames in place on Enter, keeping the position, and tells onRename rather than onChange", () => {
+      const holder = { stages: ["seed", "sprout", "bloom"] };
+      const onChange = vi.fn();
+      const onRename = vi.fn();
+      const w = stageChips(holder, onChange, { onRename });
+      editTo(w, "sprout", " shoot ");
+      expect(holder.stages).toEqual(["seed", "shoot", "bloom"]);
+      expect(chipLabels(w)).toEqual(["1. seed", "2. shoot", "3. bloom"]);
+      expect(onRename).toHaveBeenCalledWith("sprout", "shoot");
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("keeps an enclosing <label> from taking the click, which would close the rename at once", () => {
+      const w = stageChips({ stages: ["seed", "bloom"] });
+      const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+      labelOf(w, "seed").dispatchEvent(click);
+      expect(click.defaultPrevented).toBe(true);
+      expect(w.querySelector(".shell-stage-rename")).not.toBeNull();
+    });
+
+    it("without onRename a rename is an ordinary change", () => {
+      const holder = { stages: ["seed", "bloom"] };
+      const onChange = vi.fn();
+      const w = stageChips(holder, onChange);
+      editTo(w, "seed", "bud");
+      expect(holder.stages).toEqual(["bud", "bloom"]);
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves the ladder alone on Escape, a blank name, the same name or another stage's name", () => {
+      const holder = { stages: ["seed", "bloom"] };
+      const onRename = vi.fn();
+      const w = stageChips(holder, undefined, { onRename });
+      editTo(w, "seed", "bud", "Escape");
+      editTo(w, "seed", "  ");
+      editTo(w, "seed", "seed");
+      editTo(w, "seed", "bloom");
+      expect(holder.stages).toEqual(["seed", "bloom"]);
+      expect(chipLabels(w)).toEqual(["1. seed", "2. bloom"]);
+      expect(onRename).not.toHaveBeenCalled();
+      expect(w.querySelector(".shell-stage-rename")).toBeNull();
+    });
+
+    it("tells onReorder after a move, as well as onChange", () => {
+      const onChange = vi.fn();
+      const onReorder = vi.fn();
+      const w = stageChips({ stages: ["a", "b"] }, onChange, { onReorder });
+      buttonsOf(w, "a").later.click();
+      expect(onReorder).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+  });
 });
 
 describe("wireReorder", () => {

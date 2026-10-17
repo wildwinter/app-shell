@@ -147,3 +147,50 @@ describe("mountPropertyList", () => {
     expect(host.querySelector(".empty")?.textContent).toBe("No fields yet.");
   });
 });
+
+describe("a quality's stages in the list", () => {
+  type Decl = { name: string; type: string; default?: unknown; stages?: string[] };
+  const mount = (opts: Parameters<typeof mountPropertyList<Decl>>[2]) => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const decls: Decl[] = [{ name: "act", type: "quality", default: "arrival", stages: ["arrival", "act-1"] }];
+    mountPropertyList(host, decls, opts);
+    return { host, decls };
+  };
+  const rename = (host: HTMLElement, stage: string, to: string): void => {
+    [...host.querySelectorAll<HTMLElement>(".shell-tag")].find((c) => c.dataset["stage"] === stage)!
+      .querySelector<HTMLElement>(".shell-tag-label")!.click();
+    const input = host.querySelector<HTMLInputElement>(".shell-stage-rename")!;
+    input.value = to;
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+  };
+
+  it("a rename carries the default with it and goes to onStageRename, not onChange", () => {
+    const onChange = vi.fn();
+    const onStageRename = vi.fn();
+    const { host, decls } = mount({ onChange, onStageRename });
+    rename(host, "arrival", "prologue");
+    expect(decls[0]).toMatchObject({ default: "prologue", stages: ["prologue", "act-1"] });
+    expect(onStageRename).toHaveBeenCalledWith(decls[0], "arrival", "prologue");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(options(host.querySelector(".set-default")!)).toEqual(["(first stage)", "prologue", "act-1"]);
+  });
+
+  it("without onStageRename the rename is an ordinary change", () => {
+    const onChange = vi.fn();
+    const { host, decls } = mount({ onChange });
+    rename(host, "act-1", "act-one");
+    expect(decls[0]!.stages).toEqual(["arrival", "act-one"]);
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it("a reorder hands onStageReorder a note line under the stages", () => {
+    const onStageReorder = vi.fn((_d: unknown, note: HTMLElement) => { note.textContent = "2 gates compare against this ladder."; });
+    const { host } = mount({ onStageReorder });
+    const later = [...host.querySelectorAll<HTMLElement>(".shell-tag")][0]!.querySelectorAll("button")[1]!;
+    later.click();
+    expect(onStageReorder).toHaveBeenCalledTimes(1);
+    expect(host.querySelector(".shell-stage-note")?.textContent).toBe("2 gates compare against this ladder.");
+  });
+});
+

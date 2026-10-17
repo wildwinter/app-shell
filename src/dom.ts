@@ -204,19 +204,36 @@ export function tagChips(holder: { values?: string[] }, onChange?: () => void): 
   return wrap;
 }
 
+/** What `stageChips` tells its caller beyond "something changed". */
+export interface StageChipsOptions {
+  /**
+   * A stage was renamed in place, `from` to `to`. Given, a rename calls this
+   * INSTEAD of `onChange`: values are stored by stage name, so whoever knows
+   * where those values live has to carry them, and doing it as one edit is
+   * theirs to arrange. Absent, a rename is an ordinary change.
+   */
+  onRename?: (from: string, to: string) => void;
+  /** The stages were reordered (after `onChange`): the one edit that changes
+   *  what every ordering gate means without changing any value. */
+  onReorder?: () => void;
+}
+
 /**
  * An ORDERED chips editor for a string-list field whose order means something
  * (a quality's stages: `advance()` walks them, so 2 comes after 1): numbered
  * chips, each with move-earlier / move-later / remove, plus an add input
- * (Enter or "," commits; blank / duplicate ignored). Mutates `holder.stages`
- * in place; `onChange` fires after any add / move / remove.
+ * (Enter or "," commits; blank / duplicate ignored). A stage's name renames
+ * in place when clicked (Enter or blur commits, Escape cancels; blank, the same
+ * name or another stage's is ignored). Mutates `holder.stages` in place;
+ * `onChange` fires after any add / move / remove, and after a rename unless
+ * `opts.onRename` takes it.
  *
  * Patterpad's, lifted (ui-review-2026-09, finding 3); Storyletter had been
  * faking it with `tagChips` over a `values` holder, which loses the order
  * controls. Same class family as `tagChips` (`.shell-tags`), so it is styled by
  * settings.css already.
  */
-export function stageChips(holder: { stages?: string[] }, onChange?: () => void): HTMLElement {
+export function stageChips(holder: { stages?: string[] }, onChange?: () => void, opts: StageChipsOptions = {}): HTMLElement {
   const wrap = el("div", "shell-tags shell-stages");
   const input = el("input", "shell-tag-input");
   input.type = "text"; input.placeholder = "Add stage"; input.spellcheck = false;
@@ -227,17 +244,56 @@ export function stageChips(holder: { stages?: string[] }, onChange?: () => void)
     b.addEventListener("click", onClick);
     return b;
   };
+  // The name, editable in place. A span with a button's role rather than a
+  // <button>, so the chip's own controls stay its only buttons.
+  const nameLabel = (chip: HTMLElement, v: string, i: number): HTMLElement => {
+    const label = el("span", "shell-tag-label", `${i + 1}. ${v}`);
+    label.setAttribute("role", "button"); label.tabIndex = 0;
+    label.dataset["tip"] = `Rename ${v}`;
+    const edit = (): void => {
+      const field = el("input", "shell-tag-input shell-stage-rename");
+      field.type = "text"; field.value = v; field.spellcheck = false;
+      field.setAttribute("aria-label", `Rename ${v}`);
+      let done = false;
+      const finish = (keep: boolean): void => {
+        if (done) return;
+        done = true;
+        const to = field.value.trim();
+        const stages = holder.stages ?? [];
+        if (keep && to !== "" && to !== v && !stages.includes(to)) {
+          stages[stages.indexOf(v)] = to;
+          rebuild();
+          if (opts.onRename) opts.onRename(v, to); else onChange?.();
+        } else {
+          rebuild();
+        }
+      };
+      field.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); finish(true); }
+        else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(false); }
+      });
+      field.addEventListener("blur", () => finish(true));
+      label.replaceWith(field);
+      chip.classList.add("editing");
+      field.focus(); field.select();
+    };
+    // The chips usually sit inside a <label> for the add input (`labelled`),
+    // whose activation would move focus there and close the rename at once.
+    label.addEventListener("click", (e) => { e.preventDefault(); edit(); });
+    label.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); edit(); } });
+    return label;
+  };
+  const moved = (): void => { rebuild(); onChange?.(); opts.onReorder?.(); };
   const rebuild = (): void => {
     for (const c of Array.from(wrap.children)) if (c !== input) c.remove();
     const stages = holder.stages ?? [];
     stages.forEach((v, i) => {
-      const chip = el("span", "shell-tag", `${i + 1}. ${v}`);
+      const chip = el("span", "shell-tag");
       chip.dataset["stage"] = v;
       chip.append(
-        control("back", `Move ${v} earlier`, i === 0,
-          () => { if (moveItem(stages, i, -1)) { rebuild(); onChange?.(); } }),
-        control("forward", `Move ${v} later`, i === stages.length - 1,
-          () => { if (moveItem(stages, i, 1)) { rebuild(); onChange?.(); } }),
+        nameLabel(chip, v, i),
+        control("back", `Move ${v} earlier`, i === 0, () => { if (moveItem(stages, i, -1)) moved(); }),
+        control("forward", `Move ${v} later`, i === stages.length - 1, () => { if (moveItem(stages, i, 1)) moved(); }),
       );
       const x = el("button", "shell-tag-x", iconNode("close", CHIP_ICON));
       x.type = "button"; x.dataset["tip"] = `Remove ${v}`; x.setAttribute("aria-label", `Remove ${v}`);

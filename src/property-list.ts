@@ -134,6 +134,17 @@ export interface PropertyListOptions<T extends PropertyDeclLike> extends Default
   extraDetails?: (decl: T, index: number) => (HTMLElement | null)[];
   /** Offer the Purpose field. Default true. */
   purpose?: boolean;
+  /**
+   * A quality's stage was renamed in place (the declaration's own default
+   * already follows it). Given, the rename is handed here INSTEAD of
+   * `onChange`, so the caller can carry every value that names the stage in
+   * the same edit as the declaration; absent, it is an ordinary change.
+   */
+  onStageRename?: (decl: T, from: string, to: string) => void;
+  /** A quality's stages were reordered (after `onChange`). `note` is a quiet
+   *  line under the stages for the caller to fill, such as how many gates
+   *  compare against the ladder. */
+  onStageReorder?: (decl: T, note: HTMLElement) => void;
 }
 
 export interface PropertyListHandle extends SettingsSectionHandle {
@@ -187,7 +198,18 @@ export function mountPropertyList<T extends PropertyDeclLike>(host: HTMLElement,
     const details: HTMLElement[] = keep(opts.extraDetails?.(p, i));
     if (p.type === "enum" || p.type === "flags") details.push(labelled("Values", tagChips(p, refreshDefault)));
     // A quality's ladder, IN ORDER: the chips carry movers because position is the meaning.
-    if (p.type === "quality") details.push(labelled("Stages (in order)", stageChips(p, refreshDefault)));
+    if (p.type === "quality") {
+      const note = el("p", "shell-stage-note");
+      const stages = stageChips(p, refreshDefault, {
+        onRename: (from, to) => {
+          if (p.default === from) p.default = to;
+          const fresh = defaultControl(p, changed, opts); def.replaceWith(fresh); def = fresh;
+          if (opts.onStageRename) opts.onStageRename(p, from, to); else changed();
+        },
+        onReorder: () => opts.onStageReorder?.(p, note),
+      });
+      details.push(labelled("Stages (in order)", stages), note);
+    }
     if (opts.purpose !== false) {
       const purpose = el("input", "field set-purpose");
       purpose.type = "text"; purpose.placeholder = "What this property is for"; purpose.value = p.purpose ?? "";
