@@ -198,3 +198,5 @@ kbd {
 .shell-valuerow-controls:empty { display: none; }
 .shell-valuerow-add { display: inline-flex; align-items: center; gap: 4px; }
 .shell-valuerow-key { min-width: 10em; }
+/* The chosen value's own help (a manifest's valueHelp): a line per chosen flag. */
+.shell-fieldrow-valuehelp { white-space: pre-line; }

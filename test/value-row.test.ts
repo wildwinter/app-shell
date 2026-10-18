@@ -101,6 +101,17 @@ describe("valueRow", () => {
     expect(buttons(handle.el, "Remove")).toHaveLength(2);
   });
 
+  it("names a held reference the choices leave out by the host's label, and calls it gone only when the host says so", () => {
+    const labelled: ValueAdapter = { nodes: () => [{ id: "c_1", label: "bell" }], label: (kind, id) => (kind === "card" && id === "c_far" ? "far card" : undefined) };
+    const far = valueRow({ decl: { name: "next", type: "reference", to: "card" }, value: "c_far", onCommit: () => {}, adapter: labelled });
+    expect([...far.el.querySelector("select")!.options].map((o) => o.text)).toEqual(["default (none)", "bell", "far card"]);
+    expect(far.el.querySelector(".shell-fieldrow-problem")?.textContent).toBe("");
+    const gone = valueRow({ decl: { name: "next", type: "reference", to: "card" }, value: "c_x", onCommit: () => {}, adapter: labelled });
+    expect([...gone.el.querySelector("select")!.options].map((o) => o.text)).toContain("c_x (gone)");
+    const map = valueRow({ decl: { name: "perf", type: "map", key: { type: "reference", to: "card" }, of: { type: "text" } }, value: { c_far: "x" }, onCommit: () => {}, adapter: labelled });
+    expect(map.el.querySelector(".shell-valuerow-part .shell-fieldrow-label")?.textContent).toBe("far card");
+  });
+
   it("is read-only without onCommit", () => {
     const { el } = valueRow({ decl: { name: "words", type: "list", of: { type: "text" } }, value: ["a"] });
     expect(buttons(el, "Add")).toHaveLength(0);

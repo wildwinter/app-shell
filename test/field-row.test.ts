@@ -219,3 +219,20 @@ describe("fieldRows across a redraw", () => {
     expect(rows.row("k", opts("a"))).not.toBe(a);
   });
 });
+
+describe("a value's own help", () => {
+  it("shows the chosen enum value's, the fallback's when unset, each chosen flag's, and the stage's, following each change", () => {
+    const tone = fieldRow({ decl: { name: "tone", type: "enum", values: ["calm", "tense"], valueHelp: { calm: "Unhurried.", tense: "Clipped." } }, value: "tense", onCommit: () => {} });
+    const help = (el: HTMLElement): string => el.querySelector(".shell-fieldrow-valuehelp")?.textContent ?? "";
+    expect(help(tone.el)).toBe("Clipped.");
+    const sel = tone.el.querySelector("select")!;
+    sel.value = ""; sel.dispatchEvent(new Event("change"));
+    expect(help(tone.el)).toBe("Unhurried.");
+    const marks = fieldRow({ decl: { name: "marks", type: "flags", values: ["night", "rain"], valueHelp: { night: "After dark.", rain: "Wet." } }, value: ["night", "rain"], onCommit: () => {} });
+    expect(help(marks.el)).toBe("night: After dark.\nrain: Wet.");
+    const act = fieldRow({ decl: { name: "act", type: "quality", stages: ["setup", "turn"], valueHelp: { turn: "The middle." } }, value: "turn", onCommit: () => {} });
+    expect(help(act.el)).toBe("The middle.");
+    const plain = fieldRow({ decl: { name: "tone", type: "enum", values: ["a"] }, value: "a", onCommit: () => {} });
+    expect(plain.el.querySelector<HTMLElement>(".shell-fieldrow-valuehelp")!.hidden).toBe(true);
+  });
+});

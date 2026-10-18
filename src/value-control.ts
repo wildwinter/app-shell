@@ -166,6 +166,30 @@ export interface FieldDeclLike extends ValueDeclLike {
   name: string;
   /** What the field is for, shown under the control. */
   purpose?: string;
+  /** A sentence about each value (an enum's values, the flags, a quality's stages), as an extension's manifest
+   *  gives them: the chosen value's is shown under the control, and each chosen flag's. */
+  valueHelp?: Readonly<Record<string, string>>;
+}
+
+/**
+ * The help for what `decl` holds: the chosen enum value's or stage's (the one it falls back to, when unset), or
+ * each chosen flag's, "name: sentence" a line each. Empty when the declaration describes none of them.
+ */
+export function valueHelpText(decl: FieldDeclLike, value: unknown): string {
+  const help = decl.valueHelp;
+  if (help === undefined) return "";
+  const said = (v: string): string | undefined => (Object.prototype.hasOwnProperty.call(help, v) ? help[v] : undefined);
+  if (decl.type === "enum" || decl.type === "quality") {
+    const held = typeof value === "string" && value !== "" ? value
+      : typeof decl.default === "string" && decl.default !== "" ? decl.default
+        : decl.type === "enum" ? decl.values?.[0] : decl.stages?.[0];
+    return held === undefined ? "" : said(held) ?? "";
+  }
+  if (decl.type === "flags") {
+    const held = Array.isArray(value) ? value.map(String) : Array.isArray(decl.default) ? decl.default.map(String) : [];
+    return held.flatMap((v) => { const h = said(v); return h === undefined ? [] : [`${v}: ${h}`]; }).join("\n");
+  }
+  return "";
 }
 
 export interface FieldRowOptions {
@@ -241,6 +265,7 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
   caption.id = `shell-fr-${Math.random().toString(36).slice(2, 9)}`;
   const body = el("div", "shell-fieldrow-body");
   const purpose = el("p", "shell-fieldrow-purpose");
+  const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp");
   const problem = el("p", "shell-fieldrow-problem");
   problem.setAttribute("role", "status");
   row.append(caption, body);
@@ -263,6 +288,10 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
   purpose.id = `${caption.id}-p`; problem.id = `${caption.id}-m`;
 
   const sayProblem = (): void => {
+    // The chosen value's own help travels with every change of value, as the message does.
+    const help = valueHelpText(opts.decl, opts.value);
+    valueHelp.textContent = help;
+    valueHelp.hidden = help === "";
     const words = [typing || fieldValueProblem(opts.decl, opts.value), opts.problem ?? ""].filter((w) => w !== "");
     problem.textContent = words.join(" ");
     problem.hidden = words.length === 0;
@@ -413,7 +442,7 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
     show(next.value);
     purpose.textContent = decl.purpose ?? "";
     if (decl.purpose) body.append(purpose); else purpose.remove();
-    body.append(problem);
+    body.append(valueHelp, problem);
     sayProblem();
   };
 

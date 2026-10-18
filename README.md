@@ -230,6 +230,12 @@ const rows = valueRows();
 host.append(rows.row(`${nodeId}:${decl.name}`, { decl, value, adapter: { nodes: (kind) => myNodes(kind) }, onCommit }));
 ```
 
+- **v0.52:** a declaration's `valueHelp` (a sentence per enum value, flag or
+  stage, as a manifest gives them) shows the chosen value's under the control,
+  and each chosen flag's, in the field row and so in every value row. The
+  adapter's optional `label(kind, id)` names a held node the choices leave out,
+  so only a node the host says is gone reads as gone.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

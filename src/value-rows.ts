@@ -55,6 +55,17 @@ export interface ValueNode { id: string; label: string }
 /** What only the host knows: the nodes of a kind (`card`, `tag`, `cast`...), for references and map keys. */
 export interface ValueAdapter {
   nodes(kind: string): readonly ValueNode[];
+  /**
+   * The name of a node by kind and id, for a value that holds one `nodes` does not offer (a node outside the
+   * choices, say): undefined when there is no such node, which is then shown as gone. Absent: a held id `nodes`
+   * does not list is taken to be gone.
+   */
+  label?(kind: string, id: string): string | undefined;
+}
+
+/** A node's name: from the choices, else the host's `label`; undefined when the host says there is none. */
+function nodeLabel(adapter: ValueAdapter, kind: string, id: string): string | undefined {
+  return adapter.nodes(kind).find((n) => n.id === id)?.label ?? adapter.label?.(kind, id);
 }
 
 export interface ValueRowOptions {
@@ -88,7 +99,7 @@ const asDecl = (d: Omit<ValueDecl, "name"> & { name?: string }, name: string): V
 /** The toolkit's checks for this value, as words for the row itself (the parts say their own). */
 function ownProblems(decl: ValueDecl, value: unknown, adapter: ValueAdapter | undefined): string {
   if (value === undefined) return "";
-  const exists = adapter ? (kind: string, id: string) => adapter.nodes(kind).some((n) => n.id === id) : undefined;
+  const exists = adapter ? (kind: string, id: string) => nodeLabel(adapter, kind, id) !== undefined : undefined;
   return valueProblems(decl as unknown as TypeDecl, value, exists ? { exists } : {})
     .filter((p) => p.path === "" && p.severity === "error" && p.code !== "not-a-value" && p.code !== "not-a-stage")
     .map((p) => `${p.message.replace(/^the value/, "The value")}.`)
@@ -163,7 +174,11 @@ function referenceRow(initial: ValueRowOptions): ValueRowHandle {
     const add = (v: string, text: string): void => { const opt = el("option", undefined, text); opt.value = v; sel.append(opt); };
     add("", "default (none)");
     for (const n of nodes) add(n.id, n.label);
-    if (held !== "" && !nodes.some((n) => n.id === held)) add(held, `${held} (gone)`);
+    if (held !== "" && !nodes.some((n) => n.id === held)) {
+      // A node outside the choices keeps its name; only one the host says does not exist reads as gone.
+      const name = o.adapter!.label?.(o.decl.to ?? "", held);
+      add(held, name ?? `${held} (gone)`);
+    }
     sel.value = held;
     sel.disabled = o.onCommit === undefined || o.disabled === true;
     help.textContent = o.decl.help ?? o.decl.purpose ?? "";
@@ -257,14 +272,15 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
     } else if (decl.type === "map" && decl.of) {
       const value = isObject(o.value) ? o.value : {};
       const keyNodes = decl.key?.type === "reference" && o.adapter ? o.adapter.nodes(decl.key.to ?? "") : undefined;
-      const keyLabel = (k: string): string => keyNodes?.find((n) => n.id === k)?.label ?? k;
+      const keyKind = decl.key?.to ?? "";
+      const keyLabel = (k: string): string => (o.adapter && keyNodes !== undefined ? nodeLabel(o.adapter, keyKind, k) : undefined) ?? k;
       for (const k of Object.keys(value)) {
         const remove = editable() ? [iconBtn("close", `Remove ${keyLabel(k)}`, () => {
           const next = { ...(isObject(opts.value) ? opts.value : {}) };
           delete next[k];
           commit(Object.keys(next).length > 0 ? next : undefined);
         })] : [];
-        const gone = keyNodes !== undefined && !keyNodes.some((n) => n.id === k) ? `${keyLabel(k)} is not here any more.` : undefined;
+        const gone = keyNodes !== undefined && o.adapter && nodeLabel(o.adapter, keyKind, k) === undefined ? `${k} is not here any more.` : undefined;
         child(`k:${k}`, asDecl(decl.of, k), value[k], (v) => {
           const next = { ...(isObject(opts.value) ? opts.value : {}) };
           next[k] = v === undefined ? defaultOf(decl.of as unknown as TypeDecl) : v;
