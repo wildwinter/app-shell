@@ -207,3 +207,22 @@ describe("a quality's stages in the list", () => {
   });
 });
 
+
+describe("a list of another noun, with free names", () => {
+  it("names its rows by the noun, and takes any name, refusing only a duplicate", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const decls = [{ name: "", type: "text" }, { name: "Two words", type: "text" }];
+    const onChange = vi.fn();
+    const list = mountPropertyList(host, decls, { noun: "field", names: "free", onChange, types: [["text", "Text"], ["multiline", "Text (multiline)"]] });
+    const names = [...host.querySelectorAll<HTMLInputElement>(".set-name")];
+    expect(names[0]!.placeholder).toBe("Field name");
+    expect(host.querySelector(".set-purpose")!.getAttribute("placeholder")).toBe("What this field is for");
+    expect(host.querySelector('[aria-label="Delete field"]')).not.toBeNull();
+    names[0]!.value = "a name with spaces"; names[0]!.dispatchEvent(new Event("input"));
+    expect(decls[0]!.name).toBe("a name with spaces");
+    expect(list.firstIllegalName()).toBeNull();
+    expect(list.firstInvalid()).toBeNull();
+    expect(onChange).toHaveBeenCalled();
+  });
+});

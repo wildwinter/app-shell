@@ -153,6 +153,15 @@ export interface PropertyListOptions<T extends PropertyDeclLike> extends Default
   extraDetails?: (decl: T, index: number) => (HTMLElement | null)[];
   /** Offer the Purpose field. Default true. */
   purpose?: boolean;
+  /** What a row declares, in the row's own words ("Field name", "What this field is for", "Delete
+   *  field"). Default "property". */
+  noun?: string;
+  /**
+   * The rule a name follows. `"property"` (default): the property-name rules, bound and gated, since an
+   * expression must be able to reach it. `"free"`: any name, only duplicates refused, for a declaration no
+   * expression reads (a Patterpad game-data field's name is the host's word).
+   */
+  names?: "property" | "free";
   /**
    * A quality's stage was renamed in place (the declaration's own default
    * already follows it). Given, the rename is handed here INSTEAD of
@@ -188,11 +197,18 @@ export function mountPropertyList<T extends PropertyDeclLike>(host: HTMLElement,
   const keep = (parts: (HTMLElement | null)[] | undefined): HTMLElement[] =>
     (parts ?? []).filter((p): p is HTMLElement => p !== null);
 
+  const noun = opts.noun ?? "property";
+  const Noun = noun.charAt(0).toUpperCase() + noun.slice(1);
+  const freeNames = opts.names === "free";
+
   const row = (p: T, i: number): HTMLElement => {
     const name = el("input", "field set-name");
-    name.type = "text"; name.placeholder = "Property name"; name.value = p.name; name.spellcheck = false;
-    name.dataset["tip"] = PROPERTY_NAME_HINT;
-    bindPropertyName(name, (v) => { p.name = v; changed(); }, { hint: PROPERTY_NAME_HINT });
+    name.type = "text"; name.placeholder = `${Noun} name`; name.value = p.name; name.spellcheck = false;
+    if (freeNames) name.addEventListener("input", () => { p.name = name.value; changed(); });
+    else {
+      name.dataset["tip"] = PROPERTY_NAME_HINT;
+      bindPropertyName(name, (v) => { p.name = v; changed(); }, { hint: PROPERTY_NAME_HINT });
+    }
     guard.track(name);
 
     const type = el("select", "field set-type");
@@ -212,7 +228,7 @@ export function mountPropertyList<T extends PropertyDeclLike>(host: HTMLElement,
 
     const up = iconBtn("up", "Move up", () => { if (moveItem(decls, i, -1)) { render(); changed(); } }, i === 0);
     const down = iconBtn("down", "Move down", () => { if (moveItem(decls, i, 1)) { render(); changed(); } }, i === decls.length - 1);
-    const del = iconBtn("close", "Delete property", () => { decls.splice(i, 1); render(); changed(); }, false, true);
+    const del = iconBtn("close", `Delete ${noun}`, () => { decls.splice(i, 1); render(); changed(); }, false, true);
 
     const details: HTMLElement[] = keep(opts.extraDetails?.(p, i));
     if (p.type === "enum" || p.type === "flags") details.push(labelled("Values", tagChips(p, refreshDefault)));
@@ -231,7 +247,7 @@ export function mountPropertyList<T extends PropertyDeclLike>(host: HTMLElement,
     }
     if (opts.purpose !== false) {
       const purpose = el("input", "field set-purpose");
-      purpose.type = "text"; purpose.placeholder = "What this property is for"; purpose.value = p.purpose ?? "";
+      purpose.type = "text"; purpose.placeholder = `What this ${noun} is for`; purpose.value = p.purpose ?? "";
       purpose.addEventListener("input", () => {
         if (purpose.value.trim()) p.purpose = purpose.value; else delete p.purpose;
         changed();
@@ -261,9 +277,9 @@ export function mountPropertyList<T extends PropertyDeclLike>(host: HTMLElement,
 
   return {
     firstDuplicate: () => guard.firstDuplicate(),
-    firstIllegalName: () => firstIllegalPropertyName(host),
+    firstIllegalName: () => (freeNames ? null : firstIllegalPropertyName(host)),
     // The Save gate takes both faults; the field's own rollover says which.
-    firstInvalid: () => guard.firstDuplicate() ?? firstIllegalPropertyName(host),
+    firstInvalid: () => guard.firstDuplicate() ?? (freeNames ? null : firstIllegalPropertyName(host)),
     render,
   };
 }

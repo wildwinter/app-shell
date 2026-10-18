@@ -116,6 +116,29 @@ textarea.field { resize: vertical; }
 .shell-rung.stray { color: var(--warn, var(--danger, var(--accent))); text-decoration: line-through; cursor: default; }
 span.shell-rung { cursor: default; }
 
+/* A declared field's value as a row (value-control.ts fieldRow): the caption, then the control with the
+   purpose and any message under it. The grid is the app's (it passes its own row class); these are the
+   parts both apps share. A flags value is a picker of the declared values: chips, the set ones washed. */
+.shell-fieldrow-body { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+.shell-fieldrow-textual .shell-fieldrow-body { align-items: stretch; }
+.shell-fieldrow-text { min-width: 0; }
+textarea.shell-fieldrow-text { min-height: 3.6em; font-family: inherit; line-height: 1.4; }
+.shell-fieldrow-purpose { margin: 0; font: 12px/1.4 var(--font-ui); color: var(--muted); max-width: 60ch; }
+.shell-fieldrow-problem { margin: 0; font: 12px/1.4 var(--font-ui); color: var(--warn, var(--danger, var(--accent))); }
+.shell-fieldrow.has-problem .shell-fieldrow-text { border-color: var(--warn, var(--danger)); }
+.shell-flags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.shell-flag {
+  display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius-pill);
+  background: none; color: var(--muted); font: 12px var(--font-mono); padding: 1px 8px; cursor: pointer;
+}
+.shell-flag:hover:not(.on):not(span) { color: var(--ink); }
+.shell-flag.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft, color-mix(in oklab, var(--accent) 14%, transparent)); }
+.shell-flag.fallback { color: var(--ink); border-style: dashed; background: none; }
+.shell-flag-default { font-family: var(--font-ui); }
+.shell-flag-default.on { cursor: default; }
+.shell-flag.stray { color: var(--warn, var(--danger, var(--accent))); border-color: currentColor; background: none; text-decoration: line-through; }
+span.shell-flag { cursor: default; }
+
 /* --- small things ----------------------------------------------------------- */
 /* A pill: a small bordered label (a class, a count, a state). */
 .pill {

@@ -35,6 +35,11 @@
       "import": "./dist/value-control.js",
       "require": "./dist/value-control.cjs"
     },
+    "./window-guard": {
+      "types": "./dist/window-guard.d.ts",
+      "import": "./dist/window-guard.js",
+      "require": "./dist/window-guard.cjs"
+    },
     "./dialog": {
       "types": "./dist/dialog.d.ts",
       "import": "./dist/dialog.js",
