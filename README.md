@@ -193,6 +193,43 @@ openKitGallery({
   in 0.41 to 0.45 and ruled out by the author; `image` and the `--kit-art-*`
   tokens are gone.
 
+## v0.51 (the file-byte history, and rows for structured values)
+
+**`@wildwinter/app-shell/history`** (main process): undo and redo for the files
+an app writes, the files-are-truth way. Storyletter's, lifted so Patterpad's
+project-level undo is the same code; the document undo of each app still
+shares nothing.
+
+```ts
+import { History, captureBefore, applyStates } from "@wildwinter/app-shell/history";
+
+const history = new History({ write: myOrderedWriter, restorer: (path) => path.endsWith(".patterx") ? trail : undefined });
+history.record("Rename card", "card:c_1", captureBefore(paths), writes);   // after the writes land
+const outcome = await history.applyUndo();   // { ok, label } or { ok: false, error, drift? }
+```
+
+- A repeated key folds into one step; `fold` adds a write nobody asked for to
+  the last step; a hundred steps are kept.
+- **Drift is refused**: a file changed since the step (a pull, a merge, the other
+  app) refuses the undo or redo, names the file, and drops that step and every
+  one below it.
+- A per-file `restorer` decides what counts as drift and what is written back;
+  the `write` option is the app's own write path (`applyStates`, all or nothing
+  through simple-vc-lib 0.5, by default).
+
+**`@wildwinter/app-shell/value-rows`**: a row for a value of any declared type,
+for an extension's fields. The seven scalars are the field row; a `reference`
+picks one of the host's nodes, a `record` is its fields, a `map` is keyed by a
+host's nodes or by text, a `list` adds, moves and removes items (a new item of
+an id list gets a fresh id). The checks are `@wildwinter/toolkit/extensions`'
+(an optional peer, 0.2.0 or later), so the editor and validation agree.
+
+```ts
+import { valueRows } from "@wildwinter/app-shell/value-rows";
+const rows = valueRows();
+host.append(rows.row(`${nodeId}:${decl.name}`, { decl, value, adapter: { nodes: (kind) => myNodes(kind) }, onCommit }));
+```
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

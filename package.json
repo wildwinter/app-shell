@@ -35,6 +35,11 @@
       "import": "./dist/value-control.js",
       "require": "./dist/value-control.cjs"
     },
+    "./value-rows": {
+      "types": "./dist/value-rows.d.ts",
+      "import": "./dist/value-rows.js",
+      "require": "./dist/value-rows.cjs"
+    },
     "./window-guard": {
       "types": "./dist/window-guard.d.ts",
       "import": "./dist/window-guard.js",
@@ -115,6 +120,11 @@
       "types": "./dist/app-store.d.ts",
       "import": "./dist/app-store.js",
       "require": "./dist/app-store.cjs"
+    },
+    "./history": {
+      "types": "./dist/history.d.ts",
+      "import": "./dist/history.js",
+      "require": "./dist/history.cjs"
     },
     "./notes-editor.css": {
       "import": "./dist/notes-editor.css",
@@ -233,9 +243,10 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "peerDependencies": {
-    "@wildwinter/simple-vc-lib": ">=0.2.0",
+    "@wildwinter/simple-vc-lib": ">=0.5.0",
     "electron": ">=28",
-    "electron-updater": ">=6"
+    "electron-updater": ">=6",
+    "@wildwinter/toolkit": ">=0.2.0 <1.0.0"
   },
   "peerDependenciesMeta": {
     "electron": {
@@ -246,10 +257,16 @@
     },
     "electron-updater": {
       "optional": true
+    },
+    "@wildwinter/toolkit": {
+      "optional": true
     }
   },
   "devDependencies": {
-    "@wildwinter/simple-vc-lib": "^0.2.1",
+    "@wildwinter/expr": "^0.6.0",
+    "@wildwinter/scoperegistry": "^0.9.0",
+    "@wildwinter/simple-vc-lib": "^0.5.2",
+    "@wildwinter/toolkit": "^0.2.0",
     "electron": "42.6.0",
     "electron-updater": "^6.8.9",
     "jsdom": "^25.0.0",

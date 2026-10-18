@@ -498,6 +498,15 @@ const keeper = (() => {
   };
 })();
 
+/**
+ * The focus keeping `fieldRows` does, for a host (or a structured row) that keeps row elements itself: call
+ * `settle` before it updates a row and `restore` once the row is back in the page.
+ */
+export const fieldRowFocus = {
+  settle: (row: HTMLElement): void => keeper.settle(row),
+  restore: (row: HTMLElement): void => keeper.restore(row),
+};
+
 export interface FieldRows {
   /**
    * The row for `key` (a node and a field, say `${nodeId}:${field}`): the same element as last time when

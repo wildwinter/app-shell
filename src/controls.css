@@ -188,3 +188,13 @@ kbd {
   transition: color var(--dur-quick) var(--ease-standard);
 }
 .shell-crumb-link:hover { color: var(--ink); text-decoration: underline; }
+
+/* Structured values (record, map, list): the parts, each a field row of its own, indented under the
+   caption, with a map's and a list's own controls beside each part. */
+.shell-valuerow-parts { gap: 6px; padding-left: 10px; border-left: 1px solid var(--line, color-mix(in oklab, var(--ink) 14%, transparent)); }
+.shell-valuerow-part { display: flex; align-items: flex-start; gap: 6px; width: 100%; }
+.shell-valuerow-part > .shell-fieldrow { flex: 1; min-width: 0; }
+.shell-valuerow-controls { display: inline-flex; gap: 2px; padding-top: 2px; }
+.shell-valuerow-controls:empty { display: none; }
+.shell-valuerow-add { display: inline-flex; align-items: center; gap: 4px; }
+.shell-valuerow-key { min-width: 10em; }
