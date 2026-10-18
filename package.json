@@ -40,6 +40,11 @@
       "import": "./dist/value-rows.js",
       "require": "./dist/value-rows.cjs"
     },
+    "./extension-copy": {
+      "types": "./dist/extension-copy.d.ts",
+      "import": "./dist/extension-copy.js",
+      "require": "./dist/extension-copy.cjs"
+    },
     "./window-guard": {
       "types": "./dist/window-guard.d.ts",
       "import": "./dist/window-guard.js",

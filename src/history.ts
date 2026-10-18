@@ -219,6 +219,12 @@ export class History {
     return entry.after;
   }
 
+  /** Forget every undone step: for a host that changes the files on its own (a step merged into the last one,
+   *  a reload), after which redoing what was undone would put back the wrong bytes. */
+  clearRedo(): void {
+    this.redoStack = [];
+  }
+
   /** An undo whose states could not be written: the step goes back where it was, so the author can try again
    *  once the file can be written. */
   undoFailed(): void {

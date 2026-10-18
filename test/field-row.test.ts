@@ -236,3 +236,15 @@ describe("a value's own help", () => {
     expect(plain.el.querySelector<HTMLElement>(".shell-fieldrow-valuehelp")!.hidden).toBe(true);
   });
 });
+
+describe("a host's own sentence in place of the row's", () => {
+  it("replaces the row's problem, and an empty one says nothing", () => {
+    const decl = { name: "act", type: "quality", stages: ["setup", "turn"] };
+    const own = fieldRow({ decl, value: "opening", onCommit: () => {} });
+    expect(own.el.querySelector(".shell-fieldrow-problem")?.textContent).toContain("not one of the stages");
+    const replaced = fieldRow({ decl, value: "opening", onCommit: () => {}, problem: "ignored", replaceProblem: "Renamed: pick “setup”." });
+    expect(replaced.el.querySelector(".shell-fieldrow-problem")?.textContent).toBe("Renamed: pick “setup”.");
+    const silent = fieldRow({ decl, value: "opening", onCommit: () => {}, replaceProblem: "" });
+    expect(silent.el.querySelector<HTMLElement>(".shell-fieldrow-problem")!.hidden).toBe(true);
+  });
+});

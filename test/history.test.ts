@@ -148,4 +148,17 @@ describe("the file-byte history", () => {
     expect(await h.applyUndo()).toEqual({ ok: true, label: "Edit" });
     expect([read(a), read(rec)]).toEqual(["1", "r1"]);
   });
+
+  it("clears redo when the host asks", async () => {
+    const d = dir();
+    const a = join(d, "a.txt");
+    writeFileSync(a, "1");
+    const h = new History();
+    await commit(h, "Edit", "k", [{ path: a, content: "2" }]);
+    await h.applyUndo();
+    expect(h.canRedo).toBe(true);
+    h.clearRedo();
+    expect(h.canRedo).toBe(false);
+    expect(h.canUndo).toBe(false);
+  });
 });

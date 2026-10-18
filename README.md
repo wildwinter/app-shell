@@ -235,6 +235,13 @@ host.append(rows.row(`${nodeId}:${decl.name}`, { decl, value, adapter: { nodes: 
   and each chosen flag's, in the field row and so in every value row. The
   adapter's optional `label(kind, id)` names a held node the choices leave out,
   so only a node the host says is gone reads as gone.
+- **v0.53:** `History.clearRedo()`, for a host that changes the files on its
+  own; `replaceProblem` on a field row or value row, the host's sentence instead
+  of the row's own; and **`@wildwinter/app-shell/extension-copy`**, an
+  extension's problems worded for the writer (`entryProblemLine`,
+  `valueProblemSentence`, `fieldPhrase`), Patterpad's rules made the family's,
+  with each app's words for its items, kinds and where a value is changed
+  passed in.
 
 ## Roadmap
 

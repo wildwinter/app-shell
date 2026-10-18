@@ -79,6 +79,8 @@ export interface ValueRowOptions {
   disabled?: boolean;
   /** A message of the app's own about this value, shown under it. */
   problem?: string;
+  /** The app's own sentence instead of the row's own checks, as the field row's `replaceProblem`. */
+  replaceProblem?: string;
   /** The caption; default the declaration's label, else its name. */
   label?: string | Node;
   className?: string;
@@ -129,6 +131,7 @@ function scalarRow(initial: ValueRowOptions): ValueRowHandle {
       ...(o.onCommit ? { onCommit: (v: FieldValue | undefined) => o.onCommit!(v) } : {}),
       ...(o.disabled !== undefined ? { disabled: o.disabled } : {}),
       ...(problem !== "" ? { problem } : {}),
+      ...(o.replaceProblem !== undefined ? { replaceProblem: o.replaceProblem } : {}),
       label: o.label ?? nameOf(o.decl),
       ...(o.className !== undefined ? { className: o.className } : {}),
       ...(o.labelClassName !== undefined ? { labelClassName: o.labelClassName } : {}),
@@ -183,7 +186,7 @@ function referenceRow(initial: ValueRowOptions): ValueRowHandle {
     sel.disabled = o.onCommit === undefined || o.disabled === true;
     help.textContent = o.decl.help ?? o.decl.purpose ?? "";
     help.hidden = help.textContent === "";
-    const words = [ownProblems(o.decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
+    const words = o.replaceProblem ?? [ownProblems(o.decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
     problem.textContent = words;
     problem.hidden = words === "";
     row.classList.toggle("has-problem", words !== "");
@@ -348,7 +351,7 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
     if (decl.type !== "record" && editable()) body.append(adder);
     help.textContent = decl.help ?? decl.purpose ?? "";
     if (help.textContent !== "") body.append(help);
-    const words = [ownProblems(decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
+    const words = o.replaceProblem ?? [ownProblems(decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
     problem.textContent = words;
     problem.hidden = words === "";
     body.append(problem);

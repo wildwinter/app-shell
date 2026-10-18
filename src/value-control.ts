@@ -202,6 +202,9 @@ export interface FieldRowOptions {
   disabled?: boolean;
   /** A message of the app's own about this value (a check the row cannot make), shown under the control. */
   problem?: string;
+  /** The app's own sentence INSTEAD of the row's (a renamed stage said better than "not one of the stages").
+   *  Given, it is the whole message; `problem` is ignored. */
+  replaceProblem?: string;
   /** The caption; default the field's name. */
   label?: string | Node;
   /** Added to the row and its caption, so a row sits in its app's layout. */
@@ -292,7 +295,9 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
     const help = valueHelpText(opts.decl, opts.value);
     valueHelp.textContent = help;
     valueHelp.hidden = help === "";
-    const words = [typing || fieldValueProblem(opts.decl, opts.value), opts.problem ?? ""].filter((w) => w !== "");
+    const words = opts.replaceProblem !== undefined
+      ? [opts.replaceProblem].filter((w) => w !== "")
+      : [typing || fieldValueProblem(opts.decl, opts.value), opts.problem ?? ""].filter((w) => w !== "");
     problem.textContent = words.join(" ");
     problem.hidden = words.length === 0;
     row.classList.toggle("has-problem", words.length > 0);
