@@ -23,6 +23,7 @@ import { dupGuard, expandableRow, focusNewRow } from "./settings.js";
 import type { SettingsSectionHandle } from "./settings.js";
 import { bindPropertyName, firstIllegalPropertyName } from "./property-name-field.js";
 import { PROPERTY_NAME_HINT } from "./property-names.js";
+import { defaultLabel, fallbackText } from "./value-control.js";
 
 /** The six types both apps declare. */
 export type PropertyListType = "number" | "boolean" | "string" | "enum" | "flags" | "quality";
@@ -48,11 +49,22 @@ export const PROPERTY_TYPES: ReadonlyArray<readonly [PropertyListType, string]> 
 
 export interface DefaultControlOptions {
   /**
-   * How the default is stored. `false` (default): the string the field shows,
-   * "" for none (Storyletter's DTO). `true`: a typed value (boolean, number,
-   * string), and none DELETES the key (Patterpad's model).
+   * How the default is stored. `false` (default): the string the field shows
+   * (Storyletter's DTO). `true`: a typed value (boolean, number, string)
+   * (Patterpad's model). Either way, no default given DELETES the key: a
+   * default is optional in source, and the type's holds (the family's rule,
+   * ruled 2026-10-18).
    */
   typed?: boolean;
+  /**
+   * An enum may hold "" (none chosen), as a field's may: the select then
+   * offers "(none)" beside "default (x)". Off for a property, whose value is
+   * always one of its values.
+   */
+  noneChosen?: boolean;
+  /** What the blank says instead of the type's default, where something else holds when none is given
+   *  here: a tag's starting value falls back to its group's default, say. */
+  unsetLabel?: string;
 }
 
 const option = (value: string, label: string, selected: boolean): HTMLOptionElement => {
@@ -61,42 +73,49 @@ const option = (value: string, label: string, selected: boolean): HTMLOptionElem
   return o;
 };
 
-const NONE = "(none)";
+/** The select value that stands for an enum's "" (none chosen), apart from no default at all. */
+const NONE_CHOSEN = "\u0000none";
 
 /**
  * The type-appropriate control for a declaration's DEFAULT: a true / false
  * picker for a boolean, the value list for an enum, the stage list for a
- * quality (blank = the first rung), a note for flags (a set starts empty), a
- * number or text field otherwise. The one label for "no default" is "(none)".
+ * quality, a note for flags (a set starts empty), a number or text field
+ * otherwise. Leaving it blank gives no default, and the blank says what holds
+ * then, "default (x)" (`defaultLabel`): a default is optional, and the type's
+ * fills in.
  */
 export function defaultControl(p: PropertyDeclLike, onChange?: () => void, opts: DefaultControlOptions = {}): HTMLElement {
   const typed = opts.typed === true;
   const write = (raw: string): void => {
-    if (raw === "") { if (typed) delete p.default; else p.default = ""; }
+    if (raw === "") delete p.default;
+    else if (raw === NONE_CHOSEN) p.default = "";
     else if (typed && p.type === "boolean") p.default = raw === "true";
     else if (typed && p.type === "number") p.default = Number(raw);
     else p.default = raw;
     onChange?.();
   };
   const current = p.default === undefined || p.default === null ? "" : String(p.default);
+  // What a blank default falls back to, said on the blank itself: the type's, not this one's.
+  const unsetLabel = opts.unsetLabel ?? defaultLabel({ ...p, default: undefined });
   if (p.type === "boolean") {
     const sel = el("select", "field set-default");
-    sel.append(option("", NONE, current === ""), option("true", "True", current === "true"), option("false", "False", current === "false"));
+    sel.append(option("", unsetLabel, current === ""), option("true", "True", current === "true"), option("false", "False", current === "false"));
     sel.addEventListener("change", () => write(sel.value));
     return sel;
   }
   if (p.type === "enum") {
     const sel = el("select", "field set-default");
-    sel.append(option("", NONE, current === ""));
+    const none = opts.noneChosen === true && p.default === "";
+    sel.append(option("", unsetLabel, current === "" && !none));
+    if (opts.noneChosen) sel.append(option(NONE_CHOSEN, "(none)", none));
     for (const v of p.values ?? []) sel.append(option(v, v, current === v));
     sel.addEventListener("change", () => write(sel.value));
     return sel;
   }
   if (p.type === "quality") {
-    // The default is a STAGE; blank means the first rung, so say so rather
-    // than "(none)".
+    // The default is a STAGE; blank means the first rung, and says which.
     const sel = el("select", "field set-default");
-    sel.append(option("", "(first stage)", current === ""));
+    sel.append(option("", unsetLabel, current === ""));
     for (const v of p.stages ?? []) sel.append(option(v, v, current === v));
     sel.addEventListener("change", () => write(sel.value));
     return sel;
@@ -109,7 +128,7 @@ export function defaultControl(p: PropertyDeclLike, onChange?: () => void, opts:
   }
   const input = el("input", "field set-default");
   input.type = p.type === "number" ? "number" : "text";
-  input.placeholder = "Default";
+  input.placeholder = p.type === "number" ? `Default (${fallbackText({ type: "number" })})` : "Default";
   input.value = current;
   input.addEventListener("input", () => write(input.value));
   return input;
@@ -180,7 +199,7 @@ export function mountPropertyList<T extends PropertyDeclLike>(host: HTMLElement,
     for (const [v, label] of types) type.append(option(v, label, v === p.type));
     type.addEventListener("change", () => {
       p.type = type.value;
-      if (opts.typed) delete p.default; else p.default = "";
+      delete p.default;   // a default rarely survives a type change: the new type's holds
       if (p.type === "enum" || p.type === "flags") p.values ??= []; else delete p.values;
       if (p.type === "quality") p.stages ??= []; else delete p.stages;
       render(); changed();

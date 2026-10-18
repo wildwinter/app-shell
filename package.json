@@ -30,6 +30,11 @@
     "./dialog.css": "./dist/dialog.css",
     "./context-menu.css": "./dist/context-menu.css",
     "./pane-shell.css": "./dist/pane-shell.css",
+    "./value-control": {
+      "types": "./dist/value-control.d.ts",
+      "import": "./dist/value-control.js",
+      "require": "./dist/value-control.cjs"
+    },
     "./dialog": {
       "types": "./dist/dialog.d.ts",
       "import": "./dist/dialog.js",

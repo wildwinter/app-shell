@@ -1,5 +1,5 @@
-// The property list (property-list.ts): defaultControl per type with the one
-// "(none)" label, add-then-focus, the dup guard, extras, reorder.
+// The property list (property-list.ts): defaultControl per type with the unset label naming its fallback,
+// "default (x)", add-then-focus, the dup guard, extras, reorder.
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { defaultControl, mountPropertyList, PROPERTY_TYPES } from "../src/property-list.js";
@@ -11,15 +11,28 @@ const options = (sel: HTMLElement): string[] => [...sel.querySelectorAll("option
 const change = (sel: HTMLSelectElement, v: string): void => { sel.value = v; sel.dispatchEvent(new Event("change")); };
 
 describe("defaultControl", () => {
-  it("boolean: a picker with (none) / True / False, stored as a string by default", () => {
-    const p = { name: "a", type: "boolean", default: "" };
+  // A default is optional (the family's rule, ruled 2026-10-18): blank gives none, and says what holds then.
+  it("boolean: a picker with default (False) / True / False, stored as a string by default, blank deleting it", () => {
+    const p: { name: string; type: string; default?: string } = { name: "a", type: "boolean" };
     const sel = defaultControl(p) as HTMLSelectElement;
     expect(sel.tagName).toBe("SELECT");
-    expect(options(sel)).toEqual(["(none)", "True", "False"]);
+    expect(options(sel)).toEqual(["default (False)", "True", "False"]);
     change(sel, "true");
     expect(p.default).toBe("true");
     change(sel, "");
-    expect(p.default).toBe("");
+    expect("default" in p).toBe(false);
+  });
+
+  it("an enum that may hold none chosen offers (none) beside its default, and keeps the two apart", () => {
+    const e: { name: string; type: string; values: string[]; default?: string } = { name: "e", type: "enum", values: ["red", "blue"] };
+    const sel = defaultControl(e, undefined, { noneChosen: true }) as HTMLSelectElement;
+    expect(options(sel)).toEqual(["default (red)", "(none)", "red", "blue"]);
+    expect(sel.selectedIndex).toBe(0);
+    change(sel, sel.options[1]!.value);
+    expect(e.default).toBe("");
+    expect((defaultControl(e, undefined, { noneChosen: true }) as HTMLSelectElement).selectedIndex).toBe(1);
+    change(sel, "");
+    expect("default" in e).toBe(false);
   });
 
   it("boolean and number, typed: real values, and none deletes the key", () => {
@@ -37,13 +50,13 @@ describe("defaultControl", () => {
     expect(n.default).toBe(3);
   });
 
-  it("enum: (none) then the values; quality: (first stage) then the stages; flags: a note", () => {
+  it("enum: default (first value) then the values; quality: default (first stage) then the stages; flags: a note", () => {
     const e = { name: "e", type: "enum", values: ["red", "blue"], default: "blue" };
     const es = defaultControl(e) as HTMLSelectElement;
-    expect(options(es)).toEqual(["(none)", "red", "blue"]);
+    expect(options(es)).toEqual(["default (red)", "red", "blue"]);
     expect(es.value).toBe("blue");
     const q = { name: "q", type: "quality", stages: ["cold", "warm"] };
-    expect(options(defaultControl(q))).toEqual(["(first stage)", "cold", "warm"]);
+    expect(options(defaultControl(q))).toEqual(["default (cold)", "cold", "warm"]);
     const f = defaultControl({ name: "f", type: "flags" });
     expect(f.tagName).toBe("SPAN");
     expect(f.textContent).toBe("Starts empty");
@@ -118,14 +131,14 @@ describe("mountPropertyList", () => {
     const decls: { name: string; type: string; default?: string; values?: string[]; stages?: string[] }[] = [{ name: "a", type: "string", default: "x" }];
     mountPropertyList(host, decls);
     change(host.querySelector<HTMLSelectElement>(".set-type")!, "enum");
-    expect(decls[0]).toEqual({ name: "a", type: "enum", default: "", values: [] });
+    expect(decls[0]).toEqual({ name: "a", type: "enum", values: [] });
     expect(host.querySelector(".shell-fieldcap")?.textContent).toBe("Values");
     const tagInput = host.querySelector<HTMLInputElement>(".shell-tag-input")!;
     tagInput.value = "red"; tagInput.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
     expect(decls[0]?.values).toEqual(["red"]);
-    expect(options(host.querySelector(".set-default")!)).toEqual(["(none)", "red"]);
+    expect(options(host.querySelector(".set-default")!)).toEqual(["default (red)", "red"]);
     change(host.querySelector<HTMLSelectElement>(".set-type")!, "quality");
-    expect(decls[0]).toEqual({ name: "a", type: "quality", default: "", stages: [] });
+    expect(decls[0]).toEqual({ name: "a", type: "quality", stages: [] });
     expect(host.querySelector(".shell-fieldcap")?.textContent).toBe("Stages (in order)");
   });
 
@@ -173,7 +186,7 @@ describe("a quality's stages in the list", () => {
     expect(decls[0]).toMatchObject({ default: "prologue", stages: ["prologue", "act-1"] });
     expect(onStageRename).toHaveBeenCalledWith(decls[0], "arrival", "prologue");
     expect(onChange).not.toHaveBeenCalled();
-    expect(options(host.querySelector(".set-default")!)).toEqual(["(first stage)", "prologue", "act-1"]);
+    expect(options(host.querySelector(".set-default")!)).toEqual(["default (prologue)", "prologue", "act-1"]);
   });
 
   it("without onStageRename the rename is an ordinary change", () => {

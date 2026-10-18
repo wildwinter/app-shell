@@ -134,6 +134,7 @@ describe("family style: tooltips go through the shell", () => {
   it("sets no native title tooltip", () => {
     hold("native title", lineHits(TITLE), [
       { file: "dom.ts", match: /node\.title = props\.title/, why: "el()'s passthrough for an app that asks for a native title by name; the helper types none itself, and `tip` beside it is the shell's own" },
+      { file: "value-control.ts", match: /node\.title = props\.tip/, why: "the rung strip built in a document of its own (`doc`), for a play inspector outside the apps, where the shell's tooltip host is not mounted; in the apps the strip uses el() and its themed `tip`" },
     ], [
       { file: "property-name-field.ts", match: /input\.title = /, count: 4, why: "the illegal-name reason and the hint ride the field's native title (Patterpad's settings gate reads `bad.title` back for its message); the family form is a data attribute plus the shell tooltip" },
     ]);

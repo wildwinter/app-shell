@@ -105,6 +105,17 @@ textarea.field { resize: vertical; }
   background: var(--accent-soft, color-mix(in oklab, var(--accent) 14%, transparent));
 }
 
+/* A quality's value as its ladder (value-control.ts rungStrip): the rungs in order, the current one marked.
+   Stage names keep the mono voice values use. An unset value's fallback rung is marked quietly; a value that
+   is no longer a stage is shown after the ladder, in the warning colour, until a rung is picked. */
+.shell-rungs { flex-wrap: wrap; }
+.shell-rung { font-family: var(--font-mono); font-weight: 400; padding: 2px 7px; }
+.shell-rung.on { font-weight: 600; }
+.shell-rung.fallback { color: var(--ink); text-decoration: underline dotted; text-underline-offset: 3px; }
+.shell-rung-default { font-family: var(--font-ui); }
+.shell-rung.stray { color: var(--warn, var(--danger, var(--accent))); text-decoration: line-through; cursor: default; }
+span.shell-rung { cursor: default; }
+
 /* --- small things ----------------------------------------------------------- */
 /* A pill: a small bordered label (a class, a count, a state). */
 .pill {

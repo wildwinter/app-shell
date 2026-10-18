@@ -120,6 +120,9 @@ export type { LinkStatus, LinkStatusClass, LinkStatusOptions, LinkStatusChip } f
 // The property declaration list (property-list.ts), on the settings row kit.
 export { mountPropertyList, defaultControl, PROPERTY_TYPES } from "./property-list.js";
 export type { PropertyDeclLike, PropertyListType, PropertyListOptions, PropertyListHandle, DefaultControlOptions } from "./property-list.js";
+// Typed value controls (value-control.ts): the quality's rung strip, and the words an unset value shows.
+export { rungStrip, defaultLabel, fallbackText, stageGateNote } from "./value-control.js";
+export type { RungStripOptions, ValueDeclLike } from "./value-control.js";
 // The small idioms (util.ts).
 export { plural, debounce, isEditableTarget, formatCount, copyWithFeedback, relativeTime, isLocalOrigin } from "./util.js";
 export type { Debounced } from "./util.js";
