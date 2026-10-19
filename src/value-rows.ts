@@ -2,8 +2,9 @@
 // Rows for a value of ANY declared type: the seven scalars through the field
 // row, and the types an extension's fields add (patterkit design/proposals/
 // patter-storylet-extensions.md, "Tier 1: fields"): a `reference` to one of the
-// host's nodes, a `record` of named fields, a `map` keyed by a reference or by
-// text, and a `list` with ids or without.
+// host's nodes, a `pick` of one choice from the sources its manifest names, a
+// `record` of named fields, a `map` keyed by a reference or by text, and a `list`
+// with ids or without.
 //
 // A structured value is drawn as its parts, each part a row of its own, so the
 // family's field rules hold all the way down: commit as typed, Escape restores,
@@ -14,16 +15,17 @@
 //
 // The host supplies what only it knows through an adapter: which nodes there are
 // of a kind (a map keyed by tag offers the tags, a reference to a card the
-// cards). No Electron, no app state: DOM only.
+// cards), and the lists of text on the extension's project node a pick offers.
+// No Electron, no app state: DOM only.
 //
 // Its own entry (`@wildwinter/app-shell/value-rows`) rather than part of
 // value-control, because it needs `@wildwinter/toolkit/extensions` (an optional
-// peer, toolkit 0.2.0 or later) and the scalar row does not: a host that draws
+// peer, toolkit 0.2.5 or later) and the scalar row does not: a host that draws
 // only the family's seven types takes nothing new.
 // ---------------------------------------------------------------------------
 
-import { defaultOf, valueProblems } from "@wildwinter/toolkit/extensions";
-import type { TypeDecl } from "@wildwinter/toolkit/extensions";
+import { defaultOf, pickChoices, valueProblems } from "@wildwinter/toolkit/extensions";
+import type { PickSource, TypeDecl, ValueContext } from "@wildwinter/toolkit/extensions";
 import { el, iconBtn, moveItem } from "./dom.js";
 import { fieldRow, fieldRowFocus } from "./value-control.js";
 import type { FieldDeclLike, FieldRowHandle, FieldValue } from "./value-control.js";
@@ -36,6 +38,8 @@ export interface ValueDecl extends FieldDeclLike {
   help?: string;
   /** A reference's node kind. */
   to?: string;
+  /** A pick's sources, in the order its choices are shown: fixed words, a node kind, a project list. */
+  from?: readonly PickSource[];
   /** A record's fields. */
   fields?: ValueDecl[];
   /** A map's key: text, or a reference to a node kind. */
@@ -52,9 +56,16 @@ export interface ValueDecl extends FieldDeclLike {
 /** One node the host offers, by id, with the name the author knows it by. */
 export interface ValueNode { id: string; label: string }
 
-/** What only the host knows: the nodes of a kind (`card`, `tag`, `cast`...), for references and map keys. */
+/** What only the host knows: the nodes of a kind (`card`, `tag`, `cast`...), for references, map keys and picks,
+ *  and the lists of text on the extension's own project node, for picks. */
 export interface ValueAdapter {
   nodes(kind: string): readonly ValueNode[];
+  /**
+   * The entries of a list of text on the extension's own project node, by field name, for a pick's `list` source
+   * (the toolkit's `pickLists` reads them off the project entry). A host scopes it to the extension whose rows it
+   * draws. Absent: a pick offers no list entries, and doesn't check against them.
+   */
+  list?(name: string): readonly string[] | undefined;
   /**
    * The name of a node by kind and id, for a value that holds one `nodes` does not offer (a node outside the
    * choices, say): undefined when there is no such node, which is then shown as gone. Absent: a held id `nodes`
@@ -101,11 +112,19 @@ const asDecl = (d: Omit<ValueDecl, "name"> & { name?: string }, name: string): V
 /** The toolkit's checks for this value, as words for the row itself (the parts say their own). */
 function ownProblems(decl: ValueDecl, value: unknown, adapter: ValueAdapter | undefined): string {
   if (value === undefined) return "";
-  const exists = adapter ? (kind: string, id: string) => nodeLabel(adapter, kind, id) !== undefined : undefined;
-  return valueProblems(decl as unknown as TypeDecl, value, exists ? { exists } : {})
-    .filter((p) => p.path === "" && p.severity === "error" && p.code !== "not-a-value" && p.code !== "not-a-stage")
+  return valueProblems(decl as unknown as TypeDecl, value, contextOf(adapter))
+    .filter((p) => p.path === "" && (p.severity === "error" || p.code === "pick-ambiguous") && p.code !== "not-a-value" && p.code !== "not-a-stage")
     .map((p) => `${p.message.replace(/^the value/, "The value")}.`)
     .join(" ");
+}
+
+/** The adapter as the toolkit's checks take it: whether a node exists, and a project list's entries. */
+function contextOf(adapter: ValueAdapter | undefined): ValueContext {
+  if (!adapter) return {};
+  return {
+    exists: (kind: string, id: string) => nodeLabel(adapter, kind, id) !== undefined,
+    ...(adapter.list ? { list: (name: string) => adapter.list!(name) } : {}),
+  };
 }
 
 /**
@@ -117,6 +136,7 @@ export function valueRow(initial: ValueRowOptions): ValueRowHandle {
   const decl = initial.decl;
   if (SCALARS.has(decl.type)) return scalarRow(initial);
   if (decl.type === "reference") return referenceRow(initial);
+  if (decl.type === "pick") return pickRow(initial);
   return structuredRow(initial);
 }
 
@@ -181,6 +201,85 @@ function referenceRow(initial: ValueRowOptions): ValueRowHandle {
       // A node outside the choices keeps its name; only one the host says does not exist reads as gone.
       const name = o.adapter!.label?.(o.decl.to ?? "", held);
       add(held, name ?? `${held} (gone)`);
+    }
+    sel.value = held;
+    sel.disabled = o.onCommit === undefined || o.disabled === true;
+    help.textContent = o.decl.help ?? o.decl.purpose ?? "";
+    help.hidden = help.textContent === "";
+    const words = o.replaceProblem ?? [ownProblems(o.decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
+    problem.textContent = words;
+    problem.hidden = words === "";
+    row.classList.toggle("has-problem", words !== "");
+  };
+  draw(initial);
+  return { el: row, update: draw };
+}
+
+/**
+ * A pick: one choice, "auto" (empty) first, then each source's choices in the declared order, a node kind's and a
+ * project list's under their names. A value no source holds stays visible as what is held, marked missing; a
+ * name two sources hold is said under it. Without an adapter, a pick of fixed words alone is still a choice of
+ * them, and one with other sources is typed as text.
+ */
+function pickRow(initial: ValueRowOptions): ValueRowHandle {
+  let opts = initial;
+  if (!opts.adapter && (opts.decl.from ?? []).some((s) => !("words" in s))) {
+    const inner = scalarRow({ ...opts, decl: { ...opts.decl, type: "text" } });
+    return { el: inner.el, update: (o) => { opts = o; inner.update({ ...o, decl: { ...o.decl, type: "text" } }); } };
+  }
+  const row = el("div", "shell-fieldrow shell-valuerow-pick");
+  const caption = el("span", "shell-fieldrow-label");
+  const body = el("div", "shell-fieldrow-body");
+  const sel = el("select", "field shell-fieldrow-select");
+  const help = el("p", "shell-fieldrow-purpose");
+  const problem = el("p", "shell-fieldrow-problem");
+  problem.setAttribute("role", "status");
+  body.append(sel, help, problem);
+  row.append(caption, body);
+  sel.addEventListener("change", () => {
+    const v = sel.value === "" ? undefined : sel.value;
+    opts = { ...opts, value: v };
+    draw(opts);
+    opts.onCommit?.(v);
+  });
+  const groupName = (s: PickSource): string | undefined =>
+    "to" in s ? (s.to === "cast" ? "Cast" : s.to.charAt(0).toUpperCase() + s.to.slice(1)) : "list" in s ? s.list : undefined;
+  const draw = (o: ValueRowOptions): void => {
+    opts = o;
+    row.className = `shell-fieldrow shell-valuerow-pick${o.className ? ` ${o.className}` : ""}`;
+    const label = o.label ?? nameOf(o.decl);
+    if (typeof label === "string") caption.textContent = label; else caption.replaceChildren(label);
+    if (o.controlClassName) sel.className = `shell-fieldrow-select ${o.controlClassName}`;
+    const adapter = o.adapter;
+    const choices = pickChoices(o.decl as unknown as TypeDecl, {
+      ...(adapter ? { nodes: (kind: string) => adapter.nodes(kind) } : {}),
+      ...(adapter?.list ? { list: (name: string) => adapter.list!(name) } : {}),
+    });
+    const held = typeof o.value === "string" ? o.value : "";
+    sel.replaceChildren();
+    const option = (v: string, text: string): HTMLOptionElement => { const opt = el("option", undefined, text); opt.value = v; return opt; };
+    sel.append(option("", "auto"));
+    // One group per source, in order; a value two sources hold is offered by the first only, so the select
+    // shows one choice for what it holds (the row says the name is ambiguous).
+    const offered = new Set<string>();
+    let group: { source: PickSource; el: HTMLElement } | undefined;
+    for (const c of choices) {
+      if (offered.has(c.value)) continue;
+      offered.add(c.value);
+      const name = groupName(c.source);
+      if (name === undefined) { group = undefined; sel.append(option(c.value, c.label)); continue; }
+      if (group?.source !== c.source) {
+        const og = el("optgroup");
+        og.setAttribute("label", name);
+        sel.append(og);
+        group = { source: c.source, el: og };
+      }
+      group.el.append(option(c.value, c.label));
+    }
+    if (held !== "" && !offered.has(held)) {
+      // A node outside the choices keeps its name (as a reference's does); anything else is missing.
+      const named = (o.decl.from ?? []).map((s) => ("to" in s && adapter ? adapter.label?.(s.to, held) : undefined)).find((n) => n !== undefined);
+      sel.append(option(held, named ?? `${held} (missing)`));
     }
     sel.value = held;
     sel.disabled = o.onCommit === undefined || o.disabled === true;

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Rows for every type an extension's fields add (value-rows.ts): a reference picked from the host's
-// nodes, a record field by field, a map keyed by the host's nodes or by text, a list with ids and without, the
+// nodes, a pick from words, the host's nodes and the extension's project lists, a record field by field, a map keyed by the host's nodes or by text, a list with ids and without, the
 // toolkit's checks said under the right row, and parts that keep their element and focus across a redraw.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -43,6 +43,47 @@ describe("valueRow", () => {
     expect(onCommit).toHaveBeenLastCalledWith("c_1");
     pick(sel, "");
     expect(onCommit).toHaveBeenLastCalledWith(undefined);
+  });
+
+  describe("a pick", () => {
+    const to: ValueDecl = { name: "to", type: "pick", from: [{ words: ["all"] }, { to: "cast" }, { list: "pointsOfInterest" }] };
+    const cast: ValueAdapter = {
+      nodes: (kind) => (kind === "cast" ? [{ id: "ANNA", label: "ANNA" }, { id: "Gate", label: "Gate" }] : []),
+      list: (name) => (name === "pointsOfInterest" ? ["Gate", "Well"] : undefined),
+    };
+    const shown = (sel: HTMLSelectElement): string[] =>
+      [...sel.children].map((c) => (c.tagName === "OPTGROUP"
+        ? `${c.getAttribute("label")}: ${[...c.children].map((o) => o.textContent).join(", ")}` : c.textContent ?? ""));
+
+    it("offers auto, then each source's choices in order, a name two sources hold once", () => {
+      const onCommit = vi.fn();
+      const { el } = valueRow({ decl: to, value: undefined, onCommit, adapter: cast });
+      const sel = el.querySelector("select")!;
+      expect(shown(sel)).toEqual(["auto", "all", "Cast: ANNA, Gate", "pointsOfInterest: Well"]);
+      expect(sel.value).toBe("");
+      pick(sel, "Well");
+      expect(onCommit).toHaveBeenLastCalledWith("Well");
+      pick(sel, "");
+      expect(onCommit).toHaveBeenLastCalledWith(undefined);
+    });
+
+    it("says a name two sources hold is ambiguous, and keeps a missing one visible", () => {
+      const both = valueRow({ decl: to, value: "Gate", onCommit: () => {}, adapter: cast });
+      expect(both.el.querySelector(".shell-fieldrow-problem")?.textContent).toContain("a cast member and an entry of the list");
+      const gone = valueRow({ decl: to, value: "Gaet", onCommit: () => {}, adapter: cast });
+      const sel = gone.el.querySelector("select")!;
+      expect(sel.value).toBe("Gaet");
+      expect(sel.options[sel.selectedIndex]!.text).toBe("Gaet (missing)");
+      expect(gone.el.querySelector(".shell-fieldrow-problem")?.textContent).toContain("not one of its choices");
+    });
+
+    it("without an adapter, offers fixed words alone, and types a pick with other sources as text", () => {
+      const words = valueRow({ decl: { name: "favour", type: "pick", from: [{ words: ["speaker", "listener"] }] }, value: "listener", onCommit: () => {} });
+      expect(shown(words.el.querySelector("select")!)).toEqual(["auto", "speaker", "listener"]);
+      const typed = valueRow({ decl: to, value: "ANNA", onCommit: () => {} });
+      expect(typed.el.querySelector("select")).toBeNull();
+      expect(typed.el.querySelector("input")?.value).toBe("ANNA");
+    });
   });
 
   it("edits a record field by field, says a required field is missing, and clears when emptied", () => {

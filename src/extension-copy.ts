@@ -37,6 +37,8 @@ export interface ValueProblemWords {
 }
 
 export const quoted = (s: string): string => `“${s}”`;
+/** A check's own quoted names in the family's quotes. */
+const curly = (s: string): string => s.replace(/"([^"]*)"/g, (_, x: string) => quoted(x));
 const cap = (s: string): string => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
 const article = (s: string): string => (/^[aeiou]/i.test(s) ? "an" : "a");
 
@@ -67,6 +69,15 @@ export function valueProblemSentence(code: string | undefined, message: string, 
     case "not-a-value":
       if (/not among its flags$/.test(message)) return { text: `${on} has a flag that isn't one of its choices.`, next: `Pick from the choices ${place}.` };
       return { text: `${on} is ${quoted(value ?? "")}, which isn't one of its choices.`, next: `Pick one ${place}.` };
+    case "not-a-choice": return { text: `${on} is ${quoted(value ?? "")}, which isn't one of its choices.`, next: `Pick one ${place}.` };
+    case "pick-ambiguous": {
+      const m = / is "([^"]*)", which is (.+)$/.exec(message);
+      return m ? { text: `${on} is ${quoted(m[1]!)}, which is ${curly(m[2]!)}, so it's ambiguous.`, next: "Rename one of them." } : undefined;
+    }
+    case "pick-clash": {
+      const m = /^"([^"]*)" is (.+), so a value naming it is ambiguous$/.exec(message);
+      return m ? { text: `${quoted(m[1]!)} is ${curly(m[2]!)}, so ${field} naming it is ambiguous.`, next: "Rename one of them." } : undefined;
+    }
     case "not-a-stage": return { text: `${on} is ${quoted(value ?? "")}, which isn't one of its stages.`, next: `Pick one ${place}.` };
     case "renamed-stage": {
       const m = / is "([^"]*)", a stage this extension has since renamed "([^"]*)"/.exec(message);

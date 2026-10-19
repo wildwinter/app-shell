@@ -39,6 +39,16 @@ describe("extension problems for the writer", () => {
     expect(s).toEqual({ text: "act on the card “bell” is “gone”, which isn't one of its stages.", next: "Pick one on its page." });
   });
 
+  it("words a pick's missing, ambiguous and clashing names", () => {
+    const w = { extension: "Shot", node: "the line “Hello.”", field: "To", place: "in the inspector", kindWord: (k: string) => k };
+    expect(valueProblemSentence("not-a-choice", '"to" is "Gaet", which is not one of its choices', w))
+      .toEqual({ text: "To on the line “Hello.” is “Gaet”, which isn't one of its choices.", next: "Pick one in the inspector." });
+    expect(valueProblemSentence("pick-ambiguous", '"to" is "Gate", which is a cast member and an entry of the list "pointsOfInterest"', w))
+      .toEqual({ text: "To on the line “Hello.” is “Gate”, which is a cast member and an entry of the list “pointsOfInterest”, so it's ambiguous.", next: "Rename one of them." });
+    expect(valueProblemSentence("pick-clash", '"Gate" is a cast member and an entry of the list "pointsOfInterest", so a value naming it is ambiguous', w))
+      .toEqual({ text: "“Gate” is a cast member and an entry of the list “pointsOfInterest”, so To naming it is ambiguous.", next: "Rename one of them." });
+  });
+
   it("leaves a shape or a code it does not know to the app", () => {
     expect(entryProblemLine("the manifest is broken", "required", words)).toBeUndefined();
     expect(entryProblemLine("entries.card.c_1.note: something new", "brand-new-code", words)).toBeUndefined();

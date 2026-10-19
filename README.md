@@ -219,10 +219,12 @@ const outcome = await history.applyUndo();   // { ok, label } or { ok: false, er
 
 **`@wildwinter/app-shell/value-rows`**: a row for a value of any declared type,
 for an extension's fields. The seven scalars are the field row; a `reference`
-picks one of the host's nodes, a `record` is its fields, a `map` is keyed by a
+picks one of the host's nodes, a `pick` one choice from its sources ("auto"
+first, then its fixed words, the host's nodes of a kind, and the extension's
+project lists, through the adapter's optional `list(name)`), a `record` is its fields, a `map` is keyed by a
 host's nodes or by text, a `list` adds, moves and removes items (a new item of
 an id list gets a fresh id). The checks are `@wildwinter/toolkit/extensions`'
-(an optional peer, 0.2.0 or later), so the editor and validation agree.
+(an optional peer, 0.2.5 or later), so the editor and validation agree.
 
 ```ts
 import { valueRows } from "@wildwinter/app-shell/value-rows";
@@ -242,6 +244,9 @@ host.append(rows.row(`${nodeId}:${decl.name}`, { decl, value, adapter: { nodes: 
   `valueProblemSentence`, `fieldPhrase`), Patterpad's rules made the family's,
   with each app's words for its items, kinds and where a value is changed
   passed in.
+- **v0.54:** the `pick` row, the adapter's `list(name)` for a pick's
+  project lists, and the words for a pick's problems (`not-a-choice`,
+  `pick-ambiguous`, `pick-clash`). Needs toolkit 0.2.5.
 
 ## Roadmap
 
