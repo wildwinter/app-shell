@@ -248,6 +248,41 @@ host.append(rows.row(`${nodeId}:${decl.name}`, { decl, value, adapter: { nodes: 
   project lists, and the words for a pick's problems (`not-a-choice`,
   `pick-ambiguous`, `pick-clash`). Needs toolkit 0.2.5.
 
+## v0.55 (one live link server)
+
+**`@wildwinter/app-shell/live-link`** (main process): the loopback WebSocket
+server a running game connects to, once for the family. Patterpad's and
+Storyletter's were copies; each now plugs its own protocol into this one.
+`ws` (8 or later) is an optional peer the app supplies.
+
+```ts
+import { createLiveLinkServer } from "@wildwinter/app-shell/live-link";
+
+const server = createLiveLinkServer<MyFields>({
+  port: 4471,
+  currentBuildHash: () => projectHash(),
+  onStatus: (s) => sendToWindows(s),
+  protocol: ({ pushStatus }) => ({
+    hello: ({ build, project, msg }) => { /* a run begins: read msg's own fields */ },
+    message: (msg) => { /* anything after the hello; pushStatus() if it changes the status */ },
+    reset: () => { /* the game went away */ },
+    describe: () => ({ /* your fields on a connected status */ }),
+  }),
+});
+server.start();
+server.pushBundle(hash, json);   // after a save
+```
+
+- Loopback only, and a web page's Origin is refused (`isLocalOrigin`).
+- One game at a time: a new connection replaces the old.
+- Nothing reaches the protocol before a hello, which names the build: `match`,
+  `stale`, or `unknown` (no project open).
+- `pushBundle` sends `{ t: "bundle", v: 1, build, data }` only to a game that
+  has said hello and runs another build, and shows the build stale until the
+  game re-hellos with the new one.
+- A taken port reports an error and leaves the server off. The status is the
+  link-status chip's.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),
