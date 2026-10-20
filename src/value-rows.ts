@@ -493,3 +493,7 @@ export function valueRows(): ValueRows {
 // the rows and the fold together.
 export { isSet, extensionFold, foldCaption } from "./value-fold.js";
 export type { ExtensionFold, FoldSectionOptions } from "./value-fold.js";
+
+// A map of records (record-map.ts): the inspector's summary and the helper window's grid.
+export { isRecordMap, recordMapGrid, recordMapKeyLabel, recordMapSummary, valueText } from "./record-map.js";
+export type { RecordMapGrid, RecordMapGridOptions } from "./record-map.js";

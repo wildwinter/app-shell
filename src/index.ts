@@ -32,7 +32,7 @@ export { describeProblem, problemLine, problemName, defaultProblemCopy } from ".
 export type { ProblemLike, ProblemCopy, ProblemCopyEntry, ProblemCopyTable } from "./problems.js";
 export { expandableRow, focusNewRow, revealRow, revealRowWhenReady, dupGuard, mountSettingsDialog } from "./settings.js";
 export type { DupGuard, SettingsSection, SettingsSectionHandle, SettingsDialog, SettingsDialogOptions } from "./settings.js";
-export { pinButton, toolWindowHead, followButton } from "./tool-window-web.js";
+export { pinButton, toolWindowHead, followButton, selectionFollowButton } from "./tool-window-web.js";
 export type { PinButtonOptions, PinButton, ToolWindowHeadOptions, FollowButtonOptions, FollowButton } from "./tool-window-web.js";
 export { confirmDialog } from "./confirm.js";
 // The one modal skeleton (title, sub, body, actions, scrim, motion, focus

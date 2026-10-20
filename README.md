@@ -327,6 +327,26 @@ fold.sweep();   // after each redraw, beside the rows' own sweep
 
 Project Settings shouldn't fold: it's where an author goes to set things.
 
+## v0.57 (a map of records as a grid)
+
+**`@wildwinter/app-shell/value-rows`**, for a map whose values are records (an
+extension's per-character performance, say), too big for an inspector's column:
+
+- `isRecordMap(decl)`: which fields these are, from the declaration alone.
+- `recordMapSummary(decl, value, adapter)`: a line per key, "TAM: smile, nod",
+  the record's set values as their controls show them (`valueText`); for the
+  inspector, beside an Edit button.
+- `recordMapGrid({ decl, value, adapter, onCommit, disabled })`: the grid a
+  helper window draws, a row per key and a column per record field, each cell
+  the row value-rows draws for that field (picks, checks and problems
+  included), a remove button per row and the key adder under it. `onCommit`
+  gets the whole map. Cells keep their elements across `update`. Styles in
+  `controls.css`.
+
+**`selectionFollowButton`** (tool-window kit): "Follow selection", for a helper
+window that shows whatever the editor has selected. The other direction from
+`followButton` ("Follow in the editor"), so it has its own words.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

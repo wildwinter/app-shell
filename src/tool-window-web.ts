@@ -202,3 +202,34 @@ export function followButton(opts: FollowButtonOptions): FollowButton {
   b.addEventListener("click", () => { on = !on; reflect(); opts.onToggle(on); });
   return { el: b, set: (next: boolean) => { on = next; reflect(); } };
 }
+
+export interface SelectionFollowButtonOptions {
+  on: boolean;
+  /** Persist the choice. The button reflects the click itself. */
+  onToggle: (on: boolean) => void;
+  /** What the window stays on when it stops following: "line" (Patterpad), "card" (Storyletter). */
+  what?: string;
+}
+
+/**
+ * "Follow selection": the other direction from `followButton`. A helper window
+ * that shows whatever the editor has selected (Patterpad's fields window, after
+ * Pattershot's brief H1) moves along as the author moves; off, it stays on the
+ * node it shows. On by default in such a window: following is what it is for.
+ */
+export function selectionFollowButton(opts: SelectionFollowButtonOptions): FollowButton {
+  const what = opts.what ?? "line";
+  const b = el("button", "btn swin-follow", "Follow selection");
+  b.type = "button";
+  let on = opts.on;
+  const reflect = (): void => {
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+    b.dataset["tip"] = on
+      ? `Shows whatever is selected in the editor. Click to stay on this ${what}.`
+      : `Stays on this ${what}. Click to follow the selection.`;
+  };
+  reflect();
+  b.addEventListener("click", () => { on = !on; reflect(); opts.onToggle(on); });
+  return { el: b, set: (next: boolean) => { on = next; reflect(); } };
+}

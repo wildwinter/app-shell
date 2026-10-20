@@ -1,7 +1,7 @@
 // The tool window's head (toolWindowHead) and the follow toggle (followButton).
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { toolWindowHead, followButton, pinButton } from "../src/tool-window-web.js";
+import { toolWindowHead, followButton, pinButton, selectionFollowButton } from "../src/tool-window-web.js";
 
 afterEach(() => document.body.replaceChildren());
 
@@ -151,5 +151,21 @@ describe("followButton", () => {
     expect(onToggle).not.toHaveBeenCalled();
     f.el.click();
     expect(onToggle).toHaveBeenCalledWith(false);
+  });
+});
+
+describe("selectionFollowButton", () => {
+  it("says the window follows the editor's selection, and reflects and reports a click", () => {
+    const seen: boolean[] = [];
+    const f = selectionFollowButton({ on: true, onToggle: (on) => seen.push(on) });
+    expect(f.el.textContent).toBe("Follow selection");
+    expect(f.el.getAttribute("aria-pressed")).toBe("true");
+    expect(f.el.dataset["tip"]).toBe("Shows whatever is selected in the editor. Click to stay on this line.");
+    f.el.click();
+    expect(seen).toEqual([false]);
+    expect(f.el.dataset["tip"]).toBe("Stays on this line. Click to follow the selection.");
+    f.set(true);
+    expect(f.el.classList.contains("on")).toBe(true);
+    expect(seen).toEqual([false]);
   });
 });

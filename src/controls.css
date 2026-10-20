@@ -211,3 +211,20 @@ kbd {
 .shell-fold-cap:hover svg, .shell-fold-cap:focus-visible svg { color: var(--ink); }
 .shell-fold-cap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
 .shell-fold-body:empty { display: none; }
+
+/* A map of records as a grid (value-rows' recordMapGrid): a row per key, a column per record field, each
+   cell the field's own row with its caption and help left to the column head. */
+.shell-recordgrid-table { width: 100%; border-collapse: collapse; }
+.shell-recordgrid-table th { font: 600 12px/1.3 var(--font-ui); color: var(--muted); text-align: left; padding: 4px 6px; vertical-align: top; }
+.shell-recordgrid-table td { padding: 3px 6px; vertical-align: top; }
+.shell-recordgrid-table tbody tr { border-top: 1px solid var(--line); }
+.shell-recordgrid-table th.shell-recordgrid-key { color: var(--ink); padding-top: 9px; white-space: nowrap; }
+.shell-recordgrid-gone { color: var(--danger); font-weight: 400; }
+.shell-recordgrid-tools { width: 1%; white-space: nowrap; }
+.shell-recordgrid-cell { display: block; }
+.shell-recordgrid-cell > .shell-fieldrow-label,
+.shell-recordgrid-cell .shell-fieldrow-purpose,
+.shell-recordgrid-cell .shell-fieldrow-valuehelp { display: none; }
+.shell-recordgrid-cell select, .shell-recordgrid-cell input { width: 100%; min-width: 7em; }
+.shell-recordgrid-empty { margin: 6px 0; font: 12.5px/1.4 var(--font-ui); color: var(--muted); }
+.shell-recordgrid-add { margin-top: 8px; }
