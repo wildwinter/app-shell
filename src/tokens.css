@@ -20,7 +20,13 @@
    ============================================================================ */
 
 :root {
-  color-scheme: light dark;
+  /* Native controls (an unticked checkbox, a radio, a scrollbar, a select's
+     pop-up, a date field) and every light-dark() below follow this, so it must
+     follow the palette the author chose, not the OS: a light palette under a
+     dark OS drew every unticked checkbox as a dark filled square. Every palette
+     block in an app's theme.css declares `--color-scheme: light` or `dark`;
+     with no palette chosen the fallback follows the OS, as before. */
+  color-scheme: var(--color-scheme, light dark);
 
   /* The semantic set's third member, and the only COLOUR in this file.
 

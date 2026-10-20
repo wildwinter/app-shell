@@ -283,6 +283,27 @@ server.pushBundle(hash, json);   // after a save
 - A taken port reports an error and leaves the server off. The status is the
   link-status chip's.
 
+## v0.56 (native controls follow the palette)
+
+**`--color-scheme`**: `tokens.css` now sets `color-scheme: var(--color-scheme,
+light dark)` on `:root`. Native controls (unticked checkboxes, radios,
+scrollbars, select pop-ups, date fields) and every `light-dark()` default
+(`--ok`, `--on-accent`) draw from `color-scheme`, so they followed the OS even
+when the author had picked a palette: a light palette under a dark OS drew
+every unticked checkbox as a dark filled square, and a dark palette under a
+light OS drew bright white boxes. `accent-color` colours only the ticked state.
+
+**The rule: every palette block declares `--color-scheme`**, `light` or
+`dark` by its ground. A palette that can be chosen explicitly needs a block of
+its own even when it is also the bare `:root` default, so the bare `:root` can
+leave the token unset and "follow the OS" keeps working through the fallback.
+
+```css
+/* an app's theme.css */
+:root[data-theme="linen"]  { --color-scheme: light; }
+:root[data-theme="indigo"] { --color-scheme: dark; }
+```
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),
