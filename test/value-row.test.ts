@@ -84,6 +84,21 @@ describe("valueRow", () => {
       expect(typed.el.querySelector("select")).toBeNull();
       expect(typed.el.querySelector("input")?.value).toBe("ANNA");
     });
+
+    it("shows the chosen word's own help, following each change, and none for auto or a word it doesn't describe", () => {
+      const type: ValueDecl = { name: "type", type: "pick", from: [{ words: ["ambient", "bark"] }, { list: "types" }],
+        valueHelp: { ambient: "Voices from sources.", bark: "A one-off line." } };
+      const row = valueRow({ decl: type, value: "bark", onCommit: () => {}, adapter: { nodes: () => [], list: () => ["duel"] } });
+      const help = (): HTMLElement => row.el.querySelector<HTMLElement>(".shell-fieldrow-valuehelp")!;
+      expect(help().textContent).toBe("A one-off line.");
+      const sel = row.el.querySelector("select")!;
+      pick(sel, "ambient");
+      expect(help().textContent).toBe("Voices from sources.");
+      pick(sel, "duel");
+      expect(help().hidden).toBe(true);
+      pick(sel, "");
+      expect(help().hidden).toBe(true);
+    });
   });
 
   it("edits a record field by field, says a required field is missing, and clears when emptied", () => {

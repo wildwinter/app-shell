@@ -27,7 +27,7 @@
 import { defaultOf, pickChoices, valueProblems } from "@wildwinter/toolkit/extensions";
 import type { PickSource, TypeDecl, ValueContext } from "@wildwinter/toolkit/extensions";
 import { el, iconBtn, moveItem } from "./dom.js";
-import { fieldRow, fieldRowFocus } from "./value-control.js";
+import { fieldRow, fieldRowFocus, valueHelpText } from "./value-control.js";
 import type { FieldDeclLike, FieldRowHandle, FieldValue } from "./value-control.js";
 
 /** A declaration of any type, as an extension's manifest writes it. */
@@ -232,9 +232,10 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
   const body = el("div", "shell-fieldrow-body");
   const sel = el("select", "field shell-fieldrow-select");
   const help = el("p", "shell-fieldrow-purpose");
+  const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp");
   const problem = el("p", "shell-fieldrow-problem");
   problem.setAttribute("role", "status");
-  body.append(sel, help, problem);
+  body.append(sel, help, valueHelp, problem);
   row.append(caption, body);
   sel.addEventListener("change", () => {
     const v = sel.value === "" ? undefined : sel.value;
@@ -285,6 +286,9 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
     sel.disabled = o.onCommit === undefined || o.disabled === true;
     help.textContent = o.decl.help ?? o.decl.purpose ?? "";
     help.hidden = help.textContent === "";
+    // The chosen word's own help, as an enum's value has (a pick's help describes its fixed words only).
+    valueHelp.textContent = valueHelpText(o.decl, o.value);
+    valueHelp.hidden = valueHelp.textContent === "";
     const words = o.replaceProblem ?? [ownProblems(o.decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
     problem.textContent = words;
     problem.hidden = words === "";

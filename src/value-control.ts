@@ -166,14 +166,14 @@ export interface FieldDeclLike extends ValueDeclLike {
   name: string;
   /** What the field is for, shown under the control. */
   purpose?: string;
-  /** A sentence about each value (an enum's values, the flags, a quality's stages), as an extension's manifest
-   *  gives them: the chosen value's is shown under the control, and each chosen flag's. */
+  /** A sentence about each value (an enum's values, the flags, a quality's stages, a pick's fixed words), as an
+   *  extension's manifest gives them: the chosen value's is shown under the control, and each chosen flag's. */
   valueHelp?: Readonly<Record<string, string>>;
 }
 
 /**
- * The help for what `decl` holds: the chosen enum value's or stage's (the one it falls back to, when unset), or
- * each chosen flag's, "name: sentence" a line each. Empty when the declaration describes none of them.
+ * The help for what `decl` holds: the chosen enum value's, stage's or pick word's (the one it falls back to, when
+ * unset), or each chosen flag's, "name: sentence" a line each. Empty when the declaration describes none of them.
  */
 export function valueHelpText(decl: FieldDeclLike, value: unknown): string {
   const help = decl.valueHelp;
@@ -188,6 +188,11 @@ export function valueHelpText(decl: FieldDeclLike, value: unknown): string {
   if (decl.type === "flags") {
     const held = Array.isArray(value) ? value.map(String) : Array.isArray(decl.default) ? decl.default.map(String) : [];
     return held.flatMap((v) => { const h = said(v); return h === undefined ? [] : [`${v}: ${h}`]; }).join("\n");
+  }
+  if (decl.type === "pick") {
+    // A pick's help describes its fixed words only; empty is automatic, so nothing is chosen to describe.
+    const held = typeof value === "string" && value !== "" ? value : typeof decl.default === "string" ? decl.default : "";
+    return held === "" ? "" : said(held) ?? "";
   }
   return "";
 }
