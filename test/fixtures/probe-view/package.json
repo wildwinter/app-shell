@@ -1,0 +1,7 @@
+{
+  "name": "probe-view",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The shell's test view: a tier 2 view extension small enough to read, for hosts' tests.",
+  "files": ["probe.extension.json", "view"]
+}

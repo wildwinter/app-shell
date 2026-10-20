@@ -82,3 +82,17 @@ describe("guardWebContents", () => {
     expect(c.open("https://example.com/")).toEqual({ action: "deny" });
   });
 });
+
+// The view scheme (view-host): a view's page is `<scheme>://<extension>/?view=<id>`, loaded by main (no
+// will-navigate), so the guard only ever sees the page reload itself or try to leave.
+describe("isSamePage on the view scheme", () => {
+  it("lets the view's page reload itself, and nothing else", () => {
+    const page = "patter-view://probe/?view=inspect";
+    expect(isSamePage(page, "patter-view://probe/?view=inspect")).toBe(true);
+    expect(isSamePage(page, "patter-view://probe/?view=other")).toBe(true);
+    expect(isSamePage(page, "patter-view://probe/view/probe-view.js")).toBe(false);
+    expect(isSamePage(page, "patter-view://pattershot/?view=inspect")).toBe(false);
+    expect(isSamePage(page, "https://example.com/")).toBe(false);
+    expect(isSamePage("", page)).toBe(false);
+  });
+});

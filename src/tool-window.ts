@@ -225,12 +225,18 @@ export function frontForModal(main: BrowserWindow, platform: NodeJS.Platform = p
 
 export interface ToolWindowOptions {
   title: string;
-  /** Renderer entry, relative to rendererDir (e.g. "table.html", "search/index.html"). */
-  page: string;
-  /** Absolute path of the built renderer dir (join(import.meta.dirname, "../renderer")). */
-  rendererDir: string;
+  /** Renderer entry, relative to rendererDir (e.g. "table.html", "search/index.html"). Not used with `url`. */
+  page?: string;
+  /** Absolute path of the built renderer dir (join(import.meta.dirname, "../renderer")). Not used with `url`. */
+  rendererDir?: string;
+  /** Load this URL instead of a page from the renderer dir (a view window's `patter-view://...`). */
+  url?: string;
   /** Absolute path of the preload bridge. */
   preload: string;
+  /** A session partition of the window's own (a view's in-memory `view-<id>`); the default session otherwise. */
+  partition?: string;
+  /** Whether the window may open devtools; Electron's default (yes) when absent. */
+  devTools?: boolean;
   rect: ToolWindowBounds;
   min?: ToolWindowSize;
   /** false = frameless: the renderer draws its own slim drag bar (.swin-head). */
@@ -256,6 +262,9 @@ export interface ToolWindowOptions {
  *  existing window when there is one; otherwise creates, wires, and loads. */
 export function openToolWindow(existing: BrowserWindow | undefined | null, opts: ToolWindowOptions): BrowserWindow {
   if (existing && !existing.isDestroyed()) { existing.focus(); return existing; }
+  if (opts.url === undefined && (opts.page === undefined || opts.rendererDir === undefined)) {
+    throw new Error("openToolWindow needs a url, or a page and its rendererDir");
+  }
   const w = new BrowserWindow({
     ...opts.rect,
     ...(opts.min !== undefined ? { minWidth: opts.min.width, minHeight: opts.min.height } : {}),
@@ -264,15 +273,20 @@ export function openToolWindow(existing: BrowserWindow | undefined | null, opts:
     ...(opts.frame !== undefined ? { frame: opts.frame } : {}),
     webPreferences: {
       contextIsolation: true, nodeIntegration: false, sandbox: true,
+      // Electron's defaults, said out loud: no webview tag, and a dropped file never navigates the window.
+      webviewTag: false, navigateOnDragDrop: false,
       preload: opts.preload,
+      ...(opts.partition !== undefined ? { partition: opts.partition } : {}),
+      ...(opts.devTools !== undefined ? { devTools: opts.devTools } : {}),
     },
   });
   if (opts.pinTo !== undefined) pinToolWindow(w, opts.pinTo(), opts.pinned ?? false);
   if (opts.remember) rememberBounds(w, opts.remember);
   w.once("ready-to-show", () => w.show());
   if (opts.onClosed) w.on("closed", opts.onClosed);
-  if (process.env["ELECTRON_RENDERER_URL"]) void w.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/${opts.page}`);
-  else void w.loadFile(join(opts.rendererDir, opts.page));
+  if (opts.url !== undefined) void w.loadURL(opts.url);
+  else if (process.env["ELECTRON_RENDERER_URL"]) void w.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/${opts.page}`);
+  else void w.loadFile(join(opts.rendererDir!, opts.page!));
   return w;
 }
 

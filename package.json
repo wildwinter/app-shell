@@ -229,7 +229,28 @@
     "./link-status.css": {
       "import": "./dist/link-status.css",
       "require": "./dist/link-status.css"
-    }
+    },
+    "./view-protocol": {
+      "types": "./dist/view-protocol.d.ts",
+      "import": "./dist/view-protocol.js",
+      "require": "./dist/view-protocol.cjs"
+    },
+    "./view-client": {
+      "types": "./dist/view-client.d.ts",
+      "import": "./dist/view-client.js",
+      "require": "./dist/view-client.cjs"
+    },
+    "./view-host": {
+      "types": "./dist/view-host.d.ts",
+      "import": "./dist/view-host.js",
+      "require": "./dist/view-host.cjs"
+    },
+    "./view-host-web": {
+      "types": "./dist/view-host-web.d.ts",
+      "import": "./dist/view-host-web.js",
+      "require": "./dist/view-host-web.cjs"
+    },
+    "./view-preload.cjs": "./dist/view-preload.cjs"
   },
   "files": [
     "dist",
@@ -254,7 +275,7 @@
   },
   "peerDependencies": {
     "@wildwinter/simple-vc-lib": ">=0.5.0",
-    "@wildwinter/toolkit": ">=0.2.5 <1.0.0",
+    "@wildwinter/toolkit": ">=0.2.6 <1.0.0",
     "electron": ">=28",
     "electron-updater": ">=6",
     "ws": ">=8"
@@ -281,7 +302,7 @@
     "@wildwinter/expr": "^0.6.0",
     "@wildwinter/scoperegistry": "^0.9.0",
     "@wildwinter/simple-vc-lib": "^0.5.2",
-    "@wildwinter/toolkit": "^0.2.5",
+    "@wildwinter/toolkit": "^0.2.6",
     "electron": "42.6.0",
     "electron-updater": "^6.8.9",
     "jsdom": "^25.0.0",

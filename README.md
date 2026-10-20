@@ -347,6 +347,201 @@ extension's per-character performance, say), too big for an inspector's column:
 window that shows whatever the editor has selected. The other direction from
 `followButton` ("Follow in the editor"), so it has its own words.
 
+## v0.58 (tier 2 view extensions)
+
+**A view** is a web component an extension's installed package supplies (a
+performance sheet, say), which an app opens in a floating tool window of its
+own. The window is sandboxed, on an in-memory session partition of its own,
+with a preload that does one thing: it hands the view a `MessagePort` straight
+to the editor's renderer. Main hands the pair over and then stays out of the
+path; the editor's renderer answers the view from the app's own model, unsaved
+edits included. Needs toolkit 0.2.6 (`views` and `reads` in the manifest).
+
+| Subpath | Where | What |
+| --- | --- | --- |
+| `./view-protocol` | both ends | The messages, `VIEW_API`, the port's channel and message names. Types and constants only. |
+| `./view-client` | the view | `connect()`, typed requests, events, the theme, and keys. For view authors. |
+| `./view-host` | main | Packages (read, install, list, choose a version), the scheme, and `openViewWindow`. Imports electron. |
+| `./view-host-web` | the editor's renderer | `hostViews` (every open view), `hostView`, `onViewPort`, `readTheme`. Also in the root entry. |
+| `./view-preload.cjs` | the view window | The view preload, which `openViewWindow` uses by default. |
+
+### Packages
+
+An extension's local package is a folder or an `npm pack` tarball with one
+`<id>.extension.json` at its top level and its view files. `readExtensionPackage(path)`
+reads either (no node_modules, no dotfiles) and says why not in a sentence.
+`installExtensionPackage(pkg, dir)` puts it in `<dir>/<id>/<version>/`
+(`dir` is `userData/view-extensions`), replacing the same version whole.
+`installedExtensions(dir)` lists what's there, and `resolveInstalled(dir, id, pinned)`
+picks the version for a project: the pinned one, else the highest with the same
+major version and a warning to show ("This project expects Pattershot 0.3.0;
+0.4.1 is installed."), else none and why ("Pattershot isn't installed on this
+machine.").
+
+### Wiring an app, in order
+
+1. **Register the scheme**, in the app's one `protocol.registerSchemesAsPrivileged`
+   call (Electron keeps only the last call, so list the app's other schemes there too):
+
+   ```ts
+   import { viewSchemePrivileges } from "@wildwinter/app-shell/view-host";
+   protocol.registerSchemesAsPrivileged([assetScheme, viewSchemePrivileges("storylet-view")]);
+   ```
+
+2. **The scheme is served per view session** by `openViewWindow` (it calls
+   `serveViews` and `guardViewSession` on the view's partition the first time).
+   `<scheme>://<id>/?view=<view>` is a generated page that loads the view's
+   `entry` as a module and fills the window with its `element`; any other path
+   is that package's own file, confined to its folder; everything else is a 404.
+   Every response carries `VIEW_CSP` as a header. The session cancels every
+   request off the scheme and refuses every permission.
+
+3. **The editor's preload forwards its port.** Apps allow no preload import but
+   electron, so it's a snippet rather than an import:
+
+   ```js
+   ipcRenderer.on("wildwinter-view:port", (event, meta) => {
+     window.postMessage({ type: "wildwinter-view:port", meta }, "*", event.ports);
+   });
+   ```
+
+4. **Open the view** from main:
+
+   ```ts
+   import { openViewWindow, resolveInstalled } from "@wildwinter/app-shell/view-host";
+
+   const choice = await resolveInstalled(viewsDir, "pattershot", project.pin("pattershot"));
+   if (!choice.installed) return showInstallPrompt(choice.why);
+   const view = openViewWindow({
+     installed: choice.installed, view: "sheet", host: "patter", scheme: "patter-view",
+     editor: mainWindow, pinnedVersion: project.pin("pattershot"),
+     title: choice.warning ? `Performance sheet (${choice.warning})` : undefined,
+     rect: savedWindowRect(store.sheet.bounds, DEF, MIN), pinTo: () => mainWindow, pinned: true,
+   });
+   // on a project change: view.close()
+   ```
+
+   The window closes with the editor. Each time the view's page loads, and each
+   time the editor's does while the view is open, both ends get a fresh pair.
+   When the view window closes, the editor gets its meta again with `closed: true`
+   and no port, through the same snippet.
+   An app that bundles its main process passes `preload` (the path of
+   `@wildwinter/app-shell/view-preload.cjs`), since the default is found beside
+   the shell's own built module.
+
+5. **Host them in the editor's renderer** with an adapter over the app's model:
+
+   ```ts
+   import { hostViews } from "@wildwinter/app-shell";
+
+   const views = hostViews((meta) => {
+     const manifest = manifestOf(meta.extension);
+     if (!manifest) return null;   // refused: its port is closed
+     return { adapter, reads: manifest.reads ?? [], names: { extension: manifest.name, view: viewName(meta) } };
+   });
+   // then, as things change, once for every open view: views.changed(ids), .selection(), .theme(), .writable()
+   ```
+
+   `hostViews` keeps one `hostView` per view window: a new port for a window
+   replaces its handle (one end reloaded), and the window's `closed` drops it.
+   `onViewPort` and `hostView` are there for an app that wants them apart.
+
+`hostView` answers nothing before a hello for `VIEW_API` (another API is
+refused with a sentence, and the port closed); checks every request's shape
+(`bad-request`); keeps each node's `ext` to the view's own extension and its
+manifest's `reads`, children included; refuses a write `read-only` with the
+adapter's why; refuses `media` as `unsupported` when the adapter has none;
+answers a throw as `failed`; and debounces `changed` (100 ms, node lists merged,
+"all" wins). The theme it sends is `readTheme()`: the palette tokens (`--bg`,
+`--surface`, `--card`, `--ink`, `--muted`, `--line`, `--line-soft`, `--accent`,
+`--accent-soft`, `--on-accent`, `--danger`, `--warn`, `--ok`, the three fonts,
+and `--char-0` to `--char-11`) and the shell's grammar (radii, shadows, motion,
+scrim, scrollbar), with the scheme from the root's `color-scheme`.
+
+### The node envelope
+
+Every node a view reads is `{ id, kind, parent, label, host, ext, children? }`
+in both hosts: `kind` the manifest's node kind, `host` that host's own fields
+for the kind (below), and `ext` extension data by extension id, the view's own
+and its `reads`, nothing else. A write is a list of `{ node, field, value }`
+edits to the view's own extension, applied as one undo step with its label or
+refused whole. `field` is one of the extension's top-level fields, never a path
+inside one: to change one key of a map, write the whole map. An absent `value`
+clears the field. A write's edits are all on the project node or none are, since
+the project's data and a scene's undo separately in Patterpad; `hostView` refuses
+a write that mixes them. A node whose data for the view's extension somebody else
+holds carries `held`, the sentence saying who, so the view can show it read-only;
+a write touching it is refused `held`.
+
+### Writing a view
+
+```ts
+import { connect } from "@wildwinter/app-shell/view-client";
+
+const app = await connect();   // as the module loads: the port arrives once
+const sel = await app.selection();
+const node = sel.path[0] && await app.node(sel.path[0].id);
+app.on("changed", () => redraw());
+await app.write("Set shot", [{ node: node.id, field: "shot", value: "wide" }]);
+```
+
+The client sets the theme's tokens on the page's root (`var(--ink)` works) and
+its `color-scheme`, and keeps them current. A key combination with Cmd or Ctrl
+that the view didn't handle (didn't `preventDefault`) goes to the app in the
+portable spelling, so Mod+Z is the editor's undo; Mod+Z, Mod+Shift+Z and Mod+Y
+never run the page's own undo. Plain typing never leaves the view. A refused
+request rejects with a `ViewRefusalError` carrying the `refusal`.
+
+**The probe view** (`test/fixtures/probe-view/`) is the shell's test view, there
+for hosts' tests to borrow: a `probe` extension targeting both hosts with one
+`note` field, and a plain-JS view (`inspect`, `<probe-view>`) that speaks the
+protocol itself, shows the selection's innermost node and its note, and writes
+the note.
+
+### Host fields
+
+What each host puts in a node's `host`, by node kind.
+
+**Patterpad** (host `patter`). `gameData` is always an object, `{}` when empty.
+`padAfterDefault` is the pause a node sets for what's inside it, present only
+when it sets one.
+
+| Kind | `host` fields |
+| --- | --- |
+| `project` | `name`, `cast` (`[{ token, name }]`, the shown name in the source language), `qualifiers` (`[{ gameId, name }]`), `padAfterDefault` (resolved), `localiseDialogueText` |
+| `scene` | `title`, `address`, `gameData`, `padAfterDefault` |
+| `block` | `name`, `address`, `gameData`, `padAfterDefault` |
+| `group` | `role` (`choice`, `branch`, `sequence`, or `group`), `gameData`, `padAfterDefault`. Not a manifest kind, so it carries no extension data. A choice's children are its options. |
+| `option` | `text` (the choice text), `gameData`, `padAfterDefault`. Its children are its prompt beat, then its run. |
+| `snippet` | `gameData`, `padAfterDefault`, `padAfterEffective` |
+| `line` | `character`, `qualifier` (or null), `direction` (or null), `text` (source language), `padAfter` (effective, as Patterplay resolves it), `padInherited` (where it came from: `snippet`, `group`, `option`, `block`, `scene`, `project`, or `default`; absent when the line sets its own), `gameData` |
+| `text` | `text`, `action`, `padAfter`, `padInherited`, `gameData` |
+| `gameEvent` | `gameData` |
+
+Patterpad answers `media` (a take's measured length, else the estimate Play
+uses) and changes only the scene open in the editor and the project node; a
+write to another scene is refused `read-only`, saying so.
+
+**Storyletter** (host `storylets`). An absent optional string is `null`; `label`
+is the title, else the gameId.
+
+| Kind | `host` fields |
+| --- | --- |
+| `project` | `name` |
+| `box` | `gameId`, `title`, `purpose` |
+| `deck` | `gameId`, `title`, `purpose`, `gate`, `box` |
+| `card` | `gameId`, `title`, `purpose`, `condition`, `priority`, `redraw`, `copies`, `tags` (`{ group: [tag gameIds] }`), `fields` (`{ name: value }`), `deck`, `box` |
+| `outcome` | `gameId`, `title`, `purpose`, `gate`, `fields`, `card`, `deck`, `box` |
+| `tagGroup` | `gameId`, `tags` (gameIds), `spatial`, `box` (null for the map's group) |
+| `tag` | `gameId`, `group` |
+| `handTemplate` | `gameId`, `title`, `purpose`, `slots`, `bindings`, `box` |
+| `hand` | `gameId`, `title`, `template`, `slots`, `tags` (`{ group: tag }`), `box` |
+
+Children: the project's boxes, then the map's tag group; a box's decks, tag
+groups, hand templates, and hands; a deck's cards; a card's outcomes; a tag
+group's tags. The selection has no outcome or tag, since Storyletter has no focus
+for either. Storyletter has no `media`.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

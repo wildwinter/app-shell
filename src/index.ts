@@ -129,3 +129,13 @@ export { plural, debounce, isEditableTarget, formatCount, copyWithFeedback, rela
 export type { Debounced } from "./util.js";
 export { createNavHistory, historyNav } from "./nav-history.js";
 export type { NavHistory, NavHistoryOptions } from "./nav-history.js";
+// Tier 2 view extensions, the editor renderer's half (view-host-web.ts): host a
+// view over its port from the app's adapter. Also its own entry,
+// @wildwinter/app-shell/view-host-web; the protocol is ./view-protocol.
+export { hostView, hostViews, onViewPort, readTheme, VIEW_THEME_TOKENS } from "./view-host-web.js";
+export type { HostViewOptions, HostViewsSetup, ViewHosts } from "./view-host-web.js";
+export { VIEW_API, VIEW_PORT_CHANNEL, VIEW_PORT_MESSAGE } from "./view-protocol.js";
+export type {
+  ViewAdapter, ViewHandle, ViewNode, ViewSelection, ViewMediaLength, ViewTheme, ViewWritable, ViewEdit, ViewRefusal,
+  ViewPortMeta, ViewHostName, ViewJson,
+} from "./view-protocol.js";

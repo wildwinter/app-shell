@@ -1,0 +1,13 @@
+{
+  "schema": "wildwinter/extension@0",
+  "id": "probe",
+  "name": "Probe",
+  "version": "1.0.0",
+  "targets": {
+    "patter": { "line": { "fields": [{ "name": "note", "type": "text", "label": "Note" }] } },
+    "storylets": { "card": { "fields": [{ "name": "note", "type": "text", "label": "Note" }] } }
+  },
+  "views": [
+    { "id": "inspect", "name": "Probe view", "entry": "view/probe-view.js", "element": "probe-view" }
+  ]
+}
