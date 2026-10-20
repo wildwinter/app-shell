@@ -283,7 +283,7 @@ server.pushBundle(hash, json);   // after a save
 - A taken port reports an error and leaves the server off. The status is the
   link-status chip's.
 
-## v0.56 (native controls follow the palette)
+## v0.56 (native controls follow the palette, and extension fields folded)
 
 **`--color-scheme`**: `tokens.css` now sets `color-scheme: var(--color-scheme,
 light dark)` on `:root`. Native controls (unticked checkboxes, radios,
@@ -303,6 +303,29 @@ leave the token unset and "follow the OS" keeps working through the fallback.
 :root[data-theme="linen"]  { --color-scheme: light; }
 :root[data-theme="indigo"] { --color-scheme: dark; }
 ```
+
+**An extension's fields folded** (`@wildwinter/app-shell/value-rows`): an
+extension's section in an inspector shows only the fields the node sets, and
+opens to every field on request. `isSet(decl, value)` is the rule: held, and
+not the toolkit's `defaultOf`, compared deeply (a record of defaults, an empty
+map, an enum's first value and `false` are all unset). `extensionFold()` draws
+the section around the host's own rows: the caption is the disclosure, with
+the count ("Pattershot (3 set)"); the fold is per extension and stays as left
+from node to node; a value cleared while folded keeps its row until the author
+leaves the node; the host's lead (a lock line) and tail (undeclared keys)
+always show. Styles in `controls.css`; `lockControls` leaves the caption live.
+
+```ts
+const fold = extensionFold();   // one per inspector, kept across redraws
+host.append(fold.section({
+  extension: x.id, caption: x.name, node: nodeId, fields, entry,
+  row: (decl) => rows.row(`${x.id}:${nodeId}:${decl.name}`, { decl, value: entry?.[decl.name], onCommit }),
+  group: (name) => heading(name),
+}));
+fold.sweep();   // after each redraw, beside the rows' own sweep
+```
+
+Project Settings shouldn't fold: it's where an author goes to set things.
 
 ## Roadmap
 

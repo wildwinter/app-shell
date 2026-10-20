@@ -200,3 +200,14 @@ kbd {
 .shell-valuerow-key { min-width: 10em; }
 /* The chosen value's own help (a manifest's valueHelp): a line per chosen flag. */
 .shell-fieldrow-valuehelp { white-space: pre-line; }
+
+/* An extension's section, folded to the fields a node sets (value-rows' extensionFold). The caption is the
+   disclosure: a quiet full-width button, the chevron then the name and its count. */
+.shell-fold-cap {
+  display: flex; align-items: center; gap: 4px; width: 100%;
+  padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.shell-fold-cap svg { flex: none; color: var(--muted); }
+.shell-fold-cap:hover svg, .shell-fold-cap:focus-visible svg { color: var(--ink); }
+.shell-fold-cap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+.shell-fold-body:empty { display: none; }

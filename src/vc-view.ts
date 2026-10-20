@@ -106,14 +106,19 @@ export function paintVcBadges(root: ParentNode, shards: VcMap): void {
 
 type Disableable = HTMLButtonElement | HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
+/** The shell's own controls that only change what is shown, so a lock never
+ *  turns them off: an extension section's fold (value-fold.ts). */
+const ALWAYS_LIVE = ".shell-fold-cap";
+
 /** Turn a region's editing controls off - or back on, but only the ones WE
  *  turned off, so a control disabled for its own reasons (the first card's
- *  "previous", a redraw-turns box on "always") stays disabled. */
+ *  "previous", a redraw-turns box on "always") stays disabled. `staysLive` is
+ *  the app's own reading controls; the shell's (ALWAYS_LIVE) stay live too. */
 export function lockControls(host: HTMLElement, off: boolean, staysLive: string): void {
   host.classList.toggle("vc-readonly", off);
   if (off) {
     host.querySelectorAll<Disableable>("input, textarea, select, button").forEach((c) => {
-      if (c.disabled || (staysLive !== "" && c.matches(staysLive))) return;
+      if (c.disabled || c.matches(ALWAYS_LIVE) || (staysLive !== "" && c.matches(staysLive))) return;
       c.disabled = true;
       c.classList.add("vc-off");
     });

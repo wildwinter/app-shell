@@ -488,3 +488,8 @@ export function valueRows(): ValueRows {
     },
   };
 }
+
+// An extension's section folded to the fields a node sets (value-fold.ts), under this entry so a host takes
+// the rows and the fold together.
+export { isSet, extensionFold, foldCaption } from "./value-fold.js";
+export type { ExtensionFold, FoldSectionOptions } from "./value-fold.js";
