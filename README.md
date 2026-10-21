@@ -617,6 +617,20 @@ between `--ink` and `--muted` (Patterpad's is `color-mix(in oklab, var(--ink)
 must read, so greyed text that still carries meaning uses `--ink-soft`. A host
 that doesn't set it sends none: a view falls back to that same mix.
 
+**Increase Contrast.** `tokens.css` answers `prefers-contrast: more` (macOS
+Increase Contrast): `--muted`, `--line` and `--line-soft` become mixes of the
+palette's own `--ink` into `--bg` (70% for the grey, 50% for both lines, since a
+soft line needn't stay softer here), so grey text reaches 5 to 7:1 and edges 3:1
+in every palette, with nothing else changed. It outranks a
+palette block (`:root:root:root`), so an app's `theme.css` needs nothing.
+
+**`./contrast`**, for tests: WCAG ratios (`contrastRatio`), `color-mix(in
+oklab)` (`mixOklab`, `resolveColour`), an app's palettes read from its
+`theme.css` in cascade order (`themePalettes`: `default`, each `data-theme`, and
+`system-dark`), and `contrastShortfalls(palettes, tokens, grounds, needs)`.
+`withHighContrast(palette)` applies the block above, and `HIGH_CONTRAST_MIX`
+holds its mixes. Each app's suite holds its text tokens to `TEXT_CONTRAST` (4.5).
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

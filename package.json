@@ -255,6 +255,11 @@
       "import": "./dist/view-host-web.js",
       "require": "./dist/view-host-web.cjs"
     },
+    "./contrast": {
+      "types": "./dist/contrast.d.ts",
+      "import": "./dist/contrast.js",
+      "require": "./dist/contrast.cjs"
+    },
     "./view-preload.cjs": "./dist/view-preload.cjs"
   },
   "files": [

@@ -136,6 +136,20 @@
   }
 }
 
+/* Increase Contrast (macOS; `prefers-contrast: more`): the greys and the edges darken in whatever palette is in
+   use, mixed from its own --ink and --bg, so the shell needs no list of palettes (as with --color-scheme). Text
+   in --muted reaches 5 to 7:1 in every palette of the family, and --line 3:1 or more, so a control's edge can be
+   seen. Nothing else changes. Three `:root`s outrank a palette block (`:root[data-theme="..."]` and the OS-dark
+   `:root:not([data-theme])`), which comes after this file. The mixes are HIGH_CONTRAST_MIX in contrast.ts; the
+   test holds the two together (patterkit design/patterpad-text-contrast-2026-10.md, option 3). */
+@media (prefers-contrast: more) {
+  :root:root:root {
+    --muted: color-mix(in oklab, var(--ink) 70%, var(--bg));
+    --line: color-mix(in oklab, var(--ink) 50%, var(--bg));
+    --line-soft: color-mix(in oklab, var(--ink) 50%, var(--bg)); /* a soft line is a line here */
+  }
+}
+
 /* A floating layer from createFloating (floating.ts) carries this attribute, because its class is
    the caller's. Never a window-drag region, even over one: Electron gives a click in a drag area to
    the OS before the page sees it (dialog.css has the whole story, 2026-09-28). */
