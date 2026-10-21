@@ -92,7 +92,7 @@ export interface ViewEdit {
 export interface ViewRefusal {
   readonly code:
     | "bad-request"   // the request's shape is wrong
-    | "unsupported"   // the host has no such thing (media in Storyletter)
+    | "unsupported"   // the host has no such thing (media and audio in Storyletter)
     | "gone"          // a node the request names doesn't exist
     | "held"          // somebody else holds the data the write would change
     | "read-only"     // the project or the view is read-only
@@ -115,6 +115,15 @@ export interface ViewRequests {
   write: { args: { label: string; edits: ViewEdit[] }; value: { written: number } };
   /** Reveal and select a node in the editor. */
   select: { args: { id: string }; value: boolean };
+  /**
+   * Play a line's or text beat's take, as the editor plays it, stopping whatever was playing: true when it plays,
+   * false when the node has no take (`media`'s `measured` says so beforehand). Refused `unsupported` by a host with
+   * no audio just now. Added after API 1's first release (app-shell 0.60): a host before it refuses `bad-request`,
+   * so a view treats either refusal as "no audio here".
+   */
+  play: { args: { id: string }; value: boolean };
+  /** Stop the take playing, if any: true when one was. Refused as `play` is. */
+  stop: { args: Record<string, never>; value: boolean };
 }
 
 export type ViewOp = keyof ViewRequests;
@@ -147,6 +156,9 @@ export interface ViewWelcome {
   readonly view: string;
   readonly theme: ViewTheme;
   readonly writable: ViewWritable;
+  /** The extensions the view's manifest `requires` that the project doesn't take, by id; empty when none. Absent
+   *  from a host before app-shell 0.60, which didn't say. */
+  readonly missing?: readonly string[];
 }
 
 /** The host's answer to a hello it can't serve, before it closes the port. */
@@ -165,6 +177,10 @@ export interface ViewEvents {
   writable: ViewWritable;
   /** The window is closing; the port goes next. */
   closing: Record<string, never>;
+  /** The take playing in the editor, by its node's id, or null when it stops or ends (whoever asked for it). */
+  playing: { id: string | null };
+  /** The project's missing requirements changed (an extension taken or removed): the new list, as in the welcome. */
+  missing: { extensions: readonly string[] };
 }
 
 export type ViewEventName = keyof ViewEvents;
@@ -217,7 +233,16 @@ export interface ViewAdapter {
   /** Apply the edits to `extension`'s data as one undo step with the label, or refuse them all. */
   write(extension: string, label: string, edits: readonly ViewEdit[]): void | ViewRefusal | Promise<void | ViewRefusal>;
   select(id: string): boolean | Promise<boolean>;
+  /** Play a node's take: true when it plays, false when it has none, or a refusal (`unsupported` while the app has
+   *  no audio, `gone`). Absent in a host with no audio; `hostView` then refuses `play` and `stop` as unsupported.
+   *  The app tells views through the handle's `playing` as a take starts and ends. */
+  play?(id: string): boolean | ViewRefusal | Promise<boolean | ViewRefusal>;
+  /** Stop the take playing: true when one was. */
+  stop?(): boolean | Promise<boolean>;
   writable(extension: string): ViewWritable;
+  /** The extensions `extension`'s manifest requires that the project doesn't take (the toolkit's
+   *  `missingRequirements`). None when absent. */
+  missing?(extension: string): readonly string[];
   /** Run a key combination the view passed on (undo, redo, the app's shortcuts). */
   key?(combo: string): void;
 }
@@ -229,5 +254,9 @@ export interface ViewHandle {
   selection(): void;
   theme(): void;
   writable(): void;
+  /** The take playing, by node id, or null when none is: call as one starts and as it stops or ends. */
+  playing(id: string | null): void;
+  /** The project's extensions changed: tell the view if its missing requirements did. */
+  missing(): void;
   close(): void;
 }

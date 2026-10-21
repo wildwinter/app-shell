@@ -57,6 +57,11 @@ export interface ViewClient {
   media(ids: string[]): Promise<{ [id: string]: ViewMediaLength }>;
   write(label: string, edits: ViewEdit[]): Promise<{ written: number }>;
   select(id: string): Promise<boolean>;
+  /** Play a line's take in the app: true when it plays, false when it has none. Rejects (`unsupported`, or
+   *  `bad-request` from an app before app-shell 0.60) where the app plays no audio. */
+  play(id: string): Promise<boolean>;
+  /** Stop the take playing: true when one was. */
+  stop(): Promise<boolean>;
   /** Listen for an event; returns the unsubscribe. */
   on<K extends ViewEventName>(name: K, fn: (value: ViewEvents[K]) => void): () => void;
   close(): void;
@@ -194,6 +199,8 @@ function client(port: MessagePort, welcome: ViewWelcome, w: Window, keys: boolea
     media: (ids) => request("media", { ids }),
     write: (label, edits) => request("write", { label, edits }),
     select: (id) => request("select", { id }),
+    play: (id) => request("play", { id }),
+    stop: () => request("stop", {}),
     on(name, fn) {
       let set = listeners.get(name);
       if (!set) listeners.set(name, (set = new Set()));

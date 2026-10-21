@@ -26,9 +26,9 @@ import type { InstalledExtension } from "./view-package.js";
 
 export {
   readExtensionPackage, packageFromFiles, readTarball, installExtensionPackage, removeInstalledExtension,
-  installedExtensions, chooseInstalled, resolveInstalled, compareVersions,
+  installedExtensions, chooseInstalled, resolveInstalled, compareVersions, planPackageAdd, viewMenuLabel,
 } from "./view-package.js";
-export type { ExtensionPackage, PackageRead, InstalledExtension, InstalledChoice } from "./view-package.js";
+export type { ExtensionPackage, PackageRead, InstalledExtension, InstalledChoice, PackageAddPlan } from "./view-package.js";
 export {
   VIEW_CSP, viewSchemePrivileges, serveViews, viewResponse, viewPage, viewPageUrl, viewContentType, confined,
   guardViewSession, viewRequestAllowed,

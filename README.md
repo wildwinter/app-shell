@@ -542,6 +542,45 @@ groups, hand templates, and hands; a deck's cards; a card's outcomes; a tag
 group's tags. The selection has no outcome or tag, since Storyletter has no focus
 for either. Storyletter has no `media`.
 
+## v0.60 (a view plays audio, hears what's missing; one Add Extension)
+
+Still view API 1: everything here is an addition a view feature-tests. Needs
+toolkit 0.3.1 (`requires`, `missingRequirements`, and a field's `editor`).
+
+**Audio, played by the host.** A view asks `play({ id })` for a line's or text
+beat's take (`app.play(id)`), and `stop()`; the app plays it as its own player
+does, so nothing about audio crosses into the sandbox. `play` answers `true`
+when the take plays and `false` when the node has none (`media`'s `measured`
+says so beforehand). A host with no audio refuses both `unsupported`, and a host
+before 0.60 refuses them `bad-request`: treat either as "no audio here". The
+event `playing` says which take plays (`{ id }`), and `{ id: null }` when it
+stops or ends, whoever asked for it. The adapter supplies `play(id)` (true,
+false, or a refusal) and `stop()`, and calls the handle's `playing(id | null)`
+as a take starts and ends; `hostView` stops a take its view started if the view
+closes while it plays.
+
+**Missing requirements.** The welcome carries `missing`, the extensions the
+view's manifest `requires` that the project doesn't take (`[]` when none; absent
+from a host before 0.60), and the event `missing` (`{ extensions }`) says the
+new list when it changes. The adapter supplies `missing(extension)` (the
+toolkit's `missingRequirements` over what the project takes), and the app calls
+the handle's `missing()` whenever the project's extensions change; `hostView`
+sends it only when the list did. A view can then say "this project doesn't take
+Patterstage" instead of previewing as if it did.
+
+**One Add Extension.** `planPackageAdd(manifest, taken)` (`./view-host`)
+decides what Add Extension does with a package for a project, so the same item
+serves the first person and a teammate whose machine lacks the views. Its views
+install on this machine whatever it says; `project` is `take` (the project
+doesn't take it: copy the manifest and pin it), `update` (the project pins an
+older version: offer the package's, one undo step if taken), or `none` (the
+same version, or the project pins a newer one, which it keeps: `note` says so).
+For `take` and `update`, `missing` lists the requirements the project lacks,
+which the app adds first (or refuses with a sentence naming them). There is no
+separate install item: a view the project offers but this machine lacks shows
+in the Window menu as `viewMenuLabel(name, false)`, "Performance sheet (not
+installed)…", and opens Add Extension.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

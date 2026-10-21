@@ -8,7 +8,9 @@
 // What hostView guarantees, whatever the adapter does: nothing answered
 // before a hello for this API; every request's shape checked; `ext` kept to
 // the view's own extension and its manifest's `reads`; writes refused whole
-// when not writable; a throw answered as `failed`; `changed` debounced.
+// when not writable; a throw answered as `failed`; `changed` debounced; a
+// take the view started stopped when it closes; `missing` sent only when it
+// changes.
 // ---------------------------------------------------------------------------
 
 import { VIEW_API, VIEW_PORT_MESSAGE } from "./view-protocol.js";
@@ -118,6 +120,9 @@ function argsProblem(op: ViewOp, args: Record<string, unknown>): string | null {
       return null;
     case "select":
       return isId(args["id"]) ? null : "A select request names the node by its id.";
+    case "play":
+      return isId(args["id"]) ? null : "A play request names the line by its id.";
+    case "stop": return null;
     case "write": {
       if (typeof args["label"] !== "string" || args["label"].trim() === "") return "A write has a label, for the undo step.";
       const edits = args["edits"];
@@ -132,7 +137,9 @@ function argsProblem(op: ViewOp, args: Record<string, unknown>): string | null {
   }
 }
 
-const OPS: readonly ViewOp[] = ["project", "node", "selection", "media", "write", "select"];
+const OPS: readonly ViewOp[] = ["project", "node", "selection", "media", "write", "select", "play", "stop"];
+
+const NO_AUDIO: ViewRefusal = { code: "unsupported", message: "This app doesn't play recordings." };
 
 /**
  * Answer a view over its port from the app's adapter. Returns the handle the app calls as its model, selection,
@@ -148,6 +155,11 @@ export function hostView(port: MessagePort, adapter: ViewAdapter, opts: HostView
   let closed = false;
   let pending: Set<string> | "all" | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  /** The take this view asked for, while it plays: stopped if the view closes first. */
+  let mine: string | null = null;
+  /** The missing requirements last told, as JSON. */
+  let missingSaid = "";
+  const missingNow = (): string[] => [...(adapter.missing?.(ext) ?? [])];
 
   const post = (msg: HostToView): void => { if (!closed) port.postMessage(msg); };
   const emit = <K extends ViewEventName>(name: K, value: ViewEvents[K]): void => {
@@ -174,6 +186,17 @@ export function hostView(port: MessagePort, adapter: ViewAdapter, opts: HostView
         if (!adapter.media) return { refusal: { code: "unsupported", message: "This app has no recordings or timings for lines." } };
         return { value: await adapter.media(args["ids"] as string[]) };
       case "select": return { value: await adapter.select(args["id"] as string) };
+      case "play": {
+        if (!adapter.play) return { refusal: NO_AUDIO };
+        const id = args["id"] as string;
+        const r = await adapter.play(id);
+        if (typeof r === "object") return { refusal: r };
+        if (r) mine = id;
+        return { value: r };
+      }
+      case "stop":
+        if (!adapter.stop) return { refusal: NO_AUDIO };
+        return { value: await adapter.stop() };
       case "write": {
         const writable = adapter.writable(ext);
         if (writable.readOnly) return { refusal: { code: "read-only", message: writable.why ?? "This project is read-only just now." } };
@@ -226,12 +249,15 @@ export function hostView(port: MessagePort, adapter: ViewAdapter, opts: HostView
       close(false);
       return;
     }
+    const missing = missingNow();
+    missingSaid = JSON.stringify(missing);
     const welcome: ViewWelcome = {
       t: "welcome", api: VIEW_API, host: adapter.host,
       extension: { id: ext, version: meta.version, ...(meta.pinned !== undefined ? { pinned: meta.pinned } : {}) },
       view: meta.view,
       theme: theme(),
       writable: adapter.writable(ext),
+      missing,
     };
     welcomed = true;
     post(welcome);
@@ -266,6 +292,8 @@ export function hostView(port: MessagePort, adapter: ViewAdapter, opts: HostView
     closed = true;
     port.removeEventListener("message", onMessage as EventListener);
     port.close();
+    // A take the view started and nobody has stopped would play on with nothing showing it.
+    if (mine !== null) { mine = null; void Promise.resolve().then(() => adapter.stop?.()).catch(() => {}); }
   }
 
   return {
@@ -284,6 +312,18 @@ export function hostView(port: MessagePort, adapter: ViewAdapter, opts: HostView
     },
     theme() { if (!closed) emit("theme", theme()); },
     writable() { if (!closed) emit("writable", adapter.writable(ext)); },
+    playing(id) {
+      if (id !== mine) mine = null;
+      if (!closed) emit("playing", { id });
+    },
+    missing() {
+      if (closed || !welcomed) return;
+      const now = missingNow();
+      const said = JSON.stringify(now);
+      if (said === missingSaid) return;
+      missingSaid = said;
+      emit("missing", { extensions: now });
+    },
     close: () => close(true),
   };
 }
@@ -330,6 +370,8 @@ export function hostViews(setup: (meta: ViewPortMeta) => HostViewsSetup | null, 
     selection: () => each((h) => h.selection()),
     theme: () => each((h) => h.theme()),
     writable: () => each((h) => h.writable()),
+    playing: (id) => each((h) => h.playing(id)),
+    missing: () => each((h) => h.missing()),
     close: () => { each((h) => h.close()); handles.clear(); },
     dispose: () => { stop(); each((h) => h.close()); handles.clear(); },
   };

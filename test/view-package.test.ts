@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import {
   chooseInstalled, compareVersions, installExtensionPackage, installedExtensions, readExtensionPackage, readTarball,
-  removeInstalledExtension, resolveInstalled,
+  planPackageAdd, removeInstalledExtension, resolveInstalled, viewMenuLabel,
 } from "../src/view-package.js";
 import type { ExtensionPackage, InstalledExtension } from "../src/view-package.js";
 
@@ -167,5 +167,38 @@ describe("choosing the installed version", () => {
     await installExtensionPackage(r, dir);
     expect((await resolveInstalled(dir, "probe", "1.0.0")).installed?.root).toBe(join(dir, "probe/1.0.0"));
     expect(await resolveInstalled(dir, "probe", "1.1.0")).toMatchObject({ warning: "This project expects Probe 1.1.0; 1.0.0 is installed." });
+  });
+});
+
+describe("planning Add Extension", () => {
+  const shot = (version: string, requires?: string[]) => ({
+    schema: "wildwinter/extension@0", id: "pattershot", name: "Pattershot", version, targets: { patter: {} },
+    ...(requires ? { requires } : {}),
+  }) as never;
+
+  it("takes an extension the project lacks, with the requirements it lacks", () => {
+    expect(planPackageAdd(shot("0.4.0", ["patterstage"]), [])).toEqual({ project: "take", version: "0.4.0", missing: ["patterstage"] });
+    expect(planPackageAdd(shot("0.4.0", ["patterstage"]), [{ id: "patterstage", pin: "0.5.0" }]))
+      .toEqual({ project: "take", version: "0.4.0", missing: [] });
+  });
+  it("installs only at the pinned version", () => {
+    expect(planPackageAdd(shot("0.4.0", ["patterstage"]), [{ id: "pattershot", pin: "0.4.0" }]))
+      .toEqual({ project: "none", pinned: "0.4.0", version: "0.4.0", missing: [] });
+  });
+  it("offers a newer version, with what it would need", () => {
+    expect(planPackageAdd(shot("0.5.0", ["patterstage"]), [{ id: "pattershot", pin: "0.4.0" }]))
+      .toEqual({ project: "update", pinned: "0.4.0", version: "0.5.0", missing: ["patterstage"] });
+  });
+  it("never downgrades, and says so", () => {
+    expect(planPackageAdd(shot("0.3.0"), [{ id: "pattershot", pin: "0.4.0" }])).toEqual({
+      project: "none", pinned: "0.4.0", version: "0.3.0", missing: [],
+      note: "This project takes Pattershot 0.4.0, newer than this package's 0.3.0, so it keeps 0.4.0.",
+    });
+    expect(planPackageAdd(shot("0.9.0"), [{ id: "pattershot", pin: "1.0.0" }]).note)
+      .toBe("This project takes Pattershot 1.0.0, newer than this package's 0.9.0, so it keeps 1.0.0. The views installed from this package won't open in it, being a different major version.");
+  });
+  it("labels a view not installed here", () => {
+    expect(viewMenuLabel("Performance sheet", true)).toBe("Performance sheet");
+    expect(viewMenuLabel("Performance sheet", false)).toBe("Performance sheet (not installed)…");
   });
 });

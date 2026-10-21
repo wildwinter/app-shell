@@ -67,7 +67,7 @@ describe("hostView: the hello", () => {
     expect(await v.next()).toEqual({
       t: "welcome", api: VIEW_API, host: "patter",
       extension: { id: "pattershot", version: "0.3.0", pinned: "0.3.0" }, view: "sheet",
-      theme: THEME, writable: { readOnly: false },
+      theme: THEME, writable: { readOnly: false }, missing: [],
     });
     expect((await v.ask("selection", {})).ok).toBe(true);
   });
@@ -215,5 +215,76 @@ describe("hostView: holds and histories", () => {
     expect(a.writes).toEqual([]);
     expect((await v.ask("write", { label: "Pin", edits: [{ node: "p", field: "a", value: 1 }, { node: "p", field: "b", value: 2 }] })).ok).toBe(true);
     expect((await v.ask("write", { label: "Pin", edits: [{ node: "l1", field: "shot", value: "wide" }, { node: "l2", field: "shot", value: "close" }] })).ok).toBe(true);
+  });
+});
+
+describe("hostView: audio", () => {
+  const ready = async (a: ViewAdapter) => { const v = setup(a); v.send({ t: "hello", api: VIEW_API }); await v.next(); return v; };
+  const audio = () => {
+    const played: string[] = [];
+    let stops = 0;
+    const a = fakeAdapter({
+      play: (id: string) => (id === "gone" ? { code: "gone" as const, message: "No such line." } : id !== "silent" && (played.push(id), true)),
+      stop: () => { stops++; return true; },
+    });
+    return { a, played, stops: () => stops };
+  };
+
+  it("plays a take, says false for a line without one, and passes the adapter's refusal on", async () => {
+    const { a, played } = audio();
+    const v = await ready(a);
+    expect(await v.ask("play", { id: "l1" })).toMatchObject({ ok: true, value: true });
+    expect(await v.ask("play", { id: "silent" })).toMatchObject({ ok: true, value: false });
+    expect(await v.ask("play", { id: "gone" })).toMatchObject({ ok: false, refusal: { code: "gone" } });
+    expect(await v.ask("play", {})).toMatchObject({ ok: false, refusal: { code: "bad-request" } });
+    expect(await v.ask("stop", {})).toMatchObject({ ok: true, value: true });
+    expect(played).toEqual(["l1"]);
+  });
+
+  it("refuses play and stop as unsupported in a host with no audio", async () => {
+    const v = await ready(fakeAdapter());
+    expect(await v.ask("play", { id: "l1" })).toMatchObject({ ok: false, refusal: { code: "unsupported" } });
+    expect(await v.ask("stop", {})).toMatchObject({ ok: false, refusal: { code: "unsupported" } });
+  });
+
+  it("sends playing, and stops the view's own take when it closes", async () => {
+    const { a, stops } = audio();
+    const v = await ready(a);
+    await v.ask("play", { id: "l1" });
+    v.handle.playing("l1");
+    expect(await v.next()).toEqual({ t: "event", name: "playing", value: { id: "l1" } });
+    v.handle.close();
+    await v.next(); // closing
+    await new Promise((r) => setTimeout(r, 0));
+    expect(stops()).toBe(1);
+  });
+
+  it("leaves a take alone on closing once it has ended or another has started", async () => {
+    const { a, stops } = audio();
+    const v = await ready(a);
+    await v.ask("play", { id: "l1" });
+    v.handle.playing(null);
+    await v.next();
+    v.handle.close();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(stops()).toBe(0);
+  });
+});
+
+describe("hostView: missing requirements", () => {
+  it("says what's missing in the welcome, and again only when it changes", async () => {
+    let missing: string[] = ["patterstage"];
+    const asked: string[] = [];
+    const v = setup(fakeAdapter({ missing: (ext: string) => { asked.push(ext); return missing; } }));
+    v.send({ t: "hello", api: VIEW_API });
+    expect(await v.next()).toMatchObject({ t: "welcome", missing: ["patterstage"] });
+    expect(asked).toEqual(["pattershot"]);
+    v.handle.missing();
+    missing = [];
+    v.handle.missing();
+    expect(await v.next()).toEqual({ t: "event", name: "missing", value: { extensions: [] } });
+    v.handle.missing();
+    v.handle.theme();
+    expect(await v.next()).toMatchObject({ t: "event", name: "theme" });
   });
 });

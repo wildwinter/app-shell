@@ -2,7 +2,8 @@
 // View packages (tier 2 view extensions, patterkit design/view-extensions.md):
 // reading an extension's local package, a folder or an `npm pack` tarball,
 // installing it on this machine under `<dir>/<id>/<version>/`, listing what's
-// installed, and choosing the installed version for a project's pin.
+// installed, choosing the installed version for a project's pin, and planning
+// what Add Extension does with a package for a project.
 //
 // Main-process code with no Electron import, so it runs under test as it is.
 // The tarball reader is a small ustar reader over node:zlib (pax and GNU long
@@ -12,7 +13,7 @@
 import { gunzipSync } from "node:zlib";
 import { lstat, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
-import { manifestProblems, parseManifest, MANIFEST_FILE_SUFFIX } from "@wildwinter/toolkit/extensions";
+import { manifestProblems, missingRequirements, parseManifest, MANIFEST_FILE_SUFFIX } from "@wildwinter/toolkit/extensions";
 import type { Manifest, Problem } from "@wildwinter/toolkit/extensions";
 
 const ID = /^[a-z][a-z0-9-]*$/;
@@ -276,4 +277,55 @@ export function chooseInstalled(
 /** `chooseInstalled` over what's installed under `dir`. */
 export async function resolveInstalled(dir: string, id: string, pinned?: string, name?: string): Promise<InstalledChoice> {
   return chooseInstalled(await installedExtensions(dir), id, pinned, name);
+}
+
+// --- Add Extension ---------------------------------------------------------------
+
+/**
+ * What Add Extension does with a package for a project, the one way in both for the first person to take an
+ * extension and for a teammate whose machine lacks its views. The package's views install on this machine in
+ * every case; `project` says what happens to the project.
+ */
+export interface PackageAddPlan {
+  /**
+   * `take`: the project doesn't take the extension, so its manifest is copied in and pinned. `update`: the project
+   * pins an older version, so the writer is offered the package's (one undo step if they take it). `none`: the
+   * project pins this version, or a newer one, and only the views install.
+   */
+  readonly project: "take" | "update" | "none";
+  /** The project's pin, when it takes the extension already. */
+  readonly pinned?: string;
+  /** The package's version. */
+  readonly version: string;
+  /** For `take` and `update`: the extensions the package's manifest requires that the project doesn't take, by id.
+   *  The project step waits on them (the app offers to add them first). */
+  readonly missing: readonly string[];
+  /** A sentence to show once the views are installed, when the project keeps a newer pin than the package. */
+  readonly note?: string;
+}
+
+/** Plan Add Extension for a package's manifest against the extensions a project takes, each with its pin. */
+export function planPackageAdd(manifest: Manifest, taken: readonly { readonly id: string; readonly pin?: string }[]): PackageAddPlan {
+  const version = manifest.version;
+  const ids = taken.map((t) => t.id);
+  const mine = taken.find((t) => t.id === manifest.id);
+  if (!mine) return { project: "take", version, missing: missingRequirements(manifest, ids) };
+  const pinned = mine.pin;
+  if (pinned === undefined || compareVersions(version, pinned) > 0) {
+    return { project: "update", ...(pinned !== undefined ? { pinned } : {}), version, missing: missingRequirements(manifest, ids) };
+  }
+  if (compareVersions(version, pinned) === 0) return { project: "none", pinned, version, missing: [] };
+  const name = manifest.name || manifest.id;
+  const otherMajor = version.split(".")[0] !== pinned.split(".")[0];
+  return {
+    project: "none", pinned, version, missing: [],
+    note: `This project takes ${name} ${pinned}, newer than this package's ${version}, so it keeps ${pinned}.`
+      + (otherMajor ? ` The views installed from this package won't open in it, being a different major version.` : ""),
+  };
+}
+
+/** A view's item in an app's Window menu: its name, or, when it isn't installed on this machine, the name marked
+ *  so, opening Add Extension for its package. */
+export function viewMenuLabel(name: string, installed: boolean): string {
+  return installed ? name : `${name} (not installed)…`;
 }

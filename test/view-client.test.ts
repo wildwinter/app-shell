@@ -87,6 +87,15 @@ describe("requests and events", () => {
     await expect(app.write("x", [{ node: "c1", field: "note" }])).rejects.toThrow("It's locked.");
   });
 
+  it("asks to play and stop, rejecting where the app has no audio", async () => {
+    const { app } = await pair();
+    for (const ask of [() => app.play("c1"), () => app.stop()]) {
+      const err = await ask().catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(ViewRefusalError);
+      expect((err as ViewRefusalError).refusal.code).toBe("unsupported");
+    }
+  });
+
   it("hears events, unsubscribes, and applies a new theme", async () => {
     const theme = { scheme: "dark" as const, tokens: { "--ink": "#eeeeee" } };
     const { app, host } = await pair(theme);
