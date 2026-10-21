@@ -1,6 +1,7 @@
 // openViewWindow (view-host.ts) with electron mocked: the hardened window on its own partition and the view
 // preload, the scheme served and the session guarded once per extension, a fresh port pair to both ends on
-// each load of either, and the view closed with the editor.
+// each load of either, the view closed with the editor, and the shell's head: its pin and close from the view's
+// own contents only, and its state told again at each load.
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -10,6 +11,7 @@ const shared = vi.hoisted(() => ({
   made: [] as unknown[],
   sessions: new Map<string, { handled: string[]; guarded: number }>(),
   nextId: 1,
+  ipc: new Map<string, ((e: { sender: unknown }, ...a: unknown[]) => void)[]>(),
 }));
 vi.mock("electron", () => {
   class Emitter {
@@ -21,6 +23,8 @@ vi.mock("electron", () => {
   }
   class Contents extends Emitter {
     posted: [string, unknown, unknown[]][] = [];
+    sent: [string, unknown][] = [];
+    send(channel: string, msg: unknown): void { this.sent.push([channel, msg]); }
     postMessage(channel: string, msg: unknown, ports: unknown[]): void { this.posted.push([channel, msg, ports]); }
   }
   class FakeWindow extends Emitter {
@@ -40,6 +44,10 @@ vi.mock("electron", () => {
   let n = 0;
   return {
     BrowserWindow: FakeWindow,
+    ipcMain: {
+      on: (ch: string, fn: (e: { sender: unknown }, ...a: unknown[]) => void) => { shared.ipc.set(ch, [...(shared.ipc.get(ch) ?? []), fn]); },
+      removeListener: (ch: string, fn: unknown) => { shared.ipc.set(ch, (shared.ipc.get(ch) ?? []).filter((f) => f !== fn)); },
+    },
     MessageChannelMain: class { port1 = { n: ++n, end: 1 }; port2 = { n, end: 2 }; },
     session: {
       fromPartition: (p: string) => {
@@ -60,14 +68,17 @@ vi.mock("electron", () => {
 
 const { openViewWindow, viewPreloadPath } = await import("../src/view-host.js");
 const { VIEW_PORT_CHANNEL } = await import("../src/view-protocol.js");
+const { VIEW_CLOSE_CHANNEL, VIEW_HEAD_CHANNEL, VIEW_PIN_CHANNEL } = await import("../src/view-head.js");
+const ipcSend = (ch: string, sender: unknown, ...a: unknown[]): void => { for (const fn of shared.ipc.get(ch) ?? []) fn({ sender }, ...a); };
 
 const ROOT = join(import.meta.dirname, "fixtures/probe-view");
 const installed = { id: "probe", version: "1.0.0", root: ROOT, manifest: parseManifest(readFileSync(join(ROOT, "probe.extension.json"), "utf8")) };
 
 type Fake = {
   id: number; opts: { title: string; frame?: boolean; webPreferences: Record<string, unknown> }; url: string;
-  webContents: { posted: [string, unknown, { n: number; end: number }[]][]; fire(ev: string): void };
+  webContents: { posted: [string, unknown, { n: number; end: number }[]][]; sent: [string, unknown][]; fire(ev: string): void };
   fire(ev: string): void; close(): void; isDestroyed(): boolean;
+  setAlwaysOnTop: { mock: { calls: unknown[][] } }; setParentWindow: { mock: { calls: unknown[][] } };
 };
 
 describe("openViewWindow", () => {
@@ -80,13 +91,14 @@ describe("openViewWindow", () => {
     });
     const w = v.window as unknown as Fake;
     expect(w.opts.title).toBe("Probe view");
-    expect(w.opts.frame).toBe(true);
+    expect(w.opts.frame).toBe(false);
     expect(w.opts.webPreferences).toEqual({
       contextIsolation: true, nodeIntegration: false, sandbox: true, webviewTag: false, navigateOnDragDrop: false,
       preload: viewPreloadPath(), partition: "view-probe", devTools: false,
     });
     expect(viewPreloadPath()).toMatch(/view-preload\.cjs$/);
-    expect(w.url).toBe("patter-view://probe/?view=inspect");
+    // Frameless, so the page carries the head; with nothing to pin above, no pin.
+    expect(w.url).toBe("patter-view://probe/?view=inspect&head=Probe+view");
     expect(shared.sessions.get("view-probe")).toEqual({ handled: ["patter-view"], guarded: 1 });
     expect(v.meta).toEqual({ window: w.id, extension: "probe", view: "inspect", version: "1.0.0", pinned: "1.0.0" });
 
@@ -128,6 +140,55 @@ describe("openViewWindow", () => {
     expect(v.window.isDestroyed()).toBe(true);
     expect(editor.handlers.get("closed")).toEqual([]);
     expect(editor.webContents.handlers.get("did-finish-load")).toEqual([]);
+  });
+
+  it("wears the shell's head: pin and close from the view's own contents, its state told at each load", async () => {
+    const { BrowserWindow } = await import("electron");
+    const editor = new BrowserWindow({});
+    const onPin = vi.fn();
+    const v = openViewWindow({
+      installed, view: "inspect", host: "patter", scheme: "patter-view", editor: editor as never, rect: { width: 1, height: 1 },
+      title: "Probe view (1.0.0 installed)", pinTo: () => editor as never, pinned: true, onPin,
+    });
+    const w = v.window as unknown as Fake;
+    expect(w.url).toBe("patter-view://probe/?view=inspect&head=Probe+view+%281.0.0+installed%29&pin=1");
+    w.webContents.fire("dom-ready");
+    expect(w.webContents.sent.at(-1)).toEqual([VIEW_HEAD_CHANNEL, { pinned: true }]);
+
+    // Another window's contents can't pin or close it; a non-boolean pin is ignored.
+    ipcSend(VIEW_PIN_CHANNEL, editor.webContents, false);
+    ipcSend(VIEW_PIN_CHANNEL, w.webContents, "no");
+    ipcSend(VIEW_CLOSE_CHANNEL, editor.webContents);
+    expect(onPin).not.toHaveBeenCalled();
+    expect(w.isDestroyed()).toBe(false);
+
+    // Its own pin unpins it and is persisted; a reload is told the new state.
+    ipcSend(VIEW_PIN_CHANNEL, w.webContents, false);
+    expect(onPin).toHaveBeenCalledWith(false);
+    w.webContents.fire("dom-ready");
+    expect(w.webContents.sent.at(-1)).toEqual([VIEW_HEAD_CHANNEL, { pinned: false }]);
+
+    // Main re-pins it (Reset View): the head is told, and nothing is persisted from here.
+    v.setPinned(true);
+    expect(w.webContents.sent.at(-1)).toEqual([VIEW_HEAD_CHANNEL, { pinned: true }]);
+    expect(onPin).toHaveBeenCalledTimes(1);
+
+    ipcSend(VIEW_CLOSE_CHANNEL, w.webContents);
+    expect(w.isDestroyed()).toBe(true);
+    expect(shared.ipc.get(VIEW_PIN_CHANNEL)).toEqual([]);
+    expect(shared.ipc.get(VIEW_CLOSE_CHANNEL)).toEqual([]);
+  });
+
+  it("has an OS title bar and no head with frame: true", async () => {
+    const { BrowserWindow } = await import("electron");
+    const editor = new BrowserWindow({});
+    const v = openViewWindow({ installed, view: "inspect", host: "patter", scheme: "patter-view", editor: editor as never, rect: { width: 1, height: 1 }, frame: true, pinTo: () => editor as never });
+    const w = v.window as unknown as Fake;
+    expect(w.opts.frame).toBe(true);
+    expect(w.url).toBe("patter-view://probe/?view=inspect");
+    w.webContents.fire("dom-ready");
+    expect(w.webContents.sent).toEqual([]);
+    v.close();
   });
 
   it("throws for a view the manifest doesn't offer", () => {

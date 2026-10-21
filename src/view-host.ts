@@ -11,18 +11,21 @@
 // here, so they run under test as they are.
 // ---------------------------------------------------------------------------
 
-import { BrowserWindow, MessageChannelMain, session } from "electron";
+import { BrowserWindow, MessageChannelMain, ipcMain, session } from "electron";
+import type { IpcMainEvent } from "electron";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { viewsFor } from "@wildwinter/toolkit/extensions";
 import type { HostName } from "@wildwinter/toolkit/extensions";
-import { openToolWindow } from "./tool-window.js";
+import { openToolWindow, pinToolWindow } from "./tool-window.js";
 import type { ToolWindowBounds, ToolWindowSize } from "./tool-window.js";
 import { VIEW_PORT_CHANNEL } from "./view-protocol.js";
 import type { ViewPortMeta } from "./view-protocol.js";
 import { guardViewSession, serveViews, viewPageUrl } from "./view-serve.js";
 import type { ViewSource } from "./view-serve.js";
 import type { InstalledExtension } from "./view-package.js";
+import { VIEW_CLOSE_CHANNEL, VIEW_HEAD_CHANNEL, VIEW_PIN_CHANNEL } from "./view-head.js";
+import type { ViewHeadState } from "./view-head.js";
 
 export {
   readExtensionPackage, packageFromFiles, readTarball, installExtensionPackage, removeInstalledExtension,
@@ -34,6 +37,8 @@ export {
   guardViewSession, viewRequestAllowed,
 } from "./view-serve.js";
 export type { ServeViewsOptions, ViewSource, ProtocolLike, ViewSessionLike } from "./view-serve.js";
+export { VIEW_HEAD_CHANNEL, VIEW_PIN_CHANNEL, VIEW_CLOSE_CHANNEL, VIEW_HEAD_CSS, viewHeadHtml, wireViewHead } from "./view-head.js";
+export type { ViewHeadOptions, ViewHeadState, ViewHeadIpc } from "./view-head.js";
 
 /** Where the built view preload sits: beside this module in dist. An app that bundles its main process (so
  *  this module's own path is the bundle's) passes `preload` to `openViewWindow` instead. */
@@ -76,10 +81,14 @@ export interface ViewWindowOptions {
   title?: string;
   rect: ToolWindowBounds;
   min?: ToolWindowSize;
-  /** OS title bar by default: the view's page is the author's, so it has no shell head. */
+  /** Frameless by default, the family's shape: the page carries the shell's head (title, pin, close) above
+   *  the view, drawn by the host. `true` for an OS title bar and no head. */
   frame?: boolean;
+  /** The window the pin keeps it above. Without it the head has no pin. */
   pinTo?: () => BrowserWindow | undefined;
   pinned?: boolean;
+  /** The writer clicked the head's pin: persist it (the window has pinned or unpinned itself already). */
+  onPin?: (on: boolean) => void;
   remember?: (bounds: ToolWindowBounds) => void;
   onClosed?: () => void;
   /** Whether the view window may open devtools (default false). */
@@ -91,6 +100,8 @@ export interface ViewWindowOptions {
 export interface ViewWindow {
   readonly window: BrowserWindow;
   readonly meta: ViewPortMeta;
+  /** Pin or unpin it from main (Reset View re-pins), with the head's pin told so. */
+  setPinned(on: boolean): void;
   /** Close the view (the project changed, say). Closing the editor closes it too. */
   close(): void;
 }
@@ -107,14 +118,18 @@ export function openViewWindow(opts: ViewWindowOptions): ViewWindow {
   if (!decl) throw new Error(`${installed.manifest.name} has no view called "${opts.view}" in this app.`);
   prepareViewSession(installed.id, { root: installed.root, manifest: installed.manifest }, opts.scheme, opts.host);
 
+  const title = opts.title ?? decl.name;
+  const frame = opts.frame ?? false;
+  let pinned = opts.pinned ?? false;
   const w = openToolWindow(null, {
-    title: opts.title ?? decl.name,
-    url: viewPageUrl(opts.scheme, installed.id, decl.id),
+    title,
+    url: viewPageUrl(opts.scheme, installed.id, decl.id,
+      frame ? undefined : { title, ...(opts.pinTo !== undefined ? { pinned } : {}) }),
     preload: opts.preload ?? viewPreloadPath(),
     partition: viewPartition(installed.id),
     devTools: opts.devTools ?? false,
     rect: opts.rect,
-    frame: opts.frame ?? true,
+    frame,
     ...(opts.min !== undefined ? { min: opts.min } : {}),
     ...(opts.pinTo !== undefined ? { pinTo: opts.pinTo } : {}),
     ...(opts.pinned !== undefined ? { pinned: opts.pinned } : {}),
@@ -137,10 +152,35 @@ export function openViewWindow(opts: ViewWindowOptions): ViewWindow {
   // The editor reloaded: its old port went with its page, so the view needs a new one too.
   const onEditorLoad = (): void => { if (viewLoaded) handOver(); };
   const close = (): void => { if (!w.isDestroyed()) w.close(); };
+  const setPinned = (on: boolean): void => {
+    pinned = on;
+    if (w.isDestroyed()) return;
+    if (opts.pinTo !== undefined) pinToolWindow(w, opts.pinTo(), on);
+    tellHead();
+  };
+  // The head's state again at each load: a reload serves the URL's first state, which may be stale.
+  const tellHead = (): void => {
+    if (!frame && !w.isDestroyed()) w.webContents.send(VIEW_HEAD_CHANNEL, { pinned } satisfies ViewHeadState);
+  };
+  const contents = w.webContents;
+  const fromView = (e: IpcMainEvent): boolean => !w.isDestroyed() && e.sender === contents;
+  const onPinClick = (e: IpcMainEvent, on: unknown): void => {
+    if (!fromView(e) || typeof on !== "boolean" || opts.pinTo === undefined) return;
+    setPinned(on);
+    opts.onPin?.(on);
+  };
+  const onCloseClick = (e: IpcMainEvent): void => { if (fromView(e)) close(); };
+  if (!frame) {
+    ipcMain.on(VIEW_PIN_CHANNEL, onPinClick);
+    ipcMain.on(VIEW_CLOSE_CHANNEL, onCloseClick);
+    contents.on("dom-ready", tellHead);
+  }
   w.webContents.on("did-finish-load", onViewLoad);
   editor.webContents.on("did-finish-load", onEditorLoad);
   editor.once("closed", close);
   w.once("closed", () => {
+    ipcMain.removeListener(VIEW_PIN_CHANNEL, onPinClick);
+    ipcMain.removeListener(VIEW_CLOSE_CHANNEL, onCloseClick);
     if (!editor.isDestroyed()) {
       // Tell the editor the view has gone, the same way its port came: meta with `closed`, and no port.
       editor.webContents.postMessage(VIEW_PORT_CHANNEL, { ...meta, closed: true }, []);
@@ -148,5 +188,5 @@ export function openViewWindow(opts: ViewWindowOptions): ViewWindow {
       editor.removeListener("closed", close);
     }
   });
-  return { window: w, meta, close };
+  return { window: w, meta, setPinned, close };
 }

@@ -11,6 +11,8 @@ import { readFile, realpath } from "node:fs/promises";
 import { extname, isAbsolute, join, relative } from "node:path";
 import { viewsFor } from "@wildwinter/toolkit/extensions";
 import type { HostName, Manifest, ViewDecl } from "@wildwinter/toolkit/extensions";
+import { VIEW_HEAD_CSS, viewHeadHtml } from "./view-head.js";
+import type { ViewHeadOptions } from "./view-head.js";
 
 /** The view CSP: the package's own scripts and styles, inline styles, images and fonts from the package or data
  *  URLs, and no network, frames, forms, or plugins. Sent as a header on every response. */
@@ -47,9 +49,14 @@ export interface ServeViewsOptions {
   resolve: (extension: string) => ViewSource | null | Promise<ViewSource | null>;
 }
 
-/** The URL of a view's page. */
-export function viewPageUrl(scheme: string, extension: string, view: string): string {
-  return `${scheme}://${extension}/?view=${encodeURIComponent(view)}`;
+/** The URL of a view's page; with `head`, the page carries the shell's head (title, pin, close) above the view. */
+export function viewPageUrl(scheme: string, extension: string, view: string, head?: ViewHeadOptions): string {
+  const q = new URLSearchParams({ view });
+  if (head) {
+    q.set("head", head.title);
+    if (head.pinned !== undefined) q.set("pin", head.pinned ? "1" : "0");
+  }
+  return `${scheme}://${extension}/?${q.toString()}`;
 }
 
 const TYPES: Record<string, string> = {
@@ -78,18 +85,19 @@ const notFound = (): Response => new Response("Not found", { status: 404, header
 const escapeHtml = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** The page that hosts a view: its entry as a module script and its element filling the window. */
-export function viewPage(view: Pick<ViewDecl, "name" | "entry" | "element">): string {
+/** The page that hosts a view: its entry as a module script and its element filling the window, below the
+ *  shell's head when the window has one. */
+export function viewPage(view: Pick<ViewDecl, "name" | "entry" | "element">, head?: ViewHeadOptions): string {
   const el = view.element;   // checked against the custom-element pattern by viewsFor
   return `<!doctype html>
-<html><head><meta charset="utf-8"><title>${escapeHtml(view.name)}</title>
+<html><head><meta charset="utf-8"><title>${escapeHtml(head?.title ?? view.name)}</title>
 <style>
 html, body { margin: 0; height: 100%; }
 body { background: var(--bg, Canvas); color: var(--ink, CanvasText); font-family: var(--font-ui, system-ui, sans-serif); color-scheme: var(--color-scheme, light dark); }
-body > ${el} { display: block; height: 100%; overflow: auto; }
-</style>
+body > ${el} { display: block; ${head ? "flex: 1; min-height: 0" : "height: 100%"}; overflow: auto; }
+${head ? VIEW_HEAD_CSS : ""}</style>
 <script type="module" src="/${view.entry.split("/").map(encodeURIComponent).join("/")}"></script>
-</head><body><${el}></${el}></body></html>
+</head><body>${head ? viewHeadHtml(head) : ""}<${el}></${el}></body></html>
 `;
 }
 
@@ -104,7 +112,10 @@ export async function viewResponse(url: string, opts: ServeViewsOptions): Promis
     const id = u.searchParams.get("view");
     const view = id === null ? undefined : viewsFor(source.manifest, opts.host).find((v) => v.id === id);
     if (!view) return notFound();
-    return new Response(viewPage(view), { status: 200, headers: headers("text/html; charset=utf-8") });
+    const title = u.searchParams.get("head");
+    const pin = u.searchParams.get("pin");
+    const head = title === null ? undefined : { title, ...(pin !== null ? { pinned: pin === "1" } : {}) };
+    return new Response(viewPage(view, head), { status: 200, headers: headers("text/html; charset=utf-8") });
   }
   const file = await confined(source.root, u.pathname);
   if (!file) return notFound();

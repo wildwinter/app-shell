@@ -115,6 +115,7 @@ describe("family style: separators and key hints are drawn", () => {
     hold("typed separator", hits, [
       { file: "keys.ts", match: /right: \{ mac: "→", other: "Right" \}/, why: "the keycap legends again: the arrow is the Mac's own spelling of the key inside a drawn kbd, which keyLabel exists to write" },
       { file: "tool-window-web.ts", match: /tip: "Close \(Esc\)"/, why: "the tool window's close tooltip: Esc has no platform spelling, so tipWithKey would write exactly this, and copy-house-style.md rule 27 spells the fragment this way" },
+      { file: "view-head.ts", match: /data-view-close aria-label="Close \(Esc\)"/, why: "the same close label on a view window's head, which is served as HTML rather than built by toolWindowHead" },
     ], []);
   });
 
@@ -134,6 +135,7 @@ describe("family style: tooltips go through the shell", () => {
   it("sets no native title tooltip", () => {
     hold("native title", lineHits(TITLE), [
       { file: "dom.ts", match: /node\.title = props\.title/, why: "el()'s passthrough for an app that asks for a native title by name; the helper types none itself, and `tip` beside it is the shell's own" },
+      { file: "view-head.ts", match: /title="\$\{label\}"|title="Close \(E|pin\.title = pinLabel/, count: 3, why: "a view window's head lives in the view's page, served under the view CSP, where the shell's tooltip host isn't mounted; the native title is the only rollover it can have, beside aria-label" },
       { file: "value-control.ts", match: /node\.title = props\.tip/, why: "the rung strip built in a document of its own (`doc`), for a play inspector outside the apps, where the shell's tooltip host is not mounted; in the apps the strip uses el() and its themed `tip`" },
     ], [
       { file: "property-name-field.ts", match: /input\.title = /, count: 4, why: "the illegal-name reason and the hint ride the field's native title (Patterpad's settings gate reads `bad.title` back for its message); the family form is a data attribute plus the shell tooltip" },

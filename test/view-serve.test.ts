@@ -46,6 +46,12 @@ describe("viewResponse", () => {
     expect(html).toContain("var(--ink");
   });
 
+  it("serves the page with the head the URL asks for", async () => {
+    const html = await (await viewResponse(viewPageUrl("patter-view", "probe", "inspect", { title: "Probe & co", pinned: false }), opts)).text();
+    expect(html).toContain(`<span class="swin-title">Probe &amp; co</span>`);
+    expect(html).toContain(`class="swin-pin" data-view-pin aria-pressed="false"`);
+  });
+
   it("serves a package file with its type and the CSP", async () => {
     const res = await viewResponse("patter-view://probe/view/probe-view.js", opts);
     expect(res.status).toBe(200);
@@ -104,6 +110,21 @@ describe("viewContentType and viewPage", () => {
   });
   it("escapes the title", () => {
     expect(viewPage({ name: "<b>&", entry: "v.js", element: "x-y" })).toContain("<title>&lt;b&gt;&amp;</title>");
+  });
+  it("has no head unless asked", () => {
+    const html = viewPage({ name: "V", entry: "v.js", element: "x-y" });
+    expect(html).not.toContain("swin-head");
+    expect(html).toContain("body > x-y { display: block; height: 100%; overflow: auto; }");
+  });
+  it("carries the shell's head above the view when asked: title, pin when there is one, close", () => {
+    const html = viewPage({ name: "V", entry: "v.js", element: "x-y" }, { title: "<V>", pinned: true });
+    expect(html).toContain("<title>&lt;V&gt;</title>");
+    expect(html).toMatch(/<body><header class="swin-head" data-view-head><span class="swin-title">&lt;V&gt;<\/span>.*<\/header><x-y><\/x-y><\/body>/);
+    expect(html).toContain(`class="swin-pin on" data-view-pin aria-pressed="true"`);
+    expect(html).toContain(`data-view-close aria-label="Close (Esc)"`);
+    expect(html).toContain("-webkit-app-region: drag");
+    expect(html).toContain("flex: 1; min-height: 0");
+    expect(viewPage({ name: "V", entry: "v.js", element: "x-y" }, { title: "V" })).not.toContain("data-view-pin");
   });
 });
 

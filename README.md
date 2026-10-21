@@ -416,8 +416,10 @@ machine.").
      installed: choice.installed, view: "sheet", host: "patter", scheme: "patter-view",
      editor: mainWindow, pinnedVersion: project.pin("pattershot"),
      title: choice.warning ? `Performance sheet (${choice.warning})` : undefined,
-     rect: savedWindowRect(store.sheet.bounds, DEF, MIN), pinTo: () => mainWindow, pinned: true,
+     rect: savedWindowRect(store.sheet.bounds, DEF, MIN), pinTo: () => mainWindow,
+     pinned: slice.pinned(), onPin: slice.setPinned,
    });
+   // Reset View: view.setPinned(true)
    // on a project change: view.close()
    ```
 
@@ -585,6 +587,29 @@ installed)…", and opens Add Extension.
 Electron import: reading, installing and choosing packages, `planPackageAdd`,
 and `viewMenuLabel`, for main-process code that runs under test without
 Electron. `./view-host` re-exports all of it, as before.
+
+## v0.61 (a view window wears the shell's head)
+
+A view window now looks like every other tool window: frameless, with the
+shell's `.swin-head` above the view (its title, the pin, and close), drawn by
+the host. `openViewWindow` asks for it by default (`frame: true` gives the OS
+title bar and no head, as before). The page the scheme serves carries the
+head's markup and styles (`?view=<id>&head=<title>&pin=1`), and the view
+preload wires it in its own isolated world (`wireViewHead`), so the view's code
+never reaches the channels behind it.
+
+- **The pin** is drawn when the window has `pinTo`. A click pins or unpins the
+  window (`pinToolWindow`, as Search and Play do) and calls `onPin(on)`, where
+  the app persists it (`slice.setPinned`). Main re-pinning it (Reset View) goes
+  through the window's `setPinned(on)`, which tells the head too.
+- **Close** closes the window, and so does **Escape**, the family's rule: not
+  from a field, and not when the view has called `preventDefault()` on it. A
+  view that uses Escape itself says so that way.
+- **The head draws in the view's theme**: the palette tokens the view's client
+  sets on the root (`applyTheme`), with fallbacks until then. The view's own
+  element fills the rest of the window.
+
+Still view API 1: nothing changes for a view, which can't see or drive the head.
 
 ## Roadmap
 
