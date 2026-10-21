@@ -19,9 +19,10 @@ import type {
   ViewRefusal, ViewTheme, ViewWelcome,
 } from "./view-protocol.js";
 
-/** The palette names the family's apps define, read for a view's theme. */
+/** The palette names the family's apps define, read for a view's theme. `--ink-soft` is Patterpad's text tone
+ *  between ink and muted (a host that doesn't set it sends none, and the view falls back). */
 const PALETTE_TOKENS = [
-  "--bg", "--surface", "--card", "--ink", "--muted", "--line", "--line-soft", "--accent", "--accent-soft", "--on-accent",
+  "--bg", "--surface", "--card", "--ink", "--ink-soft", "--muted", "--line", "--line-soft", "--accent", "--accent-soft", "--on-accent",
   "--danger", "--warn", "--ok", "--font-ui", "--font-read", "--font-mono",
   ...Array.from({ length: 12 }, (_, i) => `--char-${i}`),
 ];

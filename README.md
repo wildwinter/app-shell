@@ -455,7 +455,7 @@ manifest's `reads`, children included; refuses a write `read-only` with the
 adapter's why; refuses `media` as `unsupported` when the adapter has none;
 answers a throw as `failed`; and debounces `changed` (100 ms, node lists merged,
 "all" wins). The theme it sends is `readTheme()`: the palette tokens (`--bg`,
-`--surface`, `--card`, `--ink`, `--muted`, `--line`, `--line-soft`, `--accent`,
+`--surface`, `--card`, `--ink`, `--ink-soft` (0.61), `--muted`, `--line`, `--line-soft`, `--accent`,
 `--accent-soft`, `--on-accent`, `--danger`, `--warn`, `--ok`, the three fonts,
 and `--char-0` to `--char-11`) and the shell's grammar (radii, shadows, motion,
 scrim, scrollbar), with the scheme from the root's `color-scheme`.
@@ -610,6 +610,12 @@ never reaches the channels behind it.
   element fills the rest of the window.
 
 Still view API 1: nothing changes for a view, which can't see or drive the head.
+
+**`--ink-soft` in the theme.** `readTheme` sends `--ink-soft` too, the text tone
+between `--ink` and `--muted` (Patterpad's is `color-mix(in oklab, var(--ink)
+70%, var(--muted))`). `--muted` in some palettes is too faint for text a writer
+must read, so greyed text that still carries meaning uses `--ink-soft`. A host
+that doesn't set it sends none: a view falls back to that same mix.
 
 ## Roadmap
 

@@ -202,9 +202,11 @@ describe("the editor's side", () => {
     const root = document.documentElement;
     root.removeAttribute("style");
     root.style.setProperty("--accent", "#c33");
+    root.style.setProperty("--ink-soft", "#555");
     root.style.setProperty("color-scheme", "dark");
     const t = readTheme(root);
     expect(t.tokens["--accent"]).toBe("#c33");
+    expect(t.tokens["--ink-soft"]).toBe("#555");
     expect(t.tokens["--ink"]).toBeUndefined();
     expect(t.scheme).toBe("dark");
     root.style.setProperty("color-scheme", "light");
