@@ -581,6 +581,11 @@ separate install item: a view the project offers but this machine lacks shows
 in the Window menu as `viewMenuLabel(name, false)`, "Performance sheet (not
 installed)…", and opens Add Extension.
 
+**`./view-package`** (0.60.1) is the package half of `./view-host` with no
+Electron import: reading, installing and choosing packages, `planPackageAdd`,
+and `viewMenuLabel`, for main-process code that runs under test without
+Electron. `./view-host` re-exports all of it, as before.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

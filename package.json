@@ -245,6 +245,11 @@
       "import": "./dist/view-host.js",
       "require": "./dist/view-host.cjs"
     },
+    "./view-package": {
+      "types": "./dist/view-package.d.ts",
+      "import": "./dist/view-package.js",
+      "require": "./dist/view-package.cjs"
+    },
     "./view-host-web": {
       "types": "./dist/view-host-web.d.ts",
       "import": "./dist/view-host-web.js",
