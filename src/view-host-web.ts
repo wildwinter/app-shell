@@ -230,7 +230,6 @@ export function hostView(port: MessagePort, adapter: ViewAdapter, opts: HostView
       t: "welcome", api: VIEW_API, host: adapter.host,
       extension: { id: ext, version: meta.version, ...(meta.pinned !== undefined ? { pinned: meta.pinned } : {}) },
       view: meta.view,
-      settings: adapter.settings(ext),
       theme: theme(),
       writable: adapter.writable(ext),
     };

@@ -20,7 +20,6 @@ const adapter: ViewAdapter = {
   write: (ext, label, edits) => { writes.push([ext, label, edits]); },
   select: () => true,
   writable: () => (readOnly ? { readOnly: true, why: "It's locked." } : { readOnly: false }),
-  settings: () => ({}),
   key: (combo) => { keys.push(combo); },
 };
 
@@ -168,7 +167,7 @@ describe("the editor's side", () => {
     const adapter = {
       host: "patter" as const, project: () => ({ id: "p", kind: "project", parent: null, label: "P", host: {}, ext: {} }),
       node: () => null, selection: () => ({ path: [] }), write: () => {}, select: () => true,
-      writable: () => ({ readOnly: false }), settings: () => ({}),
+      writable: () => ({ readOnly: false }),
     };
     const seen: number[] = [];
     const hosts = hostViews((meta) => { seen.push(meta.window); return meta.view === "nope" ? null : { adapter, reads: [] }; });

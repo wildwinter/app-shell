@@ -48,7 +48,7 @@ export interface ConnectOptions {
 }
 
 export interface ViewClient {
-  /** What the app said on welcoming the view: host, extension, view, settings, theme, writable. */
+  /** What the app said on welcoming the view: host, extension, view, theme, writable. */
   readonly welcome: ViewWelcome;
   request<K extends ViewOp>(op: K, args: ViewRequests[K]["args"]): Promise<ViewRequests[K]["value"]>;
   project(): Promise<ViewNode>;

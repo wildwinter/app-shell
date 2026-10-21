@@ -27,7 +27,6 @@ function fakeAdapter(over: Partial<ViewAdapter> = {}): Fake {
     write(ext: string, label: string, edits: unknown) { a.writes.push([ext, label, edits]); },
     select: (id: string) => id === "l1",
     writable: (): ViewWritable => a.ro,
-    settings: () => ({ characterField: "character" }),
     key(combo: string) { a.keys.push(combo); },
     ...over,
   };
@@ -68,7 +67,7 @@ describe("hostView: the hello", () => {
     expect(await v.next()).toEqual({
       t: "welcome", api: VIEW_API, host: "patter",
       extension: { id: "pattershot", version: "0.3.0", pinned: "0.3.0" }, view: "sheet",
-      settings: { characterField: "character" }, theme: THEME, writable: { readOnly: false },
+      theme: THEME, writable: { readOnly: false },
     });
     expect((await v.ask("selection", {})).ok).toBe(true);
   });

@@ -145,8 +145,6 @@ export interface ViewWelcome {
   readonly extension: { readonly id: string; readonly version: string; readonly pinned?: string };
   /** The view's own id within its manifest. */
   readonly view: string;
-  /** The extension's project settings, by name. */
-  readonly settings: { readonly [name: string]: string };
   readonly theme: ViewTheme;
   readonly writable: ViewWritable;
 }
@@ -220,8 +218,6 @@ export interface ViewAdapter {
   write(extension: string, label: string, edits: readonly ViewEdit[]): void | ViewRefusal | Promise<void | ViewRefusal>;
   select(id: string): boolean | Promise<boolean>;
   writable(extension: string): ViewWritable;
-  /** The extension's project settings, by name. */
-  settings(extension: string): { [name: string]: string };
   /** Run a key combination the view passed on (undo, redo, the app's shortcuts). */
   key?(combo: string): void;
 }
