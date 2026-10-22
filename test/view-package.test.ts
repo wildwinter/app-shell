@@ -8,6 +8,7 @@ import { gzipSync } from "node:zlib";
 import {
   chooseInstalled, compareVersions, installExtensionPackage, installedExtensions, readExtensionPackage, readTarball,
   planPackageAdd, removeInstalledExtension, resolveInstalled, viewMenuLabel, extensionRows, planProjectRemoval,
+  planPackageUpdate, manifestChanges, sameAsInstalled,
 } from "../src/view-package.js";
 import type { ExtensionPackage, InstalledExtension } from "../src/view-package.js";
 
@@ -235,5 +236,61 @@ describe("the Extensions window's rows", () => {
     const two = { id: "b", manifest: man("b", "Bee", "1.0.0", { requires: ["patterstage"] }) };
     expect(planProjectRemoval("patterstage", [shot, stage, two]))
       .toEqual({ ok: false, why: "Pattershot and Bee need Patterstage, so remove Pattershot and Bee first." });
+  });
+});
+
+describe("Update…", () => {
+  const m = (version: string, extra: Record<string, unknown> = {}) => ({
+    schema: "wildwinter/extension@0", id: "pattershot", name: "Pattershot", version,
+    targets: { patter: { line: { fields: [{ name: "look", label: "Look", type: "text" }] } } }, ...extra,
+  }) as never;
+  const row = { id: "pattershot", name: "Pattershot", inProject: true, pinned: "0.4.0", installed: ["0.4.0"] };
+
+  it("refuses another extension's package, naming both", () => {
+    expect(planPackageUpdate(row, { ...(m("0.5.0") as object), id: "lights", name: "Lights" } as never, m("0.4.0"), "patter", []))
+      .toEqual({ kind: "refused", why: "That package is Lights (\u201clights\u201d), not Pattershot (\u201cpattershot\u201d), so nothing changed." });
+  });
+  it("refuses an older version, naming both", () => {
+    expect(planPackageUpdate(row, m("0.3.0"), m("0.4.0"), "patter", [])).toEqual({
+      kind: "refused", why: "This project takes Pattershot 0.4.0, newer than this package's 0.3.0, so nothing changed: an update never goes back to an older version.",
+    });
+    expect(planPackageUpdate({ ...row, inProject: false, pinned: undefined as never, installed: ["0.3.0", "0.4.0"] }, m("0.3.5"), m("0.4.0"), "patter", []))
+      .toMatchObject({ kind: "refused", why: expect.stringContaining("Pattershot 0.4.0 is installed here") });
+  });
+  it("calls the same version a reinstall", () => {
+    expect(planPackageUpdate(row, m("0.4.0"), m("0.4.0"), "patter", [])).toEqual({ kind: "same", version: "0.4.0" });
+  });
+  it("says what a newer version changes, and what it needs that the project lacks", () => {
+    const next = m("0.5.0", {
+      targets: { patter: { line: { fields: [{ name: "gesture", label: "Gesture", type: "text" }] }, scene: { fields: [{ name: "mood", type: "text" }] } } },
+      views: [{ id: "sheet", name: "Performance sheet", entry: "view/s.js", element: "x-sheet" }],
+      requires: ["patterstage"],
+    });
+    expect(planPackageUpdate(row, next, m("0.4.0"), "patter", [])).toEqual({
+      kind: "newer", from: "0.4.0", to: "0.5.0", missing: ["patterstage"],
+      changes: [
+        "Line: adds \u201cGesture\u201d; removes \u201cLook\u201d.",
+        "Scene: adds \u201cmood\u201d.",
+        "Views: adds Performance sheet.",
+        "Now needs \u201cpatterstage\u201d.",
+      ],
+    });
+    expect(manifestChanges(m("0.4.0"), m("0.5.0"), "patter")).toEqual([]);
+  });
+
+  it("knows when a package's files are exactly what's installed", async () => {
+    const dir = await temp();
+    const pkg = await readExtensionPackage(PROBE);
+    if (!pkg.ok) throw new Error(pkg.why);
+    const r = await installExtensionPackage(pkg, dir);
+    if (!r.ok) throw new Error(r.why);
+    expect(await sameAsInstalled(pkg, r.installed.root)).toBe(true);
+    const changed = new Map(pkg.files);
+    changed.set("view/probe-view.js", new TextEncoder().encode("// rebuilt"));
+    expect(await sameAsInstalled({ ...pkg, files: changed }, r.installed.root)).toBe(false);
+    const more = new Map(pkg.files);
+    more.set("view/extra.js", new TextEncoder().encode("x"));
+    expect(await sameAsInstalled({ ...pkg, files: more }, r.installed.root)).toBe(false);
+    expect(await sameAsInstalled(pkg, join(dir, "nope"))).toBe(false);
   });
 });

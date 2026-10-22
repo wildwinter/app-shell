@@ -10,7 +10,7 @@ const stage: ExtensionRow = { id: "patterstage", name: "Patterstage", inProject:
 const missing: ExtensionRow = { id: "probe", name: "Probe", inProject: true, views: ["Probe view"], installed: [], needsInstall: true, requiredBy: [] };
 
 const setUp = () => {
-  const act = { add: vi.fn(), install: vi.fn(), remove: vi.fn(), uninstall: vi.fn() };
+  const act = { add: vi.fn(), install: vi.fn(), remove: vi.fn(), uninstall: vi.fn(), update: vi.fn() };
   const panel = extensionsPanel(act);
   document.body.replaceChildren(panel.el);
   const buttons = () => [...panel.el.querySelectorAll("button")];
@@ -36,6 +36,8 @@ describe("extensionsPanel", () => {
     click("Uninstall 0.3.0", "pattershot");
     click("Remove from project…", "pattershot");
     click("Install on this machine…", "probe");
+    click("Update…", "patterstage");
+    expect(act.update).toHaveBeenCalledWith("patterstage");
     expect(act.add).toHaveBeenCalledOnce();
     expect(act.uninstall).toHaveBeenCalledWith("pattershot", "0.3.0");
     expect(act.remove).toHaveBeenCalledWith("pattershot");
@@ -48,7 +50,7 @@ describe("extensionsPanel", () => {
     const { panel, buttons } = setUp();
     panel.render({ rows: [{ ...shot, inProject: false }, missing], hasProject: false, app: "Patterpad", focus: "probe" });
     const labels = buttons().map((b) => `${b.textContent}${b.disabled ? " (off)" : ""}`);
-    expect(labels).toEqual(["Add extension… (off)", "Uninstall 0.3.0", "Uninstall 0.4.0"]);
+    expect(labels).toEqual(["Add extension… (off)", "Update…", "Uninstall 0.3.0", "Uninstall 0.4.0"]); // Probe has nothing to update from here
     expect(panel.el.querySelector(".ext-focus")?.getAttribute("data-extension")).toBe("probe");
   });
 

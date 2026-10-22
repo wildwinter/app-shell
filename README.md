@@ -672,6 +672,28 @@ the work, asking first.
 Remove from Project keeps the extension's data on nodes (validation already
 says data for an untaken extension is kept and not compiled), as one undo step.
 
+## v0.63 (Update… in the Extensions window)
+
+Each row has **Update…** (one the project takes, or one installed here). The
+app asks for the extension's package, then says what will happen before doing
+it:
+
+- `planPackageUpdate(row, manifest, current, host, taken)` (`./view-package`):
+  measured against the project's pin, or the newest installed version. `newer`
+  carries `changes` (`manifestChanges`: the fields each node kind gains or
+  loses, the views gained or lost, what it newly needs) and `missing`; `same`
+  is a reinstall; another extension's package, or an older version, is
+  `refused` with a sentence naming both.
+- `sameAsInstalled(pkg, root)`: the package's files are exactly what's
+  installed, so a reinstall would change nothing and the app says so.
+- `ExtensionsPanelActions.update(id)` is the button's action.
+
+A newer version goes into the project as Add's update does (one undo step),
+and installs; the same version replaces the installed files, and the project's
+copy of the manifest too when the package changes it. The project's other
+extensions and its data aren't touched; values the new manifest no longer
+accepts show among the usual problems.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

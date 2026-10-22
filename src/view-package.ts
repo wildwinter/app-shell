@@ -13,7 +13,7 @@
 
 import { gunzipSync } from "node:zlib";
 import { lstat, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, relative, sep } from "node:path";
 import { manifestProblems, missingRequirements, parseManifest, viewsFor, MANIFEST_FILE_SUFFIX } from "@wildwinter/toolkit/extensions";
 import type { HostName, Manifest, Problem } from "@wildwinter/toolkit/extensions";
 import type { ExtensionRow } from "./extensions-panel.js";
@@ -383,4 +383,109 @@ export function planProjectRemoval(id: string, taken: readonly TakenExtension[])
     return { ok: false, why: `${list} ${by.length === 1 ? "needs" : "need"} ${name}, so remove ${list} first.` };
   }
   return { ok: true, name };
+}
+
+// --- Update… ------------------------------------------------------------------------
+
+/** What Update… does with a package for one extension's row (patterkit design/extensions-window.md, "Update"). */
+export type PackageUpdatePlan =
+  /** Another extension's package, or an older version: nothing changes, and `why` says so. */
+  | { readonly kind: "refused"; readonly why: string }
+  /** The same version: its installed files are replaced (the development case), the project left as it is. */
+  | { readonly kind: "same"; readonly version: string }
+  /** A newer version: the project takes it (when it takes the extension) and its views install. `changes` says
+   *  what changes in the manifest; `missing`, what it requires that the project lacks. */
+  | {
+    readonly kind: "newer"; readonly from?: string; readonly to: string;
+    readonly changes: readonly string[]; readonly missing: readonly string[];
+  };
+
+/**
+ * Plan Update… for a row from the package the writer chose. The version it's measured against is the project's
+ * pin when the project takes the extension, else the newest version installed here. Never a downgrade, and
+ * never another extension's package: both are refused, naming the versions or the ids.
+ */
+export function planPackageUpdate(
+  row: Pick<ExtensionRow, "id" | "name" | "inProject" | "pinned" | "installed">,
+  manifest: Manifest, current: Manifest | undefined, host: HostName, taken: readonly string[],
+): PackageUpdatePlan {
+  const name = nameOf(manifest);
+  if (manifest.id !== row.id) {
+    return { kind: "refused", why: `That package is ${name} (\u201c${manifest.id}\u201d), not ${row.name} (\u201c${row.id}\u201d), so nothing changed.` };
+  }
+  const to = manifest.version;
+  const from = row.inProject ? row.pinned : row.installed[row.installed.length - 1];
+  if (from !== undefined) {
+    const c = compareVersions(to, from);
+    if (c < 0) {
+      return {
+        kind: "refused",
+        why: row.inProject
+          ? `This project takes ${row.name} ${from}, newer than this package's ${to}, so nothing changed: an update never goes back to an older version.`
+          : `${row.name} ${from} is installed here, newer than this package's ${to}, so nothing changed: an update never goes back to an older version.`,
+      };
+    }
+    if (c === 0) return { kind: "same", version: to };
+  }
+  return {
+    kind: "newer", ...(from !== undefined ? { from } : {}), to,
+    changes: manifestChanges(current, manifest, host),
+    missing: row.inProject ? missingRequirements(manifest, taken) : [],
+  };
+}
+
+const quote = (s: string): string => `\u201c${s}\u201d`;
+const listOf = (items: readonly string[]): string =>
+  items.length <= 1 ? items[0] ?? "" : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+const capital = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * What changes between two versions of a manifest, as a line per change, for the writer to read before an update:
+ * the fields each node kind gains or loses in this app (by their labels), the views gained or lost, and what it
+ * newly requires. Empty when none of those change.
+ */
+export function manifestChanges(from: Manifest | undefined, to: Manifest, host: HostName): string[] {
+  const out: string[] = [];
+  const kindsOf = (m: Manifest | undefined) => (m?.targets?.[host] ?? {}) as Readonly<Record<string, { fields?: readonly { name: string; label?: string }[] }>>;
+  const before = kindsOf(from), after = kindsOf(to);
+  for (const kind of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
+    const was = before[kind]?.fields ?? [], now = after[kind]?.fields ?? [];
+    const label = (f: { name: string; label?: string }): string => quote(f.label || f.name);
+    const added = now.filter((f) => !was.some((w) => w.name === f.name)).map(label);
+    const removed = was.filter((f) => !now.some((n) => n.name === f.name)).map(label);
+    const parts = [
+      ...(added.length ? [`adds ${listOf(added)}`] : []),
+      ...(removed.length ? [`removes ${listOf(removed)}`] : []),
+    ];
+    if (parts.length) out.push(`${capital(kind)}: ${parts.join("; ")}.`);
+  }
+  const views = (m: Manifest | undefined) => (m ? viewsFor(m, host) : []);
+  const vWas = views(from), vNow = views(to);
+  const vAdded = vNow.filter((v) => !vWas.some((w) => w.id === v.id)).map((v) => v.name);
+  const vRemoved = vWas.filter((v) => !vNow.some((n) => n.id === v.id)).map((v) => v.name);
+  const vParts = [...(vAdded.length ? [`adds ${listOf(vAdded)}`] : []), ...(vRemoved.length ? [`removes ${listOf(vRemoved)}`] : [])];
+  if (vParts.length) out.push(`Views: ${vParts.join("; ")}.`);
+  const needs = (to.requires ?? []).filter((r) => !(from?.requires ?? []).includes(r));
+  if (needs.length) out.push(`Now needs ${listOf(needs.map(quote))}.`);
+  return out;
+}
+
+/** Whether a package's files are exactly what's installed in `root` (the same paths and the same bytes): a
+ *  reinstall of it would change nothing. */
+export async function sameAsInstalled(pkg: ExtensionPackage, root: string): Promise<boolean> {
+  const have = new Map<string, Uint8Array>();
+  const walk = async (dir: string): Promise<void> => {
+    for (const e of await readdir(dir, { withFileTypes: true })) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) await walk(full);
+      else if (e.isFile()) have.set(relative(root, full).split(sep).join("/"), new Uint8Array(await readFile(full)));
+    }
+  };
+  try { await walk(root); } catch { return false; }
+  if (have.size !== pkg.files.size) return false;
+  for (const [path, bytes] of pkg.files) {
+    const mine = have.get(path);
+    if (!mine || mine.length !== bytes.length || !mine.every((b, i) => b === bytes[i])) return false;
+  }
+  return true;
 }

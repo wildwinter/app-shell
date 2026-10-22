@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
 // The Extensions window's panel (patterkit design/extensions-window.md): every
 // extension the open project takes or this machine has installed, with Add
-// extension… at the top and, on each row, Remove from project…, Install on
-// this machine…, and an Uninstall for each installed version (sentence case:
+// extension… at the top and, on each row, Update…, Remove from project…, Install
+// on this machine…, and an Uninstall for each installed version (sentence case:
 // in-window buttons, copy-house-style rule 28). Renderer code,
 // mounted by each app's window page under the shell's tool-window head; the
 // app's main process builds the rows (`extensionRows`, ./view-package) and does
@@ -46,6 +46,8 @@ export interface ExtensionsPanelActions {
   install(id: string): void;
   remove(id: string): void;
   uninstall(id: string, version: string): void;
+  /** Update…: the app asks for the package, says what will happen, and does it. */
+  update(id: string): void;
 }
 
 export interface ExtensionsPanel {
@@ -70,6 +72,8 @@ function rowOf(r: ExtensionRow, state: ExtensionsPanelState, act: ExtensionsPane
     el("h2", "ext-name", r.name),
     el("span", "ext-where", where),
     el("span", "ext-spacer"),
+    // Update…: for one the project takes (with a project open) or one installed here, from its package.
+    (r.inProject && state.hasProject) || r.installed.length > 0 ? button("Update…", "btn", () => act.update(r.id)) : null,
     r.inProject && state.hasProject
       ? button("Remove from project…", "btn", () => act.remove(r.id), r.requiredBy.length > 0)
       : null,

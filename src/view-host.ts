@@ -31,10 +31,10 @@ import type { ViewHeadState } from "./view-head.js";
 export {
   readExtensionPackage, packageFromFiles, readTarball, installExtensionPackage, removeInstalledExtension,
   installedExtensions, chooseInstalled, resolveInstalled, compareVersions, planPackageAdd, viewMenuLabel,
-  extensionRows, planProjectRemoval,
+  extensionRows, planProjectRemoval, planPackageUpdate, manifestChanges, sameAsInstalled,
 } from "./view-package.js";
 export type {
-  ExtensionPackage, PackageRead, InstalledExtension, InstalledChoice, PackageAddPlan, ExtensionRow, TakenExtension,
+  ExtensionPackage, PackageRead, InstalledExtension, InstalledChoice, PackageAddPlan, ExtensionRow, TakenExtension, PackageUpdatePlan,
 } from "./view-package.js";
 export {
   VIEW_CSP, viewSchemePrivileges, serveViews, viewResponse, viewPage, viewPageUrl, viewContentType, confined,
