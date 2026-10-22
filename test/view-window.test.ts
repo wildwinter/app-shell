@@ -69,7 +69,10 @@ vi.mock("electron", () => {
   };
 });
 
-const { clearViewStorage, openViewWindow, viewPartition, viewPreloadPath } = await import("../src/view-host.js");
+const { clearViewStorage, openViewWindow, uninstallViews, viewPartition, viewPreloadPath } = await import("../src/view-host.js");
+const { installExtensionPackage, readExtensionPackage } = await import("../src/view-package.js");
+const { mkdtemp, rm } = await import("node:fs/promises");
+const { tmpdir } = await import("node:os");
 const { VIEW_PORT_CHANNEL } = await import("../src/view-protocol.js");
 const { VIEW_CLOSE_CHANNEL, VIEW_HEAD_CHANNEL, VIEW_PIN_CHANNEL } = await import("../src/view-head.js");
 const ipcSend = (ch: string, sender: unknown, ...a: unknown[]): void => { for (const fn of shared.ipc.get(ch) ?? []) fn({ sender }, ...a); };
@@ -199,6 +202,22 @@ describe("openViewWindow", () => {
     expect(viewPartition("other")).not.toBe(viewPartition("probe"));
     await clearViewStorage("probe");
     expect(shared.cleared).toEqual(["storage persist:view-probe", "cache persist:view-probe"]);
+  });
+
+  it("uninstalls a version, and clears the views' storage only once the last version goes", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "uninstall-"));
+    try {
+      const pkg = await readExtensionPackage(ROOT);
+      if (!pkg.ok) throw new Error(pkg.why);
+      const other = { ...pkg, manifest: { ...pkg.manifest, version: "2.0.0" } };
+      await installExtensionPackage(pkg, dir);
+      await installExtensionPackage(other as never, dir);
+      shared.cleared.length = 0;
+      expect(await uninstallViews(dir, "probe", "2.0.0")).toEqual({ cleared: false });
+      expect(shared.cleared).toEqual([]);
+      expect(await uninstallViews(dir, "probe", pkg.manifest.version)).toEqual({ cleared: true });
+      expect(shared.cleared).toEqual(["storage persist:view-probe", "cache persist:view-probe"]);
+    } finally { await rm(dir, { recursive: true, force: true }); }
   });
 
   it("throws for a view the manifest doesn't offer", () => {

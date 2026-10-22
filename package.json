@@ -83,6 +83,10 @@
       "import": "./dist/tool-window.css",
       "require": "./dist/tool-window.css"
     },
+    "./extensions-window.css": {
+      "import": "./dist/extensions-window.css",
+      "require": "./dist/extensions-window.css"
+    },
     "./confirm.css": {
       "import": "./dist/confirm.css",
       "require": "./dist/confirm.css"

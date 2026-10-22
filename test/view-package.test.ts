@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import {
   chooseInstalled, compareVersions, installExtensionPackage, installedExtensions, readExtensionPackage, readTarball,
-  planPackageAdd, removeInstalledExtension, resolveInstalled, viewMenuLabel,
+  planPackageAdd, removeInstalledExtension, resolveInstalled, viewMenuLabel, extensionRows, planProjectRemoval,
 } from "../src/view-package.js";
 import type { ExtensionPackage, InstalledExtension } from "../src/view-package.js";
 
@@ -200,5 +200,40 @@ describe("planning Add Extension", () => {
   it("labels a view not installed here", () => {
     expect(viewMenuLabel("Performance sheet", true)).toBe("Performance sheet");
     expect(viewMenuLabel("Performance sheet", false)).toBe("Performance sheet (not installed)…");
+  });
+});
+
+describe("the Extensions window's rows", () => {
+  const man = (id: string, name: string, version: string, extra: Record<string, unknown> = {}) => ({
+    schema: "wildwinter/extension@0", id, name, version, targets: { patter: {} }, ...extra,
+  }) as never;
+  const sheet = { views: [{ id: "sheet", name: "Performance sheet", entry: "view/s.js", element: "x-sheet" }] };
+  const stage = { id: "patterstage", pin: "0.5.0", manifest: man("patterstage", "Patterstage", "0.5.0") };
+  const shot = { id: "pattershot", pin: "0.4.0", manifest: man("pattershot", "Pattershot", "0.4.0", { ...sheet, requires: ["patterstage"] }) };
+  const at = (id: string, name: string, version: string, extra = {}): InstalledExtension =>
+    ({ id, version, manifest: man(id, name, version, extra), root: `/v/${id}/${version}` });
+
+  it("lists what the project takes and what's installed, by name, each with its versions and views", () => {
+    const rows = extensionRows([shot, stage], [at("pattershot", "Pattershot", "0.4.0", sheet), at("pattershot", "Pattershot", "0.3.0", sheet), at("other", "Another", "1.0.0")], "patter");
+    expect(rows.map((r) => r.name)).toEqual(["Another", "Pattershot", "Patterstage"]);
+    expect(rows[1]).toEqual({
+      id: "pattershot", name: "Pattershot", inProject: true, pinned: "0.4.0", views: ["Performance sheet"],
+      installed: ["0.3.0", "0.4.0"], needsInstall: false, requiredBy: [],
+    });
+    expect(rows[2]).toMatchObject({ inProject: true, views: [], installed: [], needsInstall: false, requiredBy: ["Pattershot"] });
+    expect(rows[0]).toMatchObject({ inProject: false, installed: ["1.0.0"], requiredBy: [] });
+    expect(rows[0]!.pinned).toBeUndefined();
+  });
+  it("says when a taken extension's views aren't installed here", () => {
+    expect(extensionRows([shot], [], "patter")[0]).toMatchObject({ needsInstall: true, installed: [] });
+  });
+
+  it("refuses to remove an extension another one needs, naming it, and one the project doesn't take", () => {
+    expect(planProjectRemoval("patterstage", [shot, stage])).toEqual({ ok: false, why: "Pattershot needs Patterstage, so remove Pattershot first." });
+    expect(planProjectRemoval("pattershot", [shot, stage])).toEqual({ ok: true, name: "Pattershot" });
+    expect(planProjectRemoval("nope", [shot])).toEqual({ ok: false, why: "This project doesn't take nope." });
+    const two = { id: "b", manifest: man("b", "Bee", "1.0.0", { requires: ["patterstage"] }) };
+    expect(planProjectRemoval("patterstage", [shot, stage, two]))
+      .toEqual({ ok: false, why: "Pattershot and Bee need Patterstage, so remove Pattershot and Bee first." });
   });
 });

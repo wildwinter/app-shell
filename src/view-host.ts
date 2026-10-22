@@ -23,6 +23,7 @@ import { VIEW_PORT_CHANNEL } from "./view-protocol.js";
 import type { ViewPortMeta } from "./view-protocol.js";
 import { guardViewSession, serveViews, viewPageUrl } from "./view-serve.js";
 import type { ViewSource } from "./view-serve.js";
+import { installedExtensions, removeInstalledExtension } from "./view-package.js";
 import type { InstalledExtension } from "./view-package.js";
 import { VIEW_CLOSE_CHANNEL, VIEW_HEAD_CHANNEL, VIEW_PIN_CHANNEL } from "./view-head.js";
 import type { ViewHeadState } from "./view-head.js";
@@ -30,8 +31,11 @@ import type { ViewHeadState } from "./view-head.js";
 export {
   readExtensionPackage, packageFromFiles, readTarball, installExtensionPackage, removeInstalledExtension,
   installedExtensions, chooseInstalled, resolveInstalled, compareVersions, planPackageAdd, viewMenuLabel,
+  extensionRows, planProjectRemoval,
 } from "./view-package.js";
-export type { ExtensionPackage, PackageRead, InstalledExtension, InstalledChoice, PackageAddPlan } from "./view-package.js";
+export type {
+  ExtensionPackage, PackageRead, InstalledExtension, InstalledChoice, PackageAddPlan, ExtensionRow, TakenExtension,
+} from "./view-package.js";
 export {
   VIEW_CSP, viewSchemePrivileges, serveViews, viewResponse, viewPage, viewPageUrl, viewContentType, confined,
   guardViewSession, viewRequestAllowed,
@@ -51,6 +55,20 @@ export function viewPreloadPath(): string {
  *  own `localStorage` (a remembered tab, say) survives a restart and an upgrade. Never shared between extensions or
  *  with the app; it reaches nothing off the view scheme either way. */
 export const viewPartition = (extension: string): string => `persist:view-${extension}`;
+
+/**
+ * Uninstall an extension's views from this machine: one version, or every version when none is named. When no
+ * version is left, its views' stored preferences go too (`clearViewStorage`; the Extensions window's D4), so
+ * moving between versions keeps them and uninstalling the last leaves nothing behind. Says whether they went.
+ * Close the extension's open view windows first: a window left open runs on whatever is still there.
+ */
+export async function uninstallViews(dir: string, extension: string, version?: string): Promise<{ cleared: boolean }> {
+  await removeInstalledExtension(dir, extension, version);
+  const left = (await installedExtensions(dir)).some((i) => i.id === extension);
+  if (left) return { cleared: false };
+  await clearViewStorage(extension);
+  return { cleared: true };
+}
 
 /** Forget everything an extension's views have stored (its partition's storage and cache): for an app removing the
  *  extension from this machine. A view open at the time keeps running on an empty store. */

@@ -644,7 +644,33 @@ refused. A view should still default quietly when its storage is empty.
 
 `clearViewStorage(extension)` (`./view-host`) forgets all of it (the
 partition's storage and cache), for an app that removes an extension from the
-machine. Neither app removes installed extensions today, so nothing calls it yet.
+machine.
+
+**The Extensions window** (patterkit `design/extensions-window.md`): one
+**File ▸ Extensions…** in each app, replacing Add Extension…, opens a tool
+window listing every extension the project takes or this machine has
+installed, with Add extension… at the top and, on each row, Remove from
+project…, Install on this machine…, and an Uninstall for each installed
+version. The shell supplies the parts; each app supplies the window and does
+the work, asking first.
+
+- `extensionRows(taken, installed, host)` (`./view-package`, pure): the rows.
+  Each says where it's taken and at what pin, its views in this app, every
+  installed version, whether its views need installing here, and which other
+  taken extensions require it.
+- `planProjectRemoval(id, taken)`: refused, with a sentence, while another
+  taken extension requires it ("Pattershot needs Patterstage, so remove
+  Pattershot first."), the add rule the other way round.
+- `uninstallViews(dir, id, version)` (`./view-host`): removes that version, and
+  clears the views' storage (`clearViewStorage`) once no version is left, so
+  moving between versions keeps a view's settings. Close the extension's view
+  windows first.
+- `extensionsPanel(actions)` (root export) and `extensions-window.css`: the
+  panel a window page mounts under `toolWindowHead`, drawn from an
+  `ExtensionsPanelState` main sends. Every button only calls its action.
+
+Remove from Project keeps the extension's data on nodes (validation already
+says data for an untaken extension is kept and not compiled), as one undo step.
 
 ## Roadmap
 

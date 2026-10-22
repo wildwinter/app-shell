@@ -2,8 +2,9 @@
 // View packages (tier 2 view extensions, patterkit design/view-extensions.md):
 // reading an extension's local package, a folder or an `npm pack` tarball,
 // installing it on this machine under `<dir>/<id>/<version>/`, listing what's
-// installed, choosing the installed version for a project's pin, and planning
-// what Add Extension does with a package for a project.
+// installed, choosing the installed version for a project's pin, planning
+// what Add Extension does with a package for a project, and the Extensions
+// window's rows and its Remove from Project rule (design/extensions-window.md).
 //
 // Main-process code with no Electron import, so it runs under test as it is.
 // The tarball reader is a small ustar reader over node:zlib (pax and GNU long
@@ -13,8 +14,11 @@
 import { gunzipSync } from "node:zlib";
 import { lstat, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
-import { manifestProblems, missingRequirements, parseManifest, MANIFEST_FILE_SUFFIX } from "@wildwinter/toolkit/extensions";
-import type { Manifest, Problem } from "@wildwinter/toolkit/extensions";
+import { manifestProblems, missingRequirements, parseManifest, viewsFor, MANIFEST_FILE_SUFFIX } from "@wildwinter/toolkit/extensions";
+import type { HostName, Manifest, Problem } from "@wildwinter/toolkit/extensions";
+import type { ExtensionRow } from "./extensions-panel.js";
+
+export type { ExtensionRow };
 
 const ID = /^[a-z][a-z0-9-]*$/;
 const VERSION = /^\d+\.\d+\.\d+$/;
@@ -328,4 +332,55 @@ export function planPackageAdd(manifest: Manifest, taken: readonly { readonly id
  *  so, opening Add Extension for its package. */
 export function viewMenuLabel(name: string, installed: boolean): string {
   return installed ? name : `${name} (not installed)…`;
+}
+
+// --- The Extensions window ---------------------------------------------------------
+
+/** A taken extension as an app knows it: its id, the project's pin, and the project's copy of its manifest. */
+export interface TakenExtension { readonly id: string; readonly pin?: string; readonly manifest: Manifest }
+
+const nameOf = (m: Manifest): string => (typeof m.name === "string" && m.name ? m.name : m.id);
+
+/** The names of the taken extensions that require `id`. */
+function requirersOf(id: string, taken: readonly TakenExtension[]): string[] {
+  const others = taken.filter((t) => t.id !== id).map((t) => t.id);
+  return taken.filter((t) => t.id !== id && missingRequirements(t.manifest, others).includes(id)).map((t) => nameOf(t.manifest));
+}
+
+/**
+ * The Extensions window's rows: every extension the project takes or this machine has installed, by name. A row's
+ * name and views come from the project's manifest when the project takes it, else from the newest installed
+ * version's.
+ */
+export function extensionRows(taken: readonly TakenExtension[], installed: readonly InstalledExtension[], host: HostName): ExtensionRow[] {
+  const ids = new Set([...taken.map((t) => t.id), ...installed.map((i) => i.id)]);
+  const rows: ExtensionRow[] = [];
+  for (const id of ids) {
+    const mine = taken.find((t) => t.id === id);
+    const versions = installed.filter((i) => i.id === id).sort((a, b) => compareVersions(a.version, b.version));
+    const manifest = mine?.manifest ?? versions[versions.length - 1]!.manifest;
+    const views = viewsFor(manifest, host).map((v) => v.name);
+    rows.push({
+      id, name: nameOf(manifest), inProject: mine !== undefined,
+      ...(mine?.pin !== undefined ? { pinned: mine.pin } : {}),
+      views, installed: versions.map((v) => v.version),
+      needsInstall: mine !== undefined && views.length > 0 && versions.length === 0,
+      requiredBy: mine ? requirersOf(id, taken) : [],
+    });
+  }
+  return rows.sort((a, b) => a.name.localeCompare(b.name) || (a.id < b.id ? -1 : 1));
+}
+
+/** Whether Remove from Project may take an extension out: refused, with a sentence, while another extension the
+ *  project takes requires it (the add rule the other way round), or when the project doesn't take it. */
+export function planProjectRemoval(id: string, taken: readonly TakenExtension[]): { readonly ok: true; readonly name: string } | { readonly ok: false; readonly why: string } {
+  const mine = taken.find((t) => t.id === id);
+  if (!mine) return { ok: false, why: `This project doesn't take ${id}.` };
+  const name = nameOf(mine.manifest);
+  const by = requirersOf(id, taken);
+  if (by.length > 0) {
+    const list = by.length === 1 ? by[0]! : `${by.slice(0, -1).join(", ")} and ${by[by.length - 1]}`;
+    return { ok: false, why: `${list} ${by.length === 1 ? "needs" : "need"} ${name}, so remove ${list} first.` };
+  }
+  return { ok: true, name };
 }

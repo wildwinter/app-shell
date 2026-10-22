@@ -139,3 +139,7 @@ export type {
   ViewAdapter, ViewHandle, ViewNode, ViewSelection, ViewMediaLength, ViewTheme, ViewWritable, ViewEdit, ViewRefusal,
   ViewPortMeta, ViewHostName, ViewJson,
 } from "./view-protocol.js";
+// The Extensions window's panel (extensions-panel.ts; style: extensions-window.css): the rows main builds with
+// `extensionRows` (./view-host), and what each button asks for.
+export { extensionsPanel } from "./extensions-panel.js";
+export type { ExtensionRow, ExtensionsPanel, ExtensionsPanelState, ExtensionsPanelActions } from "./extensions-panel.js";
