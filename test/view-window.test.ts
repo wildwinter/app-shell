@@ -12,6 +12,7 @@ const shared = vi.hoisted(() => ({
   sessions: new Map<string, { handled: string[]; guarded: number }>(),
   nextId: 1,
   ipc: new Map<string, ((e: { sender: unknown }, ...a: unknown[]) => void)[]>(),
+  cleared: [] as string[],
 }));
 vi.mock("electron", () => {
   class Emitter {
@@ -58,6 +59,8 @@ vi.mock("electron", () => {
           webRequest: { onBeforeRequest: () => { s.guarded++; } },
           setPermissionRequestHandler: () => {},
           setPermissionCheckHandler: () => {},
+          clearStorageData: async () => { shared.cleared.push(`storage ${p}`); },
+          clearCache: async () => { shared.cleared.push(`cache ${p}`); },
         };
       },
     },
@@ -66,7 +69,7 @@ vi.mock("electron", () => {
   };
 });
 
-const { openViewWindow, viewPreloadPath } = await import("../src/view-host.js");
+const { clearViewStorage, openViewWindow, viewPartition, viewPreloadPath } = await import("../src/view-host.js");
 const { VIEW_PORT_CHANNEL } = await import("../src/view-protocol.js");
 const { VIEW_CLOSE_CHANNEL, VIEW_HEAD_CHANNEL, VIEW_PIN_CHANNEL } = await import("../src/view-head.js");
 const ipcSend = (ch: string, sender: unknown, ...a: unknown[]): void => { for (const fn of shared.ipc.get(ch) ?? []) fn({ sender }, ...a); };
@@ -94,12 +97,12 @@ describe("openViewWindow", () => {
     expect(w.opts.frame).toBe(false);
     expect(w.opts.webPreferences).toEqual({
       contextIsolation: true, nodeIntegration: false, sandbox: true, webviewTag: false, navigateOnDragDrop: false,
-      preload: viewPreloadPath(), partition: "view-probe", devTools: false,
+      preload: viewPreloadPath(), partition: "persist:view-probe", devTools: false,
     });
     expect(viewPreloadPath()).toMatch(/view-preload\.cjs$/);
     // Frameless, so the page carries the head; with nothing to pin above, no pin.
     expect(w.url).toBe("patter-view://probe/?view=inspect&head=Probe+view");
-    expect(shared.sessions.get("view-probe")).toEqual({ handled: ["patter-view"], guarded: 1 });
+    expect(shared.sessions.get("persist:view-probe")).toEqual({ handled: ["patter-view"], guarded: 1 });
     expect(v.meta).toEqual({ window: w.id, extension: "probe", view: "inspect", version: "1.0.0", pinned: "1.0.0" });
 
     // Nothing is handed over until the view's page loads; the editor reloading first changes nothing.
@@ -123,7 +126,7 @@ describe("openViewWindow", () => {
 
     // A second view of the same extension reuses the prepared session.
     const v2 = openViewWindow({ installed, view: "inspect", host: "patter", scheme: "patter-view", editor: editor as never, rect: { width: 1, height: 1 } });
-    expect(shared.sessions.get("view-probe")).toEqual({ handled: ["patter-view"], guarded: 1 });
+    expect(shared.sessions.get("persist:view-probe")).toEqual({ handled: ["patter-view"], guarded: 1 });
 
     // The editor closing closes the views.
     editor.close();
@@ -189,6 +192,13 @@ describe("openViewWindow", () => {
     w.webContents.fire("dom-ready");
     expect(w.webContents.sent).toEqual([]);
     v.close();
+  });
+
+  it("keeps each extension's storage on disk, apart, and clears it on request", async () => {
+    expect(viewPartition("probe")).toBe("persist:view-probe");
+    expect(viewPartition("other")).not.toBe(viewPartition("probe"));
+    await clearViewStorage("probe");
+    expect(shared.cleared).toEqual(["storage persist:view-probe", "cache persist:view-probe"]);
   });
 
   it("throws for a view the manifest doesn't offer", () => {

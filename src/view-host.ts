@@ -47,8 +47,18 @@ export function viewPreloadPath(): string {
   return join(here, "view-preload.cjs");
 }
 
-/** The session partition a view runs in: in memory, one per extension. */
-export const viewPartition = (extension: string): string => `view-${extension}`;
+/** The session partition a view runs in: one per extension, kept on disk (`persist:`), so what a view keeps in its
+ *  own `localStorage` (a remembered tab, say) survives a restart and an upgrade. Never shared between extensions or
+ *  with the app; it reaches nothing off the view scheme either way. */
+export const viewPartition = (extension: string): string => `persist:view-${extension}`;
+
+/** Forget everything an extension's views have stored (its partition's storage and cache): for an app removing the
+ *  extension from this machine. A view open at the time keeps running on an empty store. */
+export async function clearViewStorage(extension: string): Promise<void> {
+  const ses = session.fromPartition(viewPartition(extension));
+  await ses.clearStorageData();
+  await ses.clearCache();
+}
 
 /** The installed package each prepared partition serves, read at each request (a reinstall takes effect). */
 const served = new Map<string, ViewSource>();
@@ -107,7 +117,7 @@ export interface ViewWindow {
 }
 
 /**
- * Open a view in a sandboxed tool window of its own: its own in-memory partition serving only its package,
+ * Open a view in a sandboxed tool window of its own: its own partition (kept on disk) serving only its package,
  * no network, no permissions, the view preload and nothing else. Each time the view's page loads, and each
  * time the editor's does while the view is open, both ends get a fresh `MessageChannelMain` pair on
  * `VIEW_PORT_CHANNEL`, the editor's with the `ViewPortMeta`. Throws when the manifest offers no such view here.

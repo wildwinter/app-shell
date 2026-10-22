@@ -351,7 +351,8 @@ window that shows whatever the editor has selected. The other direction from
 
 **A view** is a web component an extension's installed package supplies (a
 performance sheet, say), which an app opens in a floating tool window of its
-own. The window is sandboxed, on an in-memory session partition of its own,
+own. The window is sandboxed, on a session partition of its own (kept on disk
+since 0.62),
 with a preload that does one thing: it hands the view a `MessagePort` straight
 to the editor's renderer. Main hands the pair over and then stays out of the
 path; the editor's renderer answers the view from the app's own model, unsaved
@@ -630,6 +631,20 @@ oklab)` (`mixOklab`, `resolveColour`), an app's palettes read from its
 `system-dark`), and `contrastShortfalls(palettes, tokens, grounds, needs)`.
 `withHighContrast(palette)` applies the block above, and `HIGH_CONTRAST_MIX`
 holds its mixes. Each app's suite holds its text tokens to `TEXT_CONTRAST` (4.5).
+
+## v0.62 (a view's storage survives a restart)
+
+Each extension's views now run on a persistent partition, `persist:view-<id>`
+(`viewPartition`), instead of an in-memory one: what a view keeps in its own
+`localStorage` or IndexedDB (a remembered tab, a panel shown or hidden) is
+still there after the app quits, and after the extension is upgraded. It is
+still one partition per extension, never shared with another extension or with
+the app, and still reaches nothing off the view scheme, with every permission
+refused. A view should still default quietly when its storage is empty.
+
+`clearViewStorage(extension)` (`./view-host`) forgets all of it (the
+partition's storage and cache), for an app that removes an extension from the
+machine. Neither app removes installed extensions today, so nothing calls it yet.
 
 ## Roadmap
 

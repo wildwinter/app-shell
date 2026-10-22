@@ -233,7 +233,7 @@ export interface ToolWindowOptions {
   url?: string;
   /** Absolute path of the preload bridge. */
   preload: string;
-  /** A session partition of the window's own (a view's in-memory `view-<id>`); the default session otherwise. */
+  /** A session partition of the window's own (a view's `persist:view-<id>`); the default session otherwise. */
   partition?: string;
   /** Whether the window may open devtools; Electron's default (yes) when absent. */
   devTools?: boolean;
