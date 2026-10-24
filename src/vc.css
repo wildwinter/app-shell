@@ -12,9 +12,20 @@
 .vc-badge.vc-new { color: var(--muted); }
 .vc-badge.vc-frozen { color: var(--muted); opacity: 0.6; }
 
-/* A document somebody else holds: everything reads, nothing types. */
+/* A document somebody else holds: everything reads, nothing types. A locked control keeps its text at full
+   strength, since reading what's there is why you're looking, and many buttons show a value (a condition, a
+   jump, a chip). The lock shows on the control instead: a dashed edge wherever it has an edge, the
+   not-allowed cursor, and a field's fill gone; the notice above the document says who holds it. Opacity
+   took a locked value under AA in every palette (2.4 to 3.7). A checkbox keeps the browser's own disabled
+   look; a select doesn't keep Chromium's (a 0.7 fade). */
 .vc-readonly { position: relative; }
-.vc-off { opacity: 0.6; cursor: not-allowed; }
+.vc-off { cursor: not-allowed; border-style: dashed; }
+:is(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea).vc-off {
+  opacity: 1;
+  color: var(--ink); -webkit-text-fill-color: var(--ink);
+  background: transparent;
+  border-color: var(--line);
+}
 .vc-lock {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 10px; padding: 7px 10px;
