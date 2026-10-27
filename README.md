@@ -812,7 +812,7 @@ The behaviour step of the October 2026 UI review
 
 ## v0.68 (What's New)
 
-Unreleased. Step 5a of the October 2026 UI review: the first launch after an
+Step 5a of the October 2026 UI review: the first launch after an
 update says what's new, in the changelog's own words, and Help ▸ What's New
 (`HELP_MENU.whatsNew`) shows the latest at any time.
 
