@@ -85,3 +85,48 @@ body.pane-resizing .panes { transition: none; }   /* 1:1 feel: suspend the grid 
 .shell-histnav-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: none; border-radius: var(--radius-sm); background: none; color: var(--muted); line-height: 1; cursor: pointer; }
 .shell-histnav-btn:hover:not(:disabled) { color: var(--ink); background: var(--accent-soft); }
 .shell-histnav-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* --- one navigator row (October 2026 UI review, 3-composition.md proposal 7) --
+   Both apps' navigators draw their rows with this grammar: 28px rows at weight
+   400 in the UI face, a hover one step off the pane, and the open document's
+   row on the neutral selection fill, in ink at 500, with a 2px accent mark at
+   its left. Selection is `aria-current` on the row, so the mark and what a
+   screen reader announces are the same fact. An app keeps its own row classes
+   for depth and layout; colour, size and the selected state are these. */
+.shell-nav-row {
+  display: flex; align-items: center; gap: 6px; width: 100%; min-height: 28px;
+  padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: none;
+  color: var(--ink); font: var(--weight-regular) var(--text-md) var(--font-ui);
+  text-align: left; cursor: pointer;
+}
+.shell-nav-row:hover { background: var(--hover); }
+.shell-nav-row[aria-current]:not([aria-current="false"]) {
+  background: var(--selection); color: var(--ink); font-weight: var(--weight-medium);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+/* A row's count: quiet, and tabular so a column of them lines up. */
+.shell-nav-count { flex: none; margin-left: auto; font: var(--text-xs) var(--font-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The quiet "New scene" / "New deck" foot: the drawn add, then the words. */
+.shell-nav-add { color: var(--muted); }
+.shell-nav-add:hover { color: var(--accent); }
+
+/* --- the top bar's title (proposal 8) ---------------------------------------
+   One pattern in both apps: the project's name in ink, then (where there is
+   one) the open document's in the quieter ink, at the same size. No app name:
+   the window is the app's already. */
+.shell-topbar-title { font: var(--weight-strong) var(--text-md) var(--font-ui); color: var(--ink); }
+.shell-topbar-sub { font: var(--weight-regular) var(--text-md) var(--font-ui); color: var(--muted); }
+
+/* --- the status row (proposal 9) ---------------------------------------------
+   One row at the window's foot for what is true right now: key hints, a
+   canvas's summary, an armed tool's instruction. 28px on the window's ground,
+   no rule and no fill, in the small quiet type. Live Link (link-status.css)
+   sits in its right-hand end, centred on the row, and the row leaves it the
+   room it publishes. */
+.shell-statusrow {
+  flex: none; display: flex; align-items: center; gap: 16px; min-height: 28px;
+  padding: 0 16px; padding-right: calc(16px + var(--linkstatus-reserve, 0px));
+  background: none; border: 0;
+  font: var(--text-xs) var(--font-ui); color: var(--muted);
+  overflow: hidden; white-space: nowrap;
+}

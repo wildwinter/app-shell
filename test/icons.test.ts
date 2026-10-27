@@ -19,7 +19,7 @@ const WORDS: IconName[] = [
   "tick", "locked", "readOnly", "checkedOut", "modified", "untracked", "warning", "dot", "play", "restart",
   "viewCards", "viewTable", "viewNode", "record",
   "grip", "add", "copy", "connect", "search", "pin", "settings", "speaker",
-  "note", "comment",
+  "note", "comment", "frame", "arrange",
 ];
 
 describe("the drawn vocabulary", () => {

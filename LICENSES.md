@@ -12,8 +12,8 @@ root attributes normalised (no `xmlns`, `class`, `width` or `height`; the stroke
 width set to 2.571 so a 14px rendering strokes at 1.5px). The drawings used:
 arrow-down, arrow-left, arrow-right, arrow-up, check, chevron-down, chevron-left,
 chevron-right, copy, ellipsis, file-text, grip-vertical, layout-grid, lock, lock-open,
-message-square, pencil, pin, play, plug, plus, rotate-ccw, rows-3, search,
-settings, triangle-alert, volume-2, waypoints, x. The three filled discs (`modified`,
+message-square, panel-top, pencil, pin, play, plug, plus, rotate-ccw, rows-3, search,
+settings, triangle-alert, volume-2, waypoints, workflow, x. The three filled discs (`modified`,
 `dot`, `record`) are this package's own circle elements.
 
 ```

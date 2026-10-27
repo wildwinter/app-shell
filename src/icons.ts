@@ -177,7 +177,13 @@ export type IconName =
   | "copy"
   /** Sound: play with audio, a table read. The act of hearing, not a volume
    *  control. */
-  | "speaker";
+  | "speaker"
+  /** A titled frame drawn behind a group of things on a canvas. (The October
+   *  2026 review moved the canvas's verbs into its control cluster, where a
+   *  verb is an icon.) */
+  | "frame"
+  /** Arrange things by what links them. */
+  | "arrange";
 
 // The two roots every drawing shares. Kept as constants so the table below is
 // the inner elements only, which is what a reader compares against lucide.dev.
@@ -300,6 +306,12 @@ const DRAWN: Record<IconName, string> = {
    *  reason, comments are the conversation, and the two must never look
    *  alike. (message-square) */
   comment: stroked('<path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>'),
+
+  // --- canvases -------------------------------------------------------------
+  /** A titled frame behind a group of things: a panel with its title bar. (panel-top) */
+  frame: stroked('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/>'),
+  /** Arrange by what links them: two linked nodes. (workflow) */
+  arrange: stroked('<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>'),
 };
 
 /**

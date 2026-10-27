@@ -749,9 +749,29 @@ item is the accent, filled; menus set themselves in the UI face.
 or fade, and every locked control has a dashed edge and the not-allowed
 cursor (fading had taken locked values under AA in every palette).
 
-## v0.65
+## v0.65 (the frame's shared pieces)
 
-Unreleased. `themePalettes` reads a built stylesheet's unquoted selectors
+Unreleased. The composition step of the October 2026 UI review
+(`design/ui-review-2026-10/3-composition.md`, proposals 7 to 9): three things
+both apps drew alike are the shell's now, in `pane-shell.css`, which both
+already import.
+
+- **`.shell-nav-row`**, one navigator row: 28px at weight 400, a hover on
+  `--hover`, and the open document's row marked by `aria-current` on the
+  neutral `--selection` fill, in ink at 500 with a 2px accent mark. With
+  `.shell-nav-count` (a quiet, tabular count) and `.shell-nav-add` (the
+  "New scene" / "New deck" foot).
+- **`.shell-topbar-title`** and **`.shell-topbar-sub`**: the project's name
+  in ink and the open document's in the quieter ink, at one size, and no app
+  name.
+- **`.shell-statusrow`**: a 28px row at the window's foot, with no rule and
+  no fill, for hints, a canvas summary or an armed tool's instruction. It
+  leaves Live Link the room it publishes, and Live Link now sits centred on
+  it (its toggle 22px, 3px off the corner).
+- Two drawn icons for a canvas's verbs: `frame` (Lucide panel-top) and
+  `arrange` (Lucide workflow).
+
+`themePalettes` reads a built stylesheet's unquoted selectors
 (`[data-theme=dark]`, as the bundler writes `palette.css`) the same as quoted
 ones, so an app's contrast test can read the shipped file.
 

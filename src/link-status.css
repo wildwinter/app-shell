@@ -5,7 +5,9 @@
    --danger / --font-ui / --font-mono) over the shared tokens.
    --------------------------------------------------------------------------- */
 
-.linkstatus { position: fixed; right: 14.5px; bottom: 5px; z-index: 40; display: inline-flex; align-items: center; gap: 6.5px; }
+/* Fixed to the window's bottom-right corner, centred on the 28px status row there (pane-shell.css
+   `.shell-statusrow`): the toggle is 22px, so 3px clears it on both sides. */
+.linkstatus { position: fixed; right: 14.5px; bottom: 3px; z-index: 40; display: inline-flex; align-items: center; gap: 6.5px; }
 .linkstatus[hidden] { display: none; }
 .linkstatus-word { font: var(--text-xs) var(--font-ui); color: var(--muted); user-select: none; }
 
@@ -20,7 +22,7 @@
 .linkstatus-url[hidden] { display: none; }
 
 .linkstatus-toggle {
-  flex: none; width: 22.5px; height: 22.5px; display: inline-flex; align-items: center; justify-content: center;
+  flex: none; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
   padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface);
   color: var(--muted); cursor: pointer;
   transition: color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
