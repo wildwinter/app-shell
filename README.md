@@ -751,7 +751,7 @@ cursor (fading had taken locked values under AA in every palette).
 
 ## v0.65 (the frame's shared pieces)
 
-Unreleased. The composition step of the October 2026 UI review
+The composition step of the October 2026 UI review
 (`design/ui-review-2026-10/3-composition.md`, proposals 7 to 9): three things
 both apps drew alike are the shell's now, in `pane-shell.css`, which both
 already import.
