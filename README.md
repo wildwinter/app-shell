@@ -836,7 +836,7 @@ update says what's new, in the changelog's own words, and Help ▸ What's New
 
 ## v0.69 (hover that fades)
 
-Unreleased. After step 6 of the October 2026 UI review: controls that appear on
+After step 6 of the October 2026 UI review: controls that appear on
 hover, and hover tints, were blinking in and out at 120ms or snapping with no
 transition at all, and a page of them felt busy. Four tokens give hover its own
 timing (tokens.css): a revealed control fades in over `--dur-reveal` (180ms)
