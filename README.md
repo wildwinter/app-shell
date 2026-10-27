@@ -775,6 +775,18 @@ already import.
 (`[data-theme=dark]`, as the bundler writes `palette.css`) the same as quoted
 ones, so an app's contrast test can read the shipped file.
 
+## v0.66 (a jump and a call, drawn; one focus ring)
+
+Unreleased. Two drawn icons for a script's flow, from the October 2026 UI
+review's END marker (`design/ui-review-2026-10/3-composition.md`, proposal
+3): `jump` (Lucide corner-down-right), a one-way jump, and `call` (Lucide
+iteration-ccw), out and back. Patterpad typed "↪" and "⤳" for these.
+
+The family's keyboard focus ring now covers editable text as well. A
+contenteditable used to fall back to the system's ring, which macOS draws in
+the user's accent colour (Patterpad's scene title showed up boxed in orange).
+An editor that draws its own focus still wins, as before.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

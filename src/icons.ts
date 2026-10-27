@@ -183,7 +183,13 @@ export type IconName =
    *  verb is an icon.) */
   | "frame"
   /** Arrange things by what links them. */
-  | "arrange";
+  | "arrange"
+  /** A one-way jump to somewhere else in the script: the arrow that turns the
+   *  corner and goes on. Drawn where Patterpad used to type "↪". */
+  | "jump"
+  /** A call: go there and come back. The loop that returns to where it set
+   *  out, so it never reads as a plain jump. Drawn where Patterpad typed "⤳". */
+  | "call";
 
 // The two roots every drawing shares. Kept as constants so the table below is
 // the inner elements only, which is what a reader compares against lucide.dev.
@@ -312,6 +318,12 @@ const DRAWN: Record<IconName, string> = {
   frame: stroked('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/>'),
   /** Arrange by what links them: two linked nodes. (workflow) */
   arrange: stroked('<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>'),
+
+  // --- flow -----------------------------------------------------------------
+  /** A one-way jump. (corner-down-right) */
+  jump: stroked('<path d="m15 10 5 5-5 5"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/>'),
+  /** A call, out and back. (iteration-ccw) */
+  call: stroked('<path d="m16 14 4 4-4 4"/><path d="M20 10a8 8 0 1 0-8 8h8"/>'),
 };
 
 /**

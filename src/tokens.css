@@ -152,8 +152,11 @@
 /* The family's keyboard focus ring: one rule, zero specificity (:where), so a
    component may draw its own and win without !important. Until 0.39.0
    Patterpad's main window had no ring at all and Storyletter carried five
-   copies of this line. Mouse focus stays quiet; only :focus-visible draws. */
-:where(button, [role="button"], input, select, textarea, summary, a[href], [tabindex]):focus-visible {
+   copies of this line. Mouse focus stays quiet; only :focus-visible draws.
+   Editable text is in the list too (0.66): without it a contenteditable fell
+   back to the system ring, drawn in the Mac's own accent colour (Patterpad's
+   scene title came up boxed in orange). An editor draws its own and wins. */
+:where(button, [role="button"], input, select, textarea, summary, a[href], [tabindex], [contenteditable]:not([contenteditable="false"])):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }

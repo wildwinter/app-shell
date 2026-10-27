@@ -167,6 +167,13 @@ describe("family style: the stylesheets", () => {
     hold("outline: none", hits, [], []);
   });
 
+  it("draws the family's focus ring on editable text too, so nothing falls back to the system's", () => {
+    const tokens = sources.find((s) => s.file === "tokens.css")!.text;
+    const ring = /:where\(([^)]*\([^)]*\)[^)]*|[^)]*)\):focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\)/.exec(tokens);
+    expect(ring?.[1]).toContain('[contenteditable]:not([contenteditable="false"])');
+    expect(ring?.[1]).toContain("[tabindex]");
+  });
+
   it("hands no rem length to the DOM from TypeScript (chrome-scale.test.ts holds the stylesheets)", () => {
     hold("rem in a TS string", lineHits(/["'`][^"'`\n]*(?<![\w.-])\d*\.?\d+rem\b/), [], []);
   });
