@@ -1,0 +1,16 @@
+/* What's New (whats-new.ts): each version's headlines in a list, a count of its
+   fixes and a link to the full notes, and the tickbox at the foot. The panel and
+   the actions row are the dialog frame's (dialog.css); the button is `.btn`. */
+.whatsnew-dialog { --dialog-width: 520px; }
+.whatsnew-dialog .shell-dialog-body { display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+.whatsnew-version { display: flex; flex-direction: column; gap: 6px; }
+.whatsnew-head { margin: 0; font: 600 var(--text-md) var(--font-ui); color: var(--ink); }
+.whatsnew-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+.whatsnew-item { font: var(--text-md)/1.45 var(--font-ui); color: var(--ink-read, var(--ink)); }
+.whatsnew-item strong { font-weight: 600; color: var(--ink); }
+.whatsnew-item code { font: var(--text-sm) var(--font-mono); }
+.whatsnew-foot, .whatsnew-empty { margin: 0; font: var(--text-sm) var(--font-ui); color: var(--muted); }
+.whatsnew-foot a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+/* The tickbox sits at the start of the actions row, the button at its end. */
+.whatsnew-show { margin-right: auto; display: flex; align-items: center; gap: 6px; font: var(--text-sm) var(--font-ui); color: var(--muted); }
+.whatsnew-show input { accent-color: var(--accent); margin: 0; }

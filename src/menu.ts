@@ -86,8 +86,12 @@ export const PANE_MENU: {
  */
 export const HELP_MENU: {
   checkForUpdates: MenuLabel;
+  whatsNew: MenuLabel;
 } = {
   checkForUpdates: { label: "Check for Updates\u2026" },
+  /** The latest release notes, as the first launch after an update shows them (whats-new.ts). No ellipsis:
+   *  it shows something and asks nothing. */
+  whatsNew: { label: "What\u2019s New" },
 };
 
 /** The app-menu items the family shares (macOS; the identity item also belongs in File elsewhere). */

@@ -154,6 +154,16 @@
       "import": "./dist/palette-main.js",
       "require": "./dist/palette-main.cjs"
     },
+    "./whats-new-main": {
+      "types": "./dist/whats-new-main.d.ts",
+      "import": "./dist/whats-new-main.js",
+      "require": "./dist/whats-new-main.cjs"
+    },
+    "./changelog": {
+      "types": "./dist/changelog.d.ts",
+      "import": "./dist/changelog.js",
+      "require": "./dist/changelog.cjs"
+    },
     "./session": {
       "types": "./dist/session.d.ts",
       "import": "./dist/session.js",
@@ -231,6 +241,10 @@
     "./command-palette.css": {
       "import": "./dist/command-palette.css",
       "require": "./dist/command-palette.css"
+    },
+    "./whats-new.css": {
+      "import": "./dist/whats-new.css",
+      "require": "./dist/whats-new.css"
     },
     "./welcome.css": {
       "import": "./dist/welcome.css",

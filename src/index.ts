@@ -115,6 +115,12 @@ export { showUpdaterDialog, feedUpdaterDownloadProgress, showUpdateReady } from 
 // main-process half is ./palette-main, and the menu readers are in ./menu.
 export { openCommandPalette, closeCommandPalette, matchScore, accelToCombo } from "./command-palette.js";
 export type { CommandPaletteOptions, PaletteItem } from "./command-palette.js";
+// What's New after an update, and Help > What's New (whats-new.ts); its main half is ./whats-new-main, and
+// the changelog reader (pure, for release scripts too) is ./changelog.
+export { openWhatsNew, whatsNewAfterUpdate, WHATS_NEW_CHANNELS } from "./whats-new.js";
+export type { WhatsNewOptions, WhatsNewState } from "./whats-new.js";
+export { parseChangelog, versionsSince, latestVersions, compareVersions, entriesWithoutLead } from "./changelog.js";
+export type { ChangelogVersion, ChangelogLead, ChangelogEntry } from "./changelog.js";
 export type { UpdaterViewOptions, UpdaterLink, UpdateReadyOptions } from "./updater-view.js";
 export type { UpdaterDownloadProgress, UpdaterPromptOptions, UpdaterReadyInfo } from "./updater.js";
 // No project open: the welcome (welcome.ts + welcome.css).

@@ -810,6 +810,30 @@ The behaviour step of the October 2026 UI review
   which reads `Menu.getApplicationMenu()` through `flattenMenu` and runs an
   item as clicking it would. Style: `command-palette.css`.
 
+## v0.68 (What's New)
+
+Unreleased. Step 5a of the October 2026 UI review: the first launch after an
+update says what's new, in the changelog's own words, and Help ▸ What's New
+(`HELP_MENU.whatsNew`) shows the latest at any time.
+
+- `./changelog` reads a Keep a Changelog file, with no DOM: `parseChangelog`
+  gives each version's headlines (each Added, Changed and Removed entry's bold
+  lead, or a `### Highlights` list when a version has one) and a count of its
+  fixes; `versionsSince`, `latestVersions` and `compareVersions` pick which;
+  `entriesWithoutLead` is for a release check, which fails on an entry What's
+  New couldn't headline.
+- `whatsNewAfterUpdate(state, opts)` opens the dialog for every version since
+  the last run, newest first: nothing on a fresh install, only this version for
+  an install from before What's New, and nothing when the "Show what's new
+  after updates" tickbox is off. `openWhatsNew(opts)` is the Help item: the
+  latest three. The app passes its CHANGELOG.md as text (built in, so no
+  network) and where each version's full release notes are. Style:
+  `whats-new.css`.
+- `./whats-new-main`'s `registerWhatsNew({ version, read, write, existing })`
+  keeps the last version and the tickbox in the app's own settings, and gives
+  the launch answer until the dialog is closed (`WHATS_NEW_CHANNELS.seen`, which
+  the launch's `onClose` sends), so a reload at launch doesn't lose it.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),
