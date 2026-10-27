@@ -696,7 +696,7 @@ accepts show among the usual problems.
 
 ## v0.64 (one family palette, and a crisper grammar)
 
-Unreleased. From the October 2026 UI review (patterkit
+From the October 2026 UI review (patterkit
 `design/ui-review-2026-10/00-conclusions.md`, ruled 2026-10-27): the family
 shares one set of colours, and the grammar moves to the "Fair Copy" look.
 
@@ -744,6 +744,10 @@ Follow System), and `themeAttribute(choice)`.
 button and the selected item, 400 for serif titles); "Saved" is muted with no
 dot; the current settings tab is ink on `--selection`; a menu's highlighted
 item is the accent, filled; menus set themselves in the UI face.
+
+**Locked controls** stay readable: a locked field keeps `--ink` with no fill
+or fade, and every locked control has a dashed edge and the not-allowed
+cursor (fading had taken locked values under AA in every palette).
 
 ## Roadmap
 
