@@ -777,7 +777,7 @@ ones, so an app's contrast test can read the shipped file.
 
 ## v0.66 (a jump and a call, drawn; one focus ring)
 
-Unreleased. Two drawn icons for a script's flow, from the October 2026 UI
+Two drawn icons for a script's flow, from the October 2026 UI
 review's END marker (`design/ui-review-2026-10/3-composition.md`, proposal
 3): `jump` (Lucide corner-down-right), a one-way jump, and `call` (Lucide
 iteration-ccw), out and back. Patterpad typed "↪" and "⤳" for these.
