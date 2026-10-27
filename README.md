@@ -789,7 +789,7 @@ An editor that draws its own focus still wins, as before.
 
 ## v0.67 (Undo, not "Are you sure?"; a quiet updater; a command palette)
 
-Unreleased. The behaviour step of the October 2026 UI review
+The behaviour step of the October 2026 UI review
 (`design/ui-review-2026-10/4-behaviour.md`, changes 1, 2 and 6).
 
 - **A toast can carry an action**: `toast(message, kind, { action: { label,
