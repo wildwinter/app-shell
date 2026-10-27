@@ -13,7 +13,8 @@
 
 import { el } from "./dom.js";
 import { dialogFrame } from "./dialog.js";
-import type { UpdaterDownloadProgress, UpdaterPromptOptions } from "./updater.js";
+import { toast } from "./toast.js";
+import type { UpdaterDownloadProgress, UpdaterPromptOptions, UpdaterReadyInfo } from "./updater.js";
 
 export interface UpdaterLink { label: string; url: string }
 
@@ -98,4 +99,33 @@ export function showUpdaterDialog(opts: UpdaterViewOptions): Promise<number> {
 
     frame.open();
   });
+}
+
+export interface UpdateReadyOptions {
+  /** Where the chip goes: the top bar's right-hand cluster. It's prepended,
+   *  so it sits before whatever the app already shows there. */
+  host: HTMLElement;
+  /** Restart and install: the app's bridge to `UPDATER_CHANNELS.restart`. */
+  restart: () => void;
+}
+
+/**
+ * An update downloaded on its own: show a "Restart to update" chip in the top
+ * bar and say so once in a toast. Nothing is modal, so the author's landing is
+ * never covered (the October 2026 review); the update installs on quit if the
+ * chip is never clicked. Calling it again (a newer version arrived) updates
+ * the one chip.
+ */
+export function showUpdateReady(info: UpdaterReadyInfo, opts: UpdateReadyOptions): HTMLButtonElement {
+  const tip = `${info.appName} ${info.version} is ready. Restart to install it, or it installs when you quit.`;
+  let chip = opts.host.querySelector<HTMLButtonElement>(".shell-update-chip");
+  if (!chip) {
+    chip = el("button", { className: "shell-update-chip", onClick: () => opts.restart() }, "Restart to update");
+    chip.type = "button";
+    opts.host.prepend(chip);
+  }
+  chip.dataset.tip = tip;
+  chip.setAttribute("aria-label", tip);
+  toast(`${info.appName} ${info.version} is ready. Restart to update, or it installs when you quit.`);
+  return chip;
 }

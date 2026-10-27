@@ -231,11 +231,97 @@ export const VIEW_MENU: {
   projectOverview: MenuLabel;
   upALevel: MenuLabel;
   colourTheme: MenuLabel;
+  commandPalette: MenuLabel;
 } = {
   projectOverview: { label: "Project Overview" },
   upALevel: { label: "Up a Level", accelerator: "CmdOrCtrl+[" },
   colourTheme: { label: "Colour Theme" },
+  /** Every command by name, and quick open (command-palette.ts). */
+  commandPalette: { label: "Command Palette\u2026", accelerator: "CmdOrCtrl+K" },
 };
+
+// --- the command palette's view of the menu ---------------------------------
+//
+// The palette lists the app's own menu, read live, so it can never disagree
+// with it (the October 2026 review): no second registry to keep in step. These
+// read anything shaped like Electron's Menu, so this file stays electron-free;
+// palette-main.ts hands them the real one.
+
+/** The palette's channels. `open` is main -> renderer (the menu item); the
+ *  other two are renderer -> main. */
+export const PALETTE_CHANNELS = {
+  open: "palette:open",
+  commands: "palette:commands",
+  run: "palette:run",
+} as const;
+
+/** What the palette reads of a menu item: Electron's MenuItem fits it. */
+export interface MenuItemLike {
+  label?: string;
+  type?: string;
+  role?: string | null;
+  accelerator?: string | null;
+  enabled?: boolean;
+  visible?: boolean;
+  submenu?: MenuLike | null;
+}
+export interface MenuLike { items: MenuItemLike[] }
+
+/** One runnable menu item, as the palette lists it. */
+export interface MenuCommand {
+  /** The item's path and label, joined: what `findMenuItem` takes back. */
+  id: string;
+  /** The submenus above it ("File", "Export"). */
+  path: string[];
+  label: string;
+  /** Electron's accelerator, when it has one ("CmdOrCtrl+K"). */
+  accelerator?: string;
+  enabled: boolean;
+}
+
+// The system's own items, which aren't the app's commands: the Services menu,
+// Hide and Show All, the window list, the recent-documents list the OS keeps.
+const SYSTEM_ROLES = new Set([
+  "services", "hide", "hideothers", "unhide", "front", "recentdocuments", "clearrecentdocuments",
+  "startspeaking", "stopspeaking",
+]);
+const ID_SEP = "\u001f";
+
+/** Every runnable item of `menu`, in menu order: separators, hidden items and
+ *  the system's own are left out, and the palette's own item too. */
+export function flattenMenu(menu: MenuLike | null | undefined, path: string[] = []): MenuCommand[] {
+  const out: MenuCommand[] = [];
+  for (const item of menu?.items ?? []) {
+    if (item.type === "separator" || item.visible === false) continue;
+    if (item.role && SYSTEM_ROLES.has(item.role.toLowerCase())) continue;
+    const label = (item.label ?? "").trim();
+    if (item.submenu) {
+      if (label && item.role?.toLowerCase() !== "windowmenu") out.push(...flattenMenu(item.submenu, [...path, label]));
+      continue;
+    }
+    if (!label || label === VIEW_MENU.commandPalette.label) continue;
+    out.push({
+      id: [...path, label].join(ID_SEP), path, label,
+      ...(item.accelerator ? { accelerator: item.accelerator } : {}),
+      enabled: item.enabled !== false,
+    });
+  }
+  return out;
+}
+
+/** The item a palette `id` names, or undefined when the menu has changed
+ *  under it. */
+export function findMenuItem<T extends MenuItemLike>(menu: { items: T[] } | null | undefined, id: string): T | undefined {
+  const parts = id.split(ID_SEP);
+  let items: MenuItemLike[] | undefined = menu?.items;
+  for (let i = 0; i < parts.length; i++) {
+    const hit = items?.find((it) => it.type !== "separator" && (it.label ?? "").trim() === parts[i]);
+    if (!hit) return undefined;
+    if (i === parts.length - 1) return hit.submenu ? undefined : hit as T;
+    items = hit.submenu?.items;
+  }
+  return undefined;
+}
 
 /** A path with the home directory as `~`, so a recents entry stays readable
  *  at menu width. `home` is `app.getPath("home")`; this file stays

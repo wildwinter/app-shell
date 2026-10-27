@@ -92,4 +92,42 @@ describe("toast", () => {
     expect(sawClosing).toBe(true);
     spy.mockRestore();
   });
+
+  it("carries an action button that runs once and dismisses (Undo replaces \"Are you sure?\")", () => {
+    const run = vi.fn();
+    toast("Deleted \u201cThe Road North\u201d.", "info", { action: { label: "Undo", run } });
+    const t = node();
+    expect(t.classList.contains("has-action")).toBe(true);
+    expect(t.querySelector(".shell-toast-text")?.textContent).toBe("Deleted \u201cThe Road North\u201d.");
+    const b = t.querySelector<HTMLButtonElement>(".shell-toast-action")!;
+    expect(b.textContent).toBe("Undo");
+    expect(b.type).toBe("button");
+    b.click();
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(t.classList.contains("closing") || t.hidden).toBe(true);
+  });
+
+  it("gives an action 8s, and holds while the pointer is on it", () => {
+    vi.useFakeTimers();
+    toast("Deleted \u201cA\u201d.", "info", { action: { label: "Undo", run: () => {} } });
+    const t = node();
+    vi.advanceTimersByTime(5000);
+    t.dispatchEvent(new Event("pointerenter"));
+    vi.advanceTimersByTime(60000);
+    expect(t.hidden).toBe(false);
+    expect(t.classList.contains("closing")).toBe(false);
+    t.dispatchEvent(new Event("pointerleave"));
+    vi.advanceTimersByTime(2999);
+    expect(t.classList.contains("closing")).toBe(false);
+    vi.advanceTimersByTime(2);
+    expect(t.classList.contains("closing") || t.hidden).toBe(true);
+  });
+
+  it("drops the action when a plain toast replaces it", () => {
+    toast("Deleted.", "info", { action: { label: "Undo", run: () => {} } });
+    toast("Saved");
+    expect(node().querySelector(".shell-toast-action")).toBeNull();
+    expect(node().classList.contains("has-action")).toBe(false);
+    expect(node().textContent).toBe("Saved");
+  });
 });

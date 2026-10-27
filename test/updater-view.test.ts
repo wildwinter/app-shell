@@ -2,7 +2,7 @@
 // progress feeds the open dialog, links open through the bridge.
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { showUpdaterDialog, feedUpdaterDownloadProgress } from "../src/updater-view.js";
+import { showUpdaterDialog, feedUpdaterDownloadProgress, showUpdateReady } from "../src/updater-view.js";
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) { this.open = true; };
@@ -80,5 +80,26 @@ describe("showUpdaterDialog", () => {
     expect(openExternal).toHaveBeenCalledWith("https://example.test/");
     buttons()[0]!.click();
     await p;
+  });
+});
+
+describe("showUpdateReady (an update that arrived on its own)", () => {
+  it("puts one Restart to update chip in the top bar, says so once, and opens no dialog", () => {
+    const host = document.createElement("div");
+    host.append(document.createElement("span"));
+    document.body.append(host);
+    const restart = vi.fn();
+    const chip = showUpdateReady({ appName: "Patterpad", version: "0.40.0" }, { host, restart });
+    expect(host.firstElementChild).toBe(chip);
+    expect(chip.textContent).toBe("Restart to update");
+    expect(chip.dataset.tip).toBe("Patterpad 0.40.0 is ready. Restart to install it, or it installs when you quit.");
+    expect(document.querySelector("dialog")).toBeNull();
+    expect(document.querySelector(".shell-toast")?.textContent).toBe("Patterpad 0.40.0 is ready. Restart to update, or it installs when you quit.");
+    chip.click();
+    expect(restart).toHaveBeenCalledTimes(1);
+    // A newer version updates the same chip.
+    showUpdateReady({ appName: "Patterpad", version: "0.40.1" }, { host, restart });
+    expect(host.querySelectorAll(".shell-update-chip").length).toBe(1);
+    expect(chip.dataset.tip).toContain("0.40.1");
   });
 });

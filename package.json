@@ -149,6 +149,11 @@
       "import": "./dist/updater.js",
       "require": "./dist/updater.cjs"
     },
+    "./palette-main": {
+      "types": "./dist/palette-main.d.ts",
+      "import": "./dist/palette-main.js",
+      "require": "./dist/palette-main.cjs"
+    },
     "./session": {
       "types": "./dist/session.d.ts",
       "import": "./dist/session.js",
@@ -222,6 +227,10 @@
     "./updater.css": {
       "import": "./dist/updater.css",
       "require": "./dist/updater.css"
+    },
+    "./command-palette.css": {
+      "import": "./dist/command-palette.css",
+      "require": "./dist/command-palette.css"
     },
     "./welcome.css": {
       "import": "./dist/welcome.css",

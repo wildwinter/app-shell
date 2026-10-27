@@ -14,7 +14,8 @@ export type { IconName, IconSvgName } from "./icons.js";
 export { mountPaneShell } from "./pane-shell.js";
 export type { PaneShell, PaneShellOptions, PaneShellState, PaneSide, PaneSideConfig } from "./pane-shell.js";
 export { PANE_MENU } from "./menu.js";
-export type { MenuLabel } from "./menu.js";
+export type { MenuLabel, MenuCommand } from "./menu.js";
+export { PALETTE_CHANNELS } from "./menu.js";
 export { iconBtn, labelled, labelledToggle, moveItem, tagChips, stageChips, wireReorder } from "./dom.js";
 export type { StageChipsOptions } from "./dom.js";
 export type { FieldHint, LabelledToggleOptions } from "./dom.js";
@@ -100,7 +101,7 @@ export type { SaveIndicator } from "./save-view.js";
 // nearly the same words (stale.ts).
 export { staleBar } from "./stale.js";
 export { toast, dismissToast } from "./toast.js";
-export type { ToastKind, ToastOptions } from "./toast.js";
+export type { ToastKind, ToastOptions, ToastAction } from "./toast.js";
 export type { StaleBarOptions } from "./stale.js";
 // The bottom bar that walks a list of things to attend to: problems, comments,
 // whatever the app has a queue of (stepper.ts).
@@ -109,9 +110,13 @@ export type { StepperBarOptions, StepperItem, StepperTone } from "./stepper.js";
 export { EDIT_MENU, GO_MENU, FILE_MENU, PLAY_MENU, REVIEW_MENU, PUBLISH_MENU, VIEW_MENU } from "./menu.js";
 // The updater's view, on the dialog frame: the renderer half the main-process
 // updater (./updater) cannot run without (updater-view.ts).
-export { showUpdaterDialog, feedUpdaterDownloadProgress } from "./updater-view.js";
-export type { UpdaterViewOptions, UpdaterLink } from "./updater-view.js";
-export type { UpdaterDownloadProgress, UpdaterPromptOptions } from "./updater.js";
+export { showUpdaterDialog, feedUpdaterDownloadProgress, showUpdateReady } from "./updater-view.js";
+// The command palette (Cmd+K): the live menu by name, and quick open (command-palette.ts); its
+// main-process half is ./palette-main, and the menu readers are in ./menu.
+export { openCommandPalette, closeCommandPalette, matchScore, accelToCombo } from "./command-palette.js";
+export type { CommandPaletteOptions, PaletteItem } from "./command-palette.js";
+export type { UpdaterViewOptions, UpdaterLink, UpdateReadyOptions } from "./updater-view.js";
+export type { UpdaterDownloadProgress, UpdaterPromptOptions, UpdaterReadyInfo } from "./updater.js";
 // No project open: the welcome (welcome.ts + welcome.css).
 export { mountWelcome } from "./welcome.js";
 export type { Welcome, WelcomeOptions, WelcomeAction, WelcomeRecent, WelcomeGroup, WelcomeGroupItem } from "./welcome.js";

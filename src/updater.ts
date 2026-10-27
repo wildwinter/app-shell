@@ -80,7 +80,20 @@ export const UPDATER_CHANNELS = {
   promptReply: "updater:prompt-reply",
   /** main -> renderer: live download progress. */
   progress: "updater:download-progress",
+  /** main -> renderer: an update has downloaded on its own and is ready, as
+   *  `UpdaterReadyInfo`. The renderer shows a "Restart to update" chip, never
+   *  a dialog (showUpdateReady in updater-view.ts). */
+  ready: "updater:ready",
+  /** renderer -> main: the chip was clicked; restart and install, asking
+   *  about unsaved edits first. */
+  restart: "updater:restart",
 } as const;
+
+/** An update that downloaded on its own and is waiting for a restart. */
+export interface UpdaterReadyInfo {
+  appName: string;
+  version: string;
+}
 
 export interface UpdaterOptions {
   /** The product name, as it should read in every message ("Patterpad"). */
@@ -317,16 +330,13 @@ autoUpdater.on("update-downloaded", (info: UpdateDownloadedEvent) => {
   updateDownloaded = info;
   lastBackgroundError = null; // it got here in the end; stale retry noise would only mislead
   writeLog("info", [`download: ${info.version} downloaded and ready to install`]);
+  // Nobody asked, so nothing stops the author: the window shows a "Restart to update" chip and one
+  // remark, and the update installs on quit if the chip is never clicked (the October 2026 review: the
+  // launch-time modal blurred the window over the place the author had come to work).
   const win = activeWindow();
-  if (!win) return;
-  void themedPrompt(win, {
-    buttons: ["Restart now", "Later"],
-    defaultId: 0,
-    cancelId: 1,
-    message: "Update ready to install",
-    detail: `${appName} ${info.version} has been downloaded. Restart now to install it, or it installs the next time you quit.`,
-    unasked: true,
-  }).then((response) => { if (response === 0) void quitAndInstallSafely(); });
+  if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return;
+  const ready: UpdaterReadyInfo = { appName, version: info.version };
+  win.webContents.send(UPDATER_CHANNELS.ready, ready);
 });
 
 /** Name the app and say how to find its window. Call once, at startup. */
@@ -334,6 +344,9 @@ export function configureUpdater(opts: UpdaterOptions): void {
   appName = opts.appName;
   activeWindowFn = opts.activeWindow;
   if (opts.logFile !== undefined) logPath = join(app.getPath("userData"), opts.logFile);
+  // The chip's click. Only an update that is actually waiting restarts anything.
+  ipcMain.removeAllListeners(UPDATER_CHANNELS.restart);
+  ipcMain.on(UPDATER_CHANNELS.restart, () => { if (updateDownloaded) void quitAndInstallSafely(); });
 }
 
 /** Fire-and-forget background check; periodic + on launch. No-op in dev. */

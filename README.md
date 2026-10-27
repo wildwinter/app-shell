@@ -787,6 +787,29 @@ contenteditable used to fall back to the system's ring, which macOS draws in
 the user's accent colour (Patterpad's scene title showed up boxed in orange).
 An editor that draws its own focus still wins, as before.
 
+## v0.67 (Undo, not "Are you sure?"; a quiet updater; a command palette)
+
+Unreleased. The behaviour step of the October 2026 UI review
+(`design/ui-review-2026-10/4-behaviour.md`, changes 1, 2 and 6).
+
+- **A toast can carry an action**: `toast(message, kind, { action: { label,
+  run } })` draws a bordered button beside the message, stays 8 seconds, and
+  holds while the pointer or focus is on it. The apps use it for Undo after a
+  delete, in place of a confirm that ended "You can undo this."
+- **An update that downloads on its own no longer opens a dialog.** Main sends
+  `UPDATER_CHANNELS.ready`; the renderer's `showUpdateReady(info, { host,
+  restart })` puts a "Restart to update" chip in the top bar and says so once
+  in a toast. The chip sends `UPDATER_CHANNELS.restart`, which installs after
+  the usual unsaved-edits question. Help > Check for Updates still answers in
+  a dialog, since the author asked. Style: `updater.css`.
+- **The command palette**, on Cmd+K (`VIEW_MENU.commandPalette`):
+  `openCommandPalette({ commands, run, items })` lists the app's live menu by
+  name (greyed where the menu is) and the app's own quick-open rows, filters
+  as you type, and runs the pick after giving focus back. The menu comes from
+  `./palette-main` (`registerCommandPalette()`, `openCommandPaletteIn(win)`),
+  which reads `Menu.getApplicationMenu()` through `flattenMenu` and runs an
+  item as clicking it would. Style: `command-palette.css`.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

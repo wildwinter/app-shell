@@ -1,0 +1,32 @@
+/* The command palette (command-palette.ts): a field and a list, top centre, on
+   the pop-up shadow tier. Not modal, so no scrim: the window stays in view. */
+.shell-palette {
+  position: fixed; z-index: 60; top: 72px; left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px)); max-height: min(440px, calc(100vh - 120px));
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
+  font: var(--text-md) var(--font-ui); color: var(--ink);
+}
+/* Never a window-drag region, even over one (dialog.css says why). */
+.shell-palette, .shell-palette * { -webkit-app-region: no-drag; }
+.shell-palette-input {
+  flex: none; height: 40px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--line);
+  background: transparent; color: var(--ink); font: var(--text-lg) var(--font-ui); outline: none;
+}
+.shell-palette-input::placeholder { color: var(--muted); }
+.shell-palette-list { overflow-y: auto; padding: 4px; }
+.shell-palette-row {
+  display: flex; align-items: baseline; gap: 10px; min-height: 28px; padding: 5px 10px;
+  border-radius: var(--radius-sm); cursor: pointer;
+}
+.shell-palette-row.active { background: var(--accent); color: var(--on-accent); }
+.shell-palette-row.disabled { cursor: default; color: var(--muted); }
+.shell-palette-label { flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shell-palette-detail {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--muted); font-size: var(--text-sm);
+}
+.shell-palette-key { flex: none; color: var(--muted); font-size: var(--text-sm); }
+.shell-palette-row.active .shell-palette-detail,
+.shell-palette-row.active .shell-palette-key { color: inherit; opacity: 0.85; }
+.shell-palette-empty { padding: 10px; color: var(--muted); }
