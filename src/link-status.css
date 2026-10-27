@@ -7,10 +7,10 @@
 
 .linkstatus { position: fixed; right: 14.5px; bottom: 5px; z-index: 40; display: inline-flex; align-items: center; gap: 6.5px; }
 .linkstatus[hidden] { display: none; }
-.linkstatus-word { font: 11px var(--font-ui); color: var(--muted); user-select: none; }
+.linkstatus-word { font: var(--text-xs) var(--font-ui); color: var(--muted); user-select: none; }
 
 .linkstatus-url {
-  font: 11.5px var(--font-mono); color: var(--muted); background: var(--surface);
+  font: var(--text-xs) var(--font-mono); color: var(--muted); background: var(--surface);
   border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer;
   transition: color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
 }

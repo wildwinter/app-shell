@@ -694,6 +694,57 @@ copy of the manifest too when the package changes it. The project's other
 extensions and its data aren't touched; values the new manifest no longer
 accepts show among the usual problems.
 
+## v0.64 (one family palette, and a crisper grammar)
+
+Unreleased. From the October 2026 UI review (patterkit
+`design/ui-review-2026-10/00-conclusions.md`, ruled 2026-10-27): the family
+shares one set of colours, and the grammar moves to the "Fair Copy" look.
+
+**`palette.css`**, new: Light (the bare `:root`), Dark, and Parchment on
+`data-theme`, with Follow System (no attribute) tracking the OS. Blue pencil
+is the accent in every app; one character and deck wheel; shared status
+colours; and three new tokens: `--selection` (a selected row's neutral fill),
+`--hover`, and the derived `--ink-soft` and `--ink-read`. The tiers are
+`--bg` (the desk), `--surface` (panes, bars, menus, dialogs) and `--card`
+(content and fields, white in Light). An app imports it after `tokens.css`
+and drops its own palette blocks:
+
+```css
+@import "@wildwinter/app-shell/tokens.css";
+@import "@wildwinter/app-shell/palette.css";
+```
+
+**`./theme`**, new: the ids as data, for a store, a menu and the root
+attribute. `THEME_CHOICES` (Follow System, Light, Dark, Parchment, in menu
+order), `ThemeChoice`, `migrateTheme(stored)` (Paper, Mist, Chambray and Linen
+go to Light; Night, Slate, Indigo and Baize go to Dark; anything unreadable to
+Follow System), and `themeAttribute(choice)`.
+
+**`tokens.css`**, retuned:
+
+- The chrome base is 13px, and every shell font size is one of five steps,
+  `--text-xs` to `--text-xl` (11, 12, 13, 15, 22). On Windows
+  (`:root[data-platform="win32"]`) the middle two are 14 and 16.
+  `--weight-regular`, `--weight-medium`, `--weight-strong`, and two leadings.
+- `--font-ui` is the system face (SF Pro, Segoe UI), with Inter as the
+  fallback. An app's own `--font-ui` still wins until it drops it.
+- Radii 4, 6 and 8, and `--radius-dialog` 12.
+- No shadow at rest (`--shadow-1` is none). Two floating tiers, `--shadow-pop`
+  and `--shadow-modal`, each a 0.5px ring and a soft drop; `--shadow-2` and
+  `--shadow-3` alias them. Menus, popovers, toasts and dialogs lose their 1px
+  border, since the ring is the edge.
+- `--hairline`: 1px, 0.5px on a 2x display.
+- One rendered icon stroke, `--icon-stroke` (1.25px, non-scaling).
+- Motion: `--dur-panel` 200ms; panels enter with a 4px rise and no scale.
+  Tooltips, menus, popovers and anchored panels appear at once; a toast still
+  fades out. Reduced motion zeroes every duration too.
+- No blur behind a dialog.
+
+**Shell stylesheets**: weights follow the rule (600 for titles, 500 for a
+button and the selected item, 400 for serif titles); "Saved" is muted with no
+dot; the current settings tab is ink on `--selection`; a menu's highlighted
+item is the accent, filled; menus set themselves in the UI face.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

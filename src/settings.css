@@ -6,26 +6,28 @@
    ============================================================================ */
 
 .settings-dialog {
-  padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 0; border: 0; border-radius: var(--radius-dialog);
   background: var(--surface); color: var(--ink);
   width: min(760px, 92vw); max-height: 82vh;
-  box-shadow: var(--shadow-3);
-  font: 14px var(--font-ui, system-ui, sans-serif);
+  box-shadow: var(--shadow-modal);
+  font: var(--text-md) var(--font-ui, system-ui, sans-serif);
 }
 /* Its own frame (the tab rail makes the generic dialog frame a poor fit), on
    the same tokens as dialog.css: the one scrim, the one radius, the one panel
    motion. */
 .settings-dialog { animation: var(--anim-panel-in); }
-.settings-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); animation: var(--anim-backdrop-in); }
+.settings-dialog::backdrop { background: var(--scrim); animation: var(--anim-backdrop-in); }
 .settings-form { display: flex; flex-direction: column; max-height: 82vh; }
-.settings-title { margin: 0; padding: 16px 20px; font-family: var(--font-read, inherit); font-size: 18.5px; font-weight: 600; border-bottom: 1px solid var(--line-soft, var(--line)); }
+.settings-title { margin: 0; padding: 16px 20px; font-family: var(--font-read, inherit); font-size: var(--text-xl); font-weight: 400; border-bottom: 1px solid var(--line-soft, var(--line)); }
 
 .settings-body { display: flex; min-height: 0; flex: 1; }
 .settings-tabs { flex: none; width: 192px; overflow-y: auto; padding: 10px 8px; border-right: 1px solid var(--line-soft, var(--line)); display: flex; flex-direction: column; gap: 1px; }
-.settings-group { padding: 12px 8px 4px; font: 600 12.5px/1.2 var(--font-ui); color: var(--muted); }
-.settings-tab { text-align: left; width: 100%; padding: 6px 10px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+.settings-group { padding: 12px 8px 4px; font: 600 var(--text-sm)/1.2 var(--font-ui); color: var(--muted); }
+.settings-tab { text-align: left; width: 100%; padding: 6px 10px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: inherit; font-size: var(--text-md); cursor: pointer; }
 .settings-tab:hover { background: var(--accent-soft, color-mix(in oklab, var(--accent) 12%, transparent)); }
-.settings-tab.active { background: var(--accent-soft, color-mix(in oklab, var(--accent) 16%, transparent)); color: var(--accent); font-weight: 500; }
+/* The current tab is ink on the neutral selection fill (palette.css), like a selected row anywhere in the
+   family; the accent is kept for the action, the focus ring and links. */
+.settings-tab.active { background: var(--selection, color-mix(in oklab, var(--ink) 7%, transparent)); color: var(--ink); font-weight: 500; }
 /* Dimmed and inert, with the reason on its rollover; it must not light up on
    hover like a live tab. */
 .settings-tab.is-disabled { color: var(--muted); opacity: 0.5; cursor: default; }
@@ -38,7 +40,7 @@
 .settings-panel[hidden] { display: none; }
 
 .settings-actions { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--line-soft, var(--line)); }
-.settings-error { flex: 1; margin: 0; color: var(--danger); font-size: 13px; }
+.settings-error { flex: 1; margin: 0; color: var(--danger); font-size: var(--text-md); }
 .settings-actions button { font: inherit; padding: 6px 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer; }
 .settings-actions button:hover { color: var(--accent); border-color: var(--accent); }
 .settings-actions .primary { background: var(--accent); color: var(--surface); border-color: transparent; font-weight: 500; }
@@ -83,7 +85,7 @@
 .set-expand.open::before { transform: rotate(90deg); }
 
 .set-rowline input, .set-rowline select, .set-details input, .set-details select {
-  font: inherit; font-size: 13.5px; background: var(--bg); color: var(--ink);
+  font: inherit; font-size: var(--text-md); background: var(--bg); color: var(--ink);
   border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 8px;
 }
 .set-rowline input.set-name { flex: 1; min-width: 96px; }
@@ -105,15 +107,15 @@
 
 /* The family's settings row (`labelled`, ruling C of the 2026-10 Patterpad
    review): the caption on the left, the control inline beside it. */
-.shell-labelled { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.shell-labelled { display: flex; align-items: center; gap: 8px; font-size: var(--text-md); }
 .shell-fieldcap { color: var(--muted); min-width: 80px; }
 /* A row with a sentence under it: the pair is one block, so the panel's gap
    falls between rows and not between a row and its own hint. Quiet text,
    kept to a reading measure. */
 .shell-field { display: flex; flex-direction: column; gap: 3px; }
 .shell-field[hidden] { display: none; }   /* see .settings-panel[hidden] */
-.shell-fieldhint { margin: 0; font: 12px/1.4 var(--font-ui); color: var(--muted); max-width: 60ch; }
-.shell-fieldhint code { font: 11.5px var(--font-mono, monospace); color: var(--ink); }
+.shell-fieldhint { margin: 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--muted); max-width: 60ch; }
+.shell-fieldhint code { font: var(--text-xs) var(--font-mono, monospace); color: var(--ink); }
 /* The toggle (`labelledToggle`): the box sits where any other row's control
    does. A disabled one dims its caption too, or the row reads as live with
    only a grey square to say otherwise. */
@@ -135,7 +137,7 @@
 .set-details .shell-labelled > input:not([type=checkbox]):not([type=radio]) { flex: 1; min-width: 0; }
 
 .shell-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-.shell-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 4px 2px 9px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink); }
+.shell-tag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-sm); padding: 2px 4px 2px 9px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink); }
 .shell-tag-x { display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 2px; }
 .shell-tag-x:hover:not(:disabled) { color: var(--danger); }
 /* stageChips' move buttons at either end of the order. */
@@ -146,16 +148,16 @@
 .shell-tag-label { cursor: text; border-radius: 3px; }
 .shell-tag-label:hover, .shell-tag-label:focus-visible { background: var(--accent-soft, color-mix(in oklab, var(--accent) 12%, transparent)); outline: none; }
 .shell-tag.editing { padding-left: 4px; }
-.shell-stage-rename { min-width: 96px; font-size: 12px; }
+.shell-stage-rename { min-width: 96px; font-size: var(--text-sm); }
 /* The caller's quiet line under a ladder (a reorder's note); takes no room while empty. */
 .shell-stage-note:empty { display: none; }
-.shell-stage-note { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.shell-stage-note { margin: 4px 0 0; font-size: var(--text-sm); color: var(--muted); }
 
 /* The property list (property-list.ts) on top of the row kit above. */
 .set-list { display: flex; flex-direction: column; gap: 6px; }
 .set-rowline select.set-type { flex: none; }
 .set-rowline .set-default { flex: 1; min-width: 80px; }
-.set-flagnote { flex: 1; color: var(--muted); font-size: 13px; font-style: italic; }
+.set-flagnote { flex: 1; color: var(--muted); font-size: var(--text-md); font-style: italic; }
 .set-details input.set-purpose { flex: 1; }
 .set-add { align-self: flex-start; margin-top: 6px; }
 

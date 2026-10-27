@@ -49,6 +49,10 @@ export type { ContextItem, PopoverOptions } from "./context-menu.js";
 // surfaces have to close the same way the shell's do, or the two halves of one
 // window animate differently (exit.ts).
 export { closeWithExit } from "./exit.js";
+// The family's colour themes (palette.css) as data: ids, menu labels, and the
+// migration from each app's retired palettes. Also its own entry, ./theme.
+export { THEME_CHOICES, DEFAULT_THEME, isThemeChoice, migrateTheme, themeAttribute } from "./theme.js";
+export type { ThemeId, ThemeChoice } from "./theme.js";
 // Every app has an About, and none of them should be the grey OS panel.
 export { showAbout } from "./about.js";
 // One floating panel anchored to its subject: Patterpad's, generalised.

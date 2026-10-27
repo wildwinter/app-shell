@@ -22,8 +22,8 @@
 /* A shelf per job (start / learn), captioned like the welcome's groups:
    sentence-case label text, never an overline. */
 .kit-gallery-shelf + .kit-gallery-shelf { margin-top: 18px; }
-.kit-gallery-caption { margin: 0 0 6px; color: var(--muted); font: 600 13px/1.3 var(--font-ui); }
-.kit-gallery-shelf-note { margin: -2px 0 8px; color: var(--muted); font: 12.5px/1.45 var(--font-ui); }
+.kit-gallery-caption { margin: 0 0 6px; color: var(--muted); font: 600 var(--text-md)/1.3 var(--font-ui); }
+.kit-gallery-shelf-note { margin: -2px 0 8px; color: var(--muted); font: var(--text-sm)/1.45 var(--font-ui); }
 
 .kit-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 8px; }
 .kit-gallery-tile {
@@ -39,26 +39,26 @@
   background: color-mix(in oklab, var(--accent) 10%, transparent);
 }
 .kit-gallery-tile-head { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
-.kit-gallery-tile-name { font: 600 14px/1.3 var(--font-ui); }
+.kit-gallery-tile-name { font: 500 var(--text-md)/1.3 var(--font-ui); }
 /* Three lines on the tile; the panel says the rest. */
 .kit-gallery-tile-blurb {
-  color: var(--muted); font: 12.5px/1.4 var(--font-ui);
+  color: var(--muted); font: var(--text-sm)/1.4 var(--font-ui);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
 }
 .kit-gallery-badge {
   padding: 1px 6px; border-radius: 999px;
   background: color-mix(in oklab, var(--accent) 16%, transparent); color: var(--ink);
-  font: 600 11px/1.5 var(--font-ui);
+  font: 600 var(--text-xs)/1.5 var(--font-ui);
 }
 
 
 /* The details panel: the chosen kit said in full, then the app's fields. */
-.kit-gallery-panel-name { margin: 2px 0 0; font: 600 16px/1.3 var(--font-ui); }
-.kit-gallery-panel-blurb, .kit-gallery-panel-detail { margin: 0; font: 13.5px/1.5 var(--font-ui); color: var(--ink); }
-.kit-gallery-play { margin: 0; font: 13.5px/1.5 var(--font-ui); color: var(--ink); }
-.kit-gallery-note { margin: 0; font: 12.5px/1.45 var(--font-ui); color: var(--muted); }
-.kit-gallery-lands-caption { margin: 6px 0 0; font: 600 13px/1.3 var(--font-ui); color: var(--muted); }
-.kit-gallery-lands { margin: 0; padding-left: 18px; font: 13px/1.5 var(--font-ui); color: var(--ink); }
+.kit-gallery-panel-name { margin: 2px 0 0; font: 600 var(--text-lg)/1.3 var(--font-ui); }
+.kit-gallery-panel-blurb, .kit-gallery-panel-detail { margin: 0; font: var(--text-md)/1.5 var(--font-ui); color: var(--ink); }
+.kit-gallery-play { margin: 0; font: var(--text-md)/1.5 var(--font-ui); color: var(--ink); }
+.kit-gallery-note { margin: 0; font: var(--text-sm)/1.45 var(--font-ui); color: var(--muted); }
+.kit-gallery-lands-caption { margin: 6px 0 0; font: 600 var(--text-md)/1.3 var(--font-ui); color: var(--muted); }
+.kit-gallery-lands { margin: 0; padding-left: 18px; font: var(--text-md)/1.5 var(--font-ui); color: var(--ink); }
 .kit-gallery-panel [hidden] { display: none; }
 /* Features: tags, quieter than the words. Flat on purpose: a faint fill and no
    edge, because a bordered chip inside a clickable tile reads as a second button
@@ -68,10 +68,10 @@
 .kit-gallery-feature {
   padding: 0 5px; border-radius: var(--radius-sm);
   background: color-mix(in oklab, var(--ink) 7%, transparent);
-  color: var(--muted); font: 500 11px/1.6 var(--font-ui); white-space: nowrap;
+  color: var(--muted); font: 500 var(--text-xs)/1.6 var(--font-ui); white-space: nowrap;
 }
 .kit-gallery-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
-.kit-gallery-label { font: 600 13px/1.3 var(--font-ui); color: var(--ink); }
+.kit-gallery-label { font: 500 var(--text-md)/1.3 var(--font-ui); color: var(--ink); }
 .kit-gallery .kit-gallery-missing { border-color: var(--danger); }
 
 /* Narrow windows: the panel goes under the tiles. */

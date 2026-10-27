@@ -24,7 +24,7 @@
   padding: 5px 11px;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--ink);
-  font: 600 12.5px var(--font-ui); letter-spacing: 0.02em; line-height: 1.2;
+  font: 500 var(--text-sm) var(--font-ui); line-height: 1.2;
   cursor: pointer; white-space: nowrap;
   -webkit-user-select: none; user-select: none;
   transition: color var(--dur-quick) var(--ease-standard),
@@ -66,11 +66,11 @@
 /* A square button holding one glyph, centred explicitly: a bare <button>
    centres by the font's metrics plus UA padding, which parks an arrow up-left
    of the square's visual centre. */
-.btn.icon { width: 28px; height: 28px; padding: 0; line-height: 1; font-size: 13.5px; }
+.btn.icon { width: 28px; height: 28px; padding: 0; line-height: 1; font-size: var(--text-md); }
 
 /* --- fields ----------------------------------------------------------------- */
 .field {
-  font: inherit; font-size: 13.5px; line-height: 1.4;
+  font: inherit; font-size: var(--text-md); line-height: 1.4;
   padding: 6px 9px;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--card); color: var(--ink);
@@ -95,7 +95,7 @@ textarea.field { resize: vertical; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
 .seg-opt {
   background: none; border: 0; cursor: pointer;
-  color: var(--muted); font: 600 12px var(--font-ui); padding: 3px 9.5px; white-space: nowrap;
+  color: var(--muted); font: 500 var(--text-sm) var(--font-ui); padding: 3px 9.5px; white-space: nowrap;
   transition: color var(--dur-quick) var(--ease-standard), background var(--dur-quick) var(--ease-standard);
 }
 .seg-opt + .seg-opt { border-left: 1px solid var(--line); }
@@ -110,7 +110,7 @@ textarea.field { resize: vertical; }
    is no longer a stage is shown after the ladder, in the warning colour, until a rung is picked. */
 .shell-rungs { flex-wrap: wrap; }
 .shell-rung { font-family: var(--font-mono); font-weight: 400; padding: 2px 7px; }
-.shell-rung.on { font-weight: 600; }
+.shell-rung.on { font-weight: 500; }
 .shell-rung.fallback { color: var(--ink); text-decoration: underline dotted; text-underline-offset: 3px; }
 .shell-rung-default { font-family: var(--font-ui); }
 .shell-rung.stray { color: var(--warn, var(--danger, var(--accent))); text-decoration: line-through; cursor: default; }
@@ -123,13 +123,13 @@ span.shell-rung { cursor: default; }
 .shell-fieldrow-textual .shell-fieldrow-body { align-items: stretch; }
 .shell-fieldrow-text { min-width: 0; }
 textarea.shell-fieldrow-text { min-height: 3.6em; font-family: inherit; line-height: 1.4; }
-.shell-fieldrow-purpose { margin: 0; font: 12px/1.4 var(--font-ui); color: var(--muted); max-width: 60ch; }
-.shell-fieldrow-problem { margin: 0; font: 12px/1.4 var(--font-ui); color: var(--warn, var(--danger, var(--accent))); }
+.shell-fieldrow-purpose { margin: 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--muted); max-width: 60ch; }
+.shell-fieldrow-problem { margin: 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--warn, var(--danger, var(--accent))); }
 .shell-fieldrow.has-problem .shell-fieldrow-text { border-color: var(--warn, var(--danger)); }
 .shell-flags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .shell-flag {
   display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius-pill);
-  background: none; color: var(--muted); font: 12px var(--font-mono); padding: 1px 8px; cursor: pointer;
+  background: none; color: var(--muted); font: var(--text-sm) var(--font-mono); padding: 1px 8px; cursor: pointer;
 }
 .shell-flag:hover:not(.on):not(span) { color: var(--ink); }
 .shell-flag.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft, color-mix(in oklab, var(--accent) 14%, transparent)); }
@@ -143,20 +143,20 @@ span.shell-flag { cursor: default; }
 /* A pill: a small bordered label (a class, a count, a state). */
 .pill {
   display: inline-flex; align-items: center; gap: 4px;
-  font: 11.5px/1.3 var(--font-ui); color: var(--muted);
+  font: var(--text-xs)/1.3 var(--font-ui); color: var(--muted);
   border: 1px solid var(--line-soft, var(--line)); border-radius: var(--radius-pill);
   padding: 1px 7px; white-space: nowrap;
 }
 
 /* The inline empty state: one muted italic sentence where a list would be. */
-.empty { margin: 0; color: var(--muted); font: italic 13px/1.45 var(--font-ui); }
+.empty { margin: 0; color: var(--muted); font: italic var(--text-md)/1.45 var(--font-ui); }
 
 /* A keycap. A key hint is an element, never a typed "↑↓ move" string. The
    element rule is the floor for a hand-written <kbd>; the shell's own hint
    helpers (keys.ts) stamp `.shell-kbd`, drawn in keys.css. */
 kbd {
   display: inline-block;
-  font: 11px/1.3 var(--font-mono, ui-monospace, monospace);
+  font: var(--text-xs)/1.3 var(--font-mono, ui-monospace, monospace);
   color: var(--muted);
   border: 1px solid var(--line); border-bottom-width: 2px; border-radius: var(--radius-sm);
   padding: 1px 5px; vertical-align: baseline;
@@ -178,7 +178,7 @@ kbd {
    `forward` chevron drawn between them. A crumb that goes somewhere is a
    button coloured as a link (it reads as a control with the pointer parked);
    the last crumb is where the reader is, in the ink. */
-.shell-crumbs { display: inline-flex; align-items: center; gap: 2px; min-width: 0; font: 12.5px/1.3 var(--font-ui); }
+.shell-crumbs { display: inline-flex; align-items: center; gap: 2px; min-width: 0; font: var(--text-sm)/1.3 var(--font-ui); }
 .shell-crumb { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .shell-crumb[aria-current] { color: var(--ink); }
 .shell-crumb-sep { flex: none; color: var(--muted); opacity: 0.7; }
@@ -215,7 +215,7 @@ kbd {
 /* A map of records as a grid (value-rows' recordMapGrid): a row per key, a column per record field, each
    cell the field's own row with its caption and help left to the column head. */
 .shell-recordgrid-table { width: 100%; border-collapse: collapse; }
-.shell-recordgrid-table th { font: 600 12px/1.3 var(--font-ui); color: var(--muted); text-align: left; padding: 4px 6px; vertical-align: top; }
+.shell-recordgrid-table th { font: 600 var(--text-sm)/1.3 var(--font-ui); color: var(--muted); text-align: left; padding: 4px 6px; vertical-align: top; }
 .shell-recordgrid-table td { padding: 3px 6px; vertical-align: top; }
 .shell-recordgrid-table tbody tr { border-top: 1px solid var(--line); }
 .shell-recordgrid-table th.shell-recordgrid-key { color: var(--ink); padding-top: 9px; white-space: nowrap; }
@@ -226,5 +226,5 @@ kbd {
 .shell-recordgrid-cell .shell-fieldrow-purpose,
 .shell-recordgrid-cell .shell-fieldrow-valuehelp { display: none; }
 .shell-recordgrid-cell select, .shell-recordgrid-cell input { width: 100%; min-width: 7em; }
-.shell-recordgrid-empty { margin: 6px 0; font: 12.5px/1.4 var(--font-ui); color: var(--muted); }
+.shell-recordgrid-empty { margin: 6px 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--muted); }
 .shell-recordgrid-add { margin-top: 8px; }

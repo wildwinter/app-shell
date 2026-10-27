@@ -1,12 +1,13 @@
 /* ============================================================================
    Design-token GRAMMAR - the app-agnostic layer (design-language.md section 4).
 
-   The shared half of "two palettes, one grammar": the scales that are IDENTICAL
-   across the editor family - elevation, motion, radius, scrollbar chrome. Each
-   app supplies its own colour + font VALUES (its palette) over this grammar in
-   its own theme.css. Do not add app-specific colours here.
+   The scales that are IDENTICAL across the editor family - type, elevation,
+   motion, radius, lines, scrollbar chrome. Since the October 2026 review
+   (patterkit design/ui-review-2026-10) the family also shares one set of
+   colours, in palette.css beside this file; an app imports both and keeps
+   only what is truly its own. Do not add app-specific values here.
 
-   SCALE. Chrome is sized in px off a 14px base; the reading surface alone
+   SCALE. Chrome is sized in px off a 13px base; the reading surface alone
    scales with the root ("Chrome has its own scale", design-language.md
    section 4, 2026-09-16). Every size in the shell's stylesheets (font-size,
    padding, gap, margin, width, height) is a pixel value: the navigator, the
@@ -17,6 +18,10 @@
    the nearest half pixel), so the conversion moved nothing there and brought
    Patterpad, whose chrome had grown 7 to 10 percent with its reading root,
    back to the same size. No `rem` in a chrome rule; the test suite greps.
+   The October 2026 review set the base at 13px (the size macOS sets body text,
+   menus and sidebar rows at, and the size the family already used most) and
+   folded 26 sizes into five, --text-xs to --text-xl. Windows sets body text at
+   14px, so the two middle steps rise there.
    ============================================================================ */
 
 :root {
@@ -51,18 +56,51 @@
      their font-size, so unstyled text inside them lands at 14px regardless of
      the app's root; a rule that wants the base by name reads it here. Not a
      scale factor: the sizes below it are literal px, on purpose. */
-  --chrome-size: 14px;
+  --chrome-size: 13px;
+
+  /* The type scale: five sizes, two leadings, three weights (the type review, spec 3 to 5). Display sizes (a
+     wordmark, a big number) are exempt and named where they're used. 600 is for titles only; a list, a label
+     and a field are 400; the selected item and a button are 500. No 700 in chrome. */
+  --text-xs: 11px;  /* counts, badges, keycaps, metadata */
+  --text-sm: 12px;  /* labels, captions, secondary lines, tooltips */
+  --text-md: 13px;  /* chrome body: rows, values, buttons, inputs, tabs, menus */
+  --text-lg: 15px;  /* pane, dialog and group titles */
+  --text-xl: 22px;  /* page titles */
+  --leading-tight: 1.25;
+  --leading-text: 1.4;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
+
+  /* The interface face is the system's own: SF Pro on a Mac, Segoe UI on Windows ("chrome is native, content is
+     ours", ruled 2026-10-27). Inter is the fallback where neither exists. An app's reading and mono faces are its
+     own, in its theme.css. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "Inter", sans-serif;
+
+  /* A divider is one device pixel: 1px at 1x, 0.5px on a 2x display (below). Pane edges and dividers use it;
+     a control's edge stays 1px solid var(--line), and a state rule is 2px of --accent. */
+  --hairline: 1px;
+
+  /* One rendered icon stroke at every size (icons drawn with non-scaling-stroke, below), matching Regular text
+     at 12 to 13px. Icons come in 12 (inline), 14 (in a control) and 16 (a toolbar). */
+  --icon-stroke: 1.25px;
 
   /* The one scrim behind every modal in the family (confirm, settings,
      identity, about, notes). Four recipes had grown across five files. */
   --scrim: color-mix(in oklab, var(--ink) 28%, transparent);
 
-  /* Elevation: three tiers by how far a surface floats (resting cards,
-     floating menus/popovers, full overlays). Theme-agnostic black so it
-     deepens naturally on the dark palettes. */
-  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.14);
-  --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.28);
+  /* Elevation: nothing at rest. Space separates first, then a hairline; a
+     shadow means "floating above the window". Two tiers, each a 0.5px ring and
+     a soft drop, the way macOS draws a menu: `pop` for menus, popovers,
+     tooltips and toasts, `modal` for dialogs and sheets. The ring lightens on
+     a dark ground, where a black ring would vanish. --shadow-1 is kept, as
+     none, so an old rule that asks for it draws nothing; 2 and 3 alias the
+     tiers. */
+  --shadow-pop: 0 0 0 0.5px light-dark(rgb(0 0 0 / 0.10), rgb(255 255 255 / 0.10)), 0 4px 16px rgb(0 0 0 / 0.12);
+  --shadow-modal: 0 0 0 0.5px light-dark(rgb(0 0 0 / 0.12), rgb(255 255 255 / 0.12)), 0 16px 40px rgb(0 0 0 / 0.22);
+  --shadow-1: none;
+  --shadow-2: var(--shadow-pop);
+  --shadow-3: var(--shadow-modal);
 
   /* Motion: one easing curve + a small duration scale, plus the shared
      panel/backdrop/screen enter-exit vocabulary. Nothing pops. */
@@ -71,7 +109,7 @@
   --dur-base: 150ms;
   --dur-settle: 200ms;
   --dur-slow: 1s;
-  --dur-panel: 260ms;
+  --dur-panel: 200ms;
   --dur-exit: 170ms;
   --anim-panel-in: panel-in var(--dur-panel) var(--ease-standard);
   --anim-backdrop-in: backdrop-in var(--dur-settle) var(--ease-standard);
@@ -81,10 +119,14 @@
   /* The long-job strip's indeterminate band (job.css draws the keyframes). */
   --anim-job-band: job-band 1.4s var(--ease-standard) infinite;
 
-  /* Corner radius: four steps cover every surface. */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  /* Corner radius (ruled 2026-10-27): close to macOS's own controls. sm for
+     a button, a field and a menu row; md for a menu or popover; lg for a card
+     or panel; dialog for a dialog or sheet alone. A pill stays round. An inner
+     corner is the outer one less the padding, 4px at least. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-dialog: 12px;
   --radius-pill: 999px;
 
   /* Scrollbar thumb: a translucent ink, so it adapts per palette. */
@@ -98,7 +140,14 @@
    no pointer events, so a click lands on the button and never on the drawing
    (a handler comparing `event.target` to its button would otherwise miss).
    Colour is inherited: every drawing is currentColor. */
-[data-icon] { display: block; flex: none; pointer-events: none; }
+[data-icon] { display: block; flex: none; pointer-events: none; stroke-width: var(--icon-stroke); }
+[data-icon] :is(path, line, polyline, polygon, rect, circle, ellipse) { vector-effect: non-scaling-stroke; }
+
+/* Windows sets body text at 14px (Fluent), so the middle of the scale rises there. An app stamps the attribute
+   from its platform, as it does for key hints. */
+:root[data-platform="win32"] { --chrome-size: 14px; --text-md: 14px; --text-lg: 16px; }
+
+@media (min-resolution: 2dppx) { :root { --hairline: 0.5px; } }
 
 /* The family's keyboard focus ring: one rule, zero specificity (:where), so a
    component may draw its own and win without !important. Until 0.39.0
@@ -114,7 +163,7 @@
    convention (design-language.md, "Captions are words, not overlines"). A
    section caption anywhere else is sentence-case text at label size, weight
    600, in the UI face, which is what the shell's own captions now are. */
-.overline { font: 600 10.5px/1 var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.overline { font: 600 var(--text-xs)/1 var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 
 * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 ::-webkit-scrollbar { width: 11px; height: 11px; }
@@ -123,16 +172,19 @@
 ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: var(--radius-sm); border: 3px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); background-clip: padding-box; }
 
-@keyframes panel-in { from { opacity: 0; transform: translateY(-9px) scale(0.965); } to { opacity: 1; transform: none; } }
+@keyframes panel-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes screen-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@keyframes panel-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-6px) scale(0.97); } }
+@keyframes panel-out { from { opacity: 1; transform: none; } to { opacity: 0; } }
 @keyframes backdrop-out { from { opacity: 1; } to { opacity: 0; } }
 
+/* Reduced motion means instant, not slower: the animations go, and so do the durations every transition reads
+   (closeWithExit then tears down at once, exit.ts). */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --anim-panel-in: none; --anim-backdrop-in: none; --anim-screen-in: none;
     --anim-panel-out: none; --anim-backdrop-out: none; --anim-job-band: none;
+    --dur-quick: 0ms; --dur-base: 0ms; --dur-settle: 0ms; --dur-panel: 0ms; --dur-exit: 0ms;
   }
 }
 

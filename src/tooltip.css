@@ -8,9 +8,9 @@
   position: fixed; z-index: 100; pointer-events: none;
   max-width: 352px; white-space: pre-line; /* tips may carry newlines */
   background: var(--ink); color: var(--surface);
-  font: 11.5px/1.4 var(--font-ui); letter-spacing: 0.01em;
+  font: var(--text-xs)/1.4 var(--font-ui);
   padding: 5px 8px; border-radius: var(--radius-sm);
-  box-shadow: 0 4px 14px color-mix(in oklab, var(--ink) 35%, transparent);
+  box-shadow: var(--shadow-pop);
 }
 .tooltip[hidden] { display: none; }
-.tooltip.show { animation: var(--anim-panel-in); }
+/* A tip appears at once: it answers the pointer, and a fade-in reads as lag. */

@@ -26,6 +26,7 @@
       "require": "./dist/index.cjs"
     },
     "./tokens.css": "./dist/tokens.css",
+    "./palette.css": "./dist/palette.css",
     "./controls.css": "./dist/controls.css",
     "./dialog.css": "./dist/dialog.css",
     "./context-menu.css": "./dist/context-menu.css",
@@ -263,6 +264,11 @@
       "types": "./dist/contrast.d.ts",
       "import": "./dist/contrast.js",
       "require": "./dist/contrast.cjs"
+    },
+    "./theme": {
+      "types": "./dist/theme.d.ts",
+      "import": "./dist/theme.js",
+      "require": "./dist/theme.cjs"
     },
     "./view-preload.cjs": "./dist/view-preload.cjs"
   },

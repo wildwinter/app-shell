@@ -5,19 +5,17 @@
 .shell-anchored {
   position: fixed; z-index: 40;
   display: flex; flex-direction: column;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: var(--radius-md);
   background: var(--surface); color: var(--ink);
-  box-shadow: var(--shadow-2, var(--shadow-1));
+  /* The pop tier's ring is the edge, so there's no border to double it. A popup appears at once: entrance motion
+     is for structural change (the October 2026 review), and a panel the author summoned is not one. */
+  box-shadow: var(--shadow-pop);
   overflow: hidden;
-  /* The family's panel motion. Placement is set in script as left/top, so a
-     transform-based keyframe composes with it rather than fighting it. */
-  animation: var(--anim-panel-in);
 }
-/* Exit: .closing swaps the enter keyframe for its reverse, and the fading panel
-   stops taking clicks so a second press cannot reach a control on its way out.
-   Zero-duration under prefers-reduced-motion, where teardown is immediate. */
-.shell-anchored.closing { animation: var(--anim-panel-out); pointer-events: none; }
+/* Exit: no motion, so closeWithExit tears the panel down at once; while it
+   goes it takes no clicks, so a second press cannot reach a control in it. */
+.shell-anchored.closing { pointer-events: none; }
 .shell-anchored-head {
   flex: none;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -25,7 +23,7 @@
   border-bottom: 1px solid var(--line-soft);
 }
 .shell-anchored-title {
-  font: 600 13px/1.2 var(--font-ui);
+  font: 600 var(--text-md)/1.2 var(--font-ui);
   color: var(--muted);
 }
 .shell-anchored-close {
@@ -44,20 +42,20 @@
    it has to LOOK refused: the hint reddens and Set goes flat. */
 .shell-id-editor .shell-anchored-body { display: flex; flex-direction: column; gap: 8px; }
 .shell-id-input {
-  font: 13px var(--font-mono, monospace);
+  font: var(--text-md) var(--font-mono, monospace);
   padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--card); color: var(--ink);
 }
-.shell-id-hint { font: 12px/1.4 var(--font-ui); color: var(--muted); }
+.shell-id-hint { font: var(--text-sm)/1.4 var(--font-ui); color: var(--muted); }
 .shell-id-hint.bad { color: var(--danger, #b00); }
 .shell-id-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .shell-id-reset {
-  font: 12px var(--font-ui); padding: 3px 10px; cursor: pointer;
+  font: var(--text-sm) var(--font-ui); padding: 3px 10px; cursor: pointer;
   background: none; border: 1px dashed var(--line); border-radius: var(--radius-sm); color: var(--muted);
 }
 .shell-id-reset:hover { border-color: var(--accent); color: var(--accent); }
 .shell-id-set {
-  font: 12.5px var(--font-ui); padding: 3px 12px; cursor: pointer;
+  font: var(--text-sm) var(--font-ui); padding: 3px 12px; cursor: pointer;
   border: 1px solid var(--accent); border-radius: var(--radius-sm);
   background: var(--accent); color: var(--surface);
 }

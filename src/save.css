@@ -1,17 +1,18 @@
-/* The save indicator (save-view.ts): a dot and a word in the topbar.
+/* The save indicator (save-view.ts): a word in the topbar, and a dot while
+   there's something not yet on disk.
 
-   The dot is `currentColor`, so the three states are one colour decision each
-   and the shape never changes - the eye reads the tone before it reads the
-   word. `--ok` for saved is why the semantic set needed completing (tokens.css):
-   this state is the one place in the family where "all is well" has to be said
-   in colour rather than by the absence of anything. */
+   The normal state is grey (the October 2026 review): "Saved" is muted text
+   with no dot and no green, because all being well needs no colour. Colour
+   arrives only when there's something to notice. The dot is `currentColor`, so
+   each state is one colour decision. */
 .savestat {
   display: inline-flex; align-items: center; gap: 5px;
-  font: 11.5px var(--font-ui); color: var(--muted);
+  font: var(--text-xs) var(--font-ui); color: var(--muted);
   -webkit-app-region: no-drag;   /* a draggable titlebar must not swallow it */
 }
 .savestat::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-pill); background: currentColor; }
-.savestat.saved { color: var(--ok); }
+.savestat.saved { color: var(--muted); }
+.savestat.saved::before { display: none; }
 /* Unsaved and saving are the same tone on purpose: both mean "not on disk yet".
    What separates them is the pulse, which says a write is actually running. */
 .savestat.unsaved, .savestat.saving { color: var(--warn); }

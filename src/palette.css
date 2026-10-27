@@ -1,0 +1,128 @@
+/* ============================================================================
+   The family PALETTE: one set of colours for every app in the family (the October 2026 UI review, "Fair Copy",
+   ruled by the author 2026-10-27; patterkit design/ui-review-2026-10/00-conclusions.md). Until then each app kept
+   its own palettes in its theme.css (Paper, Mist, Slate and Night; Chambray, Indigo, Linen and Baize); now they
+   import this file instead and keep only what is truly their own.
+
+   Three palettes on the `data-theme` axis, plus Follow System (no attribute), which tracks the OS:
+     Light      - a white page on a light grey desk, with a faint warm hint in the greys. The bare :root.
+     Dark       - neutral near-blacks, the content tier a step lighter than the ground. The OS-dark fallback too.
+     Parchment  - the one warm option, for long reading sessions: today's Paper, re-tuned lighter.
+   theme.ts holds the ids, their labels, and the migration from the retired ids.
+
+   The tiers, light to dark in every palette:
+     --bg       the desk: the window's ground, the canvas, the board.
+     --surface  chrome: panes, bars, panels, menus, dialogs.
+     --card     content and fields: the script page, a card's face, an input. White in Light.
+   One accent, blue pencil, with four jobs: the primary action, the focus ring, the marker on the current item, and
+   links. A selected row is ink on `--selection`, a neutral fill; it is never accent text.
+
+   Every palette block declares --color-scheme, light or dark by its ground (README v0.56); the bare :root leaves it
+   unset, so Follow System works through tokens.css's "light dark" fallback. contrast.ts reads this file the way
+   it reads an app's theme.css, and test/palette.test.ts holds every text token to AA on every tier.
+   ============================================================================ */
+
+:root {
+  /* Light: the default. */
+  --bg: #f5f4f2;
+  --surface: #fbfbfa;
+  --card: #ffffff;
+  --ink: #201e1b;
+  --muted: #64605b;
+  --line: #e2dfdc;
+  --line-soft: #edebe8;
+  --accent: #2b5bd0;
+  --on-accent: #ffffff;
+  --danger: #b24133;
+  --warn: #8a5f1b;
+  --ok: #337344;
+
+  /* The character and deck wheel: a name's slot is a hash index into these (colour.ts), so it's stable and needs
+     no storage. Twelve hues spaced and tested for collisions; they're content identity, not theme identity, so
+     Light and Parchment share one set and the dark palette lifts the same hues. Rust, ochre and olive were
+     darkened in the review to pass on white. */
+  --char-0:  #b23b3b;  /* red    */
+  --char-1:  #a8581d;  /* rust   */
+  --char-2:  #866913;  /* ochre  */
+  --char-3:  #65742b;  /* olive  */
+  --char-4:  #3a7544;  /* green  */
+  --char-5:  #2c7d6e;  /* teal   */
+  --char-6:  #2d7791;  /* cyan   */
+  --char-7:  #3a6aa8;  /* blue   */
+  --char-8:  #5a5ba6;  /* indigo */
+  --char-9:  #7e4e9c;  /* violet */
+  --char-10: #9c4486;  /* plum   */
+  --char-11: #a83e5c;  /* berry  */
+
+  /* Derived, so they follow whichever palette is active (custom properties resolve against the cascaded value). */
+  --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent); /* a wash behind accent content */
+  --selection: color-mix(in oklab, var(--ink) 7%, transparent);       /* the selected row's fill */
+  --hover: color-mix(in oklab, var(--ink) 4%, transparent);           /* a row under the pointer: half the selection */
+  --ink-soft: color-mix(in oklab, var(--ink) 70%, var(--muted));      /* secondary text that is still content */
+  --ink-read: color-mix(in oklab, var(--ink) 82%, var(--muted));      /* long reading text, eased off stark */
+}
+
+/* Light chosen explicitly: the bare :root's colours, light whatever the OS. */
+:root[data-theme="light"] { --color-scheme: light; }
+
+/* Dark. The OS-dark block below mirrors it; test/palette.test.ts holds the two together. */
+:root[data-theme="dark"] {
+  --color-scheme: dark;
+  --bg: #161618;
+  --surface: #1b1b1d;
+  --card: #212124;
+  --ink: #ebebed;
+  --muted: #98989e;
+  --line: #303034;
+  --line-soft: #27272a;
+  --accent: #86a6f5;
+  --on-accent: #161618; /* a light accent on a dark ground wants dark ink */
+  --danger: #ec948a;
+  --warn: #e0b771;
+  --ok: #7fc489;
+  --char-0:  #e08282; --char-1:  #e0a064; --char-2:  #cdb061; --char-3:  #abb56b;
+  --char-4:  #79bd80; --char-5:  #5cb6a3; --char-6:  #61b1c9; --char-7:  #7ba6d9;
+  --char-8:  #9c9dd6; --char-9:  #b794d2; --char-10: #d389c2; --char-11: #de8298;
+}
+
+/* Parchment: the warm option. It keeps the light character wheel and blue pencil. */
+:root[data-theme="parchment"] {
+  --color-scheme: light;
+  --bg: #f3f0ea;
+  --surface: #f9f7f3;
+  --card: #fdfcf9;
+  --ink: #2a251f;
+  --muted: #655e54;
+  --line: #e4ddd2;
+  --line-soft: #ece7df;
+  --danger: #b23b2f;
+  --warn: #855e29;
+  --ok: #3a7544;
+}
+
+/* Follow System when the OS is dark: Dark. Keep it equal to the block above. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-scheme: dark;
+    --bg: #161618;
+    --surface: #1b1b1d;
+    --card: #212124;
+    --ink: #ebebed;
+    --muted: #98989e;
+    --line: #303034;
+    --line-soft: #27272a;
+    --accent: #86a6f5;
+    --on-accent: #161618;
+    --danger: #ec948a;
+    --warn: #e0b771;
+    --ok: #7fc489;
+    --char-0:  #e08282; --char-1:  #e0a064; --char-2:  #cdb061; --char-3:  #abb56b;
+    --char-4:  #79bd80; --char-5:  #5cb6a3; --char-6:  #61b1c9; --char-7:  #7ba6d9;
+    --char-8:  #9c9dd6; --char-9:  #b794d2; --char-10: #d389c2; --char-11: #de8298;
+  }
+}
+
+/* Light text on a dark ground looks heavier than the same weight in dark on light; greyscale antialiasing takes
+   that back (the type review, spec 17). */
+:root[data-theme="dark"] { -webkit-font-smoothing: antialiased; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme]) { -webkit-font-smoothing: antialiased; } }
