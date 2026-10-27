@@ -749,6 +749,12 @@ item is the accent, filled; menus set themselves in the UI face.
 or fade, and every locked control has a dashed edge and the not-allowed
 cursor (fading had taken locked values under AA in every palette).
 
+## v0.65
+
+Unreleased. `themePalettes` reads a built stylesheet's unquoted selectors
+(`[data-theme=dark]`, as the bundler writes `palette.css`) the same as quoted
+ones, so an app's contrast test can read the shipped file.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

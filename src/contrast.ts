@@ -182,7 +182,8 @@ function splitDecls(body: string): string[] {
  * inside any other @media are left out.
  */
 export function themePalettes(css: string): Record<string, Palette> {
-  const all = rules(css);
+  // The built palette.css drops the quotes (`[data-theme=dark]`), so both spellings read as the quoted one.
+  const all = rules(css).map((r) => ({ ...r, selectors: r.selectors.map((s) => s.replace(/\[data-theme=([\w-]+)\]/g, '[data-theme="$1"]')) }));
   const names = new Set<string>();
   for (const r of all) for (const s of r.selectors) {
     const m = /^:root\[data-theme="([\w-]+)"\]$/.exec(s);

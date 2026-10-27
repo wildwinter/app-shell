@@ -48,6 +48,11 @@ describe("themePalettes", () => {
     expect(p["night"]!["--muted"]).toBe("#999999");
     expect(p["system-dark"]).toMatchObject({ "--bg": "#111111", "--muted": "#999999" });
   });
+
+  it("reads the built file's unquoted selectors the same as the source's quoted ones", () => {
+    // The bundler drops the quotes from palette.css (`[data-theme=dark]`), and the apps' tests read the built file.
+    expect(themePalettes(css.replace(/\[data-theme="([\w-]+)"\]/g, "[data-theme=$1]"))).toEqual(themePalettes(css));
+  });
   it("finds shortfalls, and says what it couldn't read", () => {
     const { shortfalls, unresolved } = contrastShortfalls(themePalettes(css), ["--muted", "--nope"], ["--bg"], TEXT_CONTRAST);
     expect(shortfalls.map((s) => s.palette).sort()).toEqual(["default", "paper"]); // #999 passes on the dark grounds
