@@ -30,3 +30,10 @@
 
 /* Never a window-drag region, even over one (dialog.css says why). */
 .shell-toast, .shell-toast * { -webkit-app-region: no-drag; }
+
+/* Hover tints ease in and out (tokens.css, --dur-tint): a colour that snaps on every pass of the pointer is
+   busier than one that settles. */
+.shell-toast-action {
+  transition: background-color var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard),
+    border-color var(--dur-tint) var(--ease-standard);
+}

@@ -31,7 +31,7 @@
   padding: 8px; text-align: left; cursor: pointer;
   background: none; color: var(--ink); font: inherit;
   border: 1px solid var(--line); border-radius: var(--radius-md);
-  transition: background var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
+  transition: background var(--dur-tint) var(--ease-standard), border-color var(--dur-tint) var(--ease-standard);
 }
 .kit-gallery-tile:hover { background: color-mix(in oklab, var(--accent) 6%, transparent); }
 .kit-gallery-tile[aria-pressed="true"] {

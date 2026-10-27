@@ -41,7 +41,7 @@
   /* A button's UA default is centred text; a wrapping path would centre its
      second line. `anywhere` because a path has no spaces to break at. */
   text-align: left; overflow-wrap: anywhere; font: inherit; color: inherit;
-  transition: background var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
+  transition: background var(--dur-tint) var(--ease-standard), border-color var(--dur-tint) var(--ease-standard);
 }
 .welcome-item:hover, .welcome-recent:hover { background: color-mix(in oklab, var(--accent) 8%, transparent); border-color: var(--line); }
 .welcome-item-name, .welcome-recent-name { color: var(--ink); font: 500 var(--text-lg) var(--font-ui); }

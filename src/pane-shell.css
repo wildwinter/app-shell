@@ -66,9 +66,9 @@
 
 /* Drag seams over each side pane's inner edge, tracking the grid columns. The
    seam is invisible at rest and lights up under the pointer and while dragging
-   (quiet chrome, shown on hover): a colour change only, at --dur-quick. */
+   (quiet chrome, shown on hover): a colour change only, at --dur-tint. */
 .pane-resizer { position: absolute; top: 0; bottom: 0; width: 7px; z-index: 6; cursor: col-resize; touch-action: none; }
-.pane-resizer::after { content: ""; position: absolute; inset: 0 3px; background: transparent; transition: background var(--dur-quick) var(--ease-standard); }
+.pane-resizer::after { content: ""; position: absolute; inset: 0 3px; background: transparent; transition: background var(--dur-tint) var(--ease-standard); }
 .pane-resizer:hover::after, .pane-resizer.dragging::after, body.pane-resizing .pane-resizer::after { background: color-mix(in oklab, var(--accent) 45%, transparent); }
 .pane-resizer-nav { left: calc(var(--nav-w) - 3px); }
 .pane-resizer-insp { right: calc(var(--insp-w) - 3px); }
@@ -129,4 +129,11 @@ body.pane-resizing .panes { transition: none; }   /* 1:1 feel: suspend the grid 
   background: none; border: 0;
   font: var(--text-xs) var(--font-ui); color: var(--muted);
   overflow: hidden; white-space: nowrap;
+}
+
+/* Hover tints ease in and out (tokens.css, --dur-tint): a colour that snaps on every pass of the pointer is
+   busier than one that settles. */
+.shell-nav-row, .shell-nav-add, .pane-toggle, .shell-histnav-btn {
+  transition: background-color var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard),
+    border-color var(--dur-tint) var(--ease-standard);
 }

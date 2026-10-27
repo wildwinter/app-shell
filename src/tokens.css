@@ -111,6 +111,16 @@
   --dur-slow: 1s;
   --dur-panel: 200ms;
   --dur-exit: 170ms;
+  /* Hover (the October 2026 UI review, after step 6): a control that appears when the pointer arrives - a
+     grip, a "⋯", a "+" - fades in over --dur-reveal after --reveal-delay, so a pointer sweeping down a
+     page doesn't flicker every row's controls in turn, and fades out over the longer --dur-conceal, so
+     leaving doesn't snap. A hover tint or colour change eases over --dur-tint, both ways. The pattern: the
+     element's own rule carries the conceal (or tint) transition; the rule that reveals it sets
+       transition-duration: var(--dur-reveal); transition-delay: var(--reveal-delay); */
+  --dur-reveal: 180ms;
+  --reveal-delay: 60ms;
+  --dur-conceal: 280ms;
+  --dur-tint: 160ms;
   --anim-panel-in: panel-in var(--dur-panel) var(--ease-standard);
   --anim-backdrop-in: backdrop-in var(--dur-settle) var(--ease-standard);
   --anim-screen-in: screen-in var(--dur-panel) var(--ease-standard);
@@ -188,6 +198,7 @@
     --anim-panel-in: none; --anim-backdrop-in: none; --anim-screen-in: none;
     --anim-panel-out: none; --anim-backdrop-out: none; --anim-job-band: none;
     --dur-quick: 0ms; --dur-base: 0ms; --dur-settle: 0ms; --dur-panel: 0ms; --dur-exit: 0ms;
+    --dur-reveal: 0ms; --reveal-delay: 0ms; --dur-conceal: 0ms; --dur-tint: 0ms;
   }
 }
 

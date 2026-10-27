@@ -65,7 +65,7 @@
   padding: 2px 9px; border: 1px solid var(--accent); border-radius: var(--radius-sm);
   background: color-mix(in oklab, var(--accent) 14%, transparent); color: var(--accent);
   font: 600 var(--text-xs) var(--font-ui);
-  transition: background var(--dur-quick) var(--ease-standard), color var(--dur-quick) var(--ease-standard);
+  transition: background var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard);
 }
 .stepbar-action:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); }
 .stepbar-action:disabled { opacity: 0.45; cursor: default; }
@@ -74,3 +74,10 @@
 .stepbar:has(.stepbar-count.warn) .stepbar-action:hover:not(:disabled) { background: var(--warn); color: var(--on-accent); }
 /* The action already pushed everything right; the close sits at its normal gap. */
 .stepbar-action ~ .stepbar-close { margin-left: 0; }
+
+/* Hover tints ease in and out (tokens.css, --dur-tint): a colour that snaps on every pass of the pointer is
+   busier than one that settles. */
+.stepbar-nav, .stepbar-cur {
+  transition: background-color var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard),
+    border-color var(--dur-tint) var(--ease-standard);
+}

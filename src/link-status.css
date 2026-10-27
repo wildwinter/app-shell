@@ -14,7 +14,7 @@
 .linkstatus-url {
   font: var(--text-xs) var(--font-mono); color: var(--muted); background: var(--surface);
   border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer;
-  transition: color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
+  transition: color var(--dur-tint) var(--ease-standard), border-color var(--dur-tint) var(--ease-standard);
 }
 .linkstatus-url:hover { border-color: var(--accent); color: var(--accent); }
 /* Lit for a moment after a copy (copyWithFeedback). */
@@ -25,7 +25,7 @@
   flex: none; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
   padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface);
   color: var(--muted); cursor: pointer;
-  transition: color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
+  transition: color var(--dur-tint) var(--ease-standard), border-color var(--dur-tint) var(--ease-standard);
 }
 .linkstatus-toggle:hover { border-color: var(--accent); }
 .linkstatus-toggle svg { display: block; }

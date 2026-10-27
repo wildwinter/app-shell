@@ -167,6 +167,13 @@ describe("family style: the stylesheets", () => {
     hold("outline: none", hits, [], []);
   });
 
+  it("gives hover its own timing: a reveal after a pause, a slower conceal, an eased tint, all off under reduced motion", () => {
+    const tokens = sources.find((s) => s.file === "tokens.css")!.text;
+    for (const t of ["--dur-reveal: 180ms", "--reveal-delay: 60ms", "--dur-conceal: 280ms", "--dur-tint: 160ms"]) expect(tokens).toContain(t);
+    const reduced = /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\n\}/.exec(tokens)?.[0] ?? "";
+    for (const t of ["--dur-reveal: 0ms", "--reveal-delay: 0ms", "--dur-conceal: 0ms", "--dur-tint: 0ms"]) expect(reduced).toContain(t);
+  });
+
   it("draws the family's focus ring on editable text too, so nothing falls back to the system's", () => {
     const tokens = sources.find((s) => s.file === "tokens.css")!.text;
     const ring = /:where\(([^)]*\([^)]*\)[^)]*|[^)]*)\):focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\)/.exec(tokens);

@@ -13,8 +13,9 @@
    "Controls have edges" (design-language.md, 2026-09-16): a button has a
    border or a fill at rest, and text a person can read without hovering.
    Ghost styling is ONLY for icon-only toolbar buttons in a bar that is itself
-   the affordance. And "Motion is interpolation", as amended: the only thing
-   that transitions on hover is colour, at --dur-quick. No lift, no shadow
+   the affordance. And "Motion is interpolation", as amended: the only things
+   that transition on hover are colour and a revealed control's opacity, at
+   --dur-tint and --dur-reveal / --dur-conceal (tokens.css). No lift, no shadow
    change, no scale.
    ============================================================================ */
 
@@ -27,9 +28,9 @@
   font: 500 var(--text-sm) var(--font-ui); line-height: 1.2;
   cursor: pointer; white-space: nowrap;
   -webkit-user-select: none; user-select: none;
-  transition: color var(--dur-quick) var(--ease-standard),
-    background var(--dur-quick) var(--ease-standard),
-    border-color var(--dur-quick) var(--ease-standard);
+  transition: color var(--dur-tint) var(--ease-standard),
+    background var(--dur-tint) var(--ease-standard),
+    border-color var(--dur-tint) var(--ease-standard);
 }
 .btn:hover:not(:disabled) {
   border-color: var(--accent);
@@ -75,7 +76,7 @@
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--card); color: var(--ink);
   -webkit-user-select: text; user-select: text;
-  transition: border-color var(--dur-quick) var(--ease-standard);
+  transition: border-color var(--dur-tint) var(--ease-standard);
 }
 .field:focus-visible { border-color: var(--accent); outline-offset: 0; }
 /* A placeholder is a hint, not content: lighter and italic, its opacity
@@ -96,7 +97,7 @@ textarea.field { resize: vertical; }
 .seg-opt {
   background: none; border: 0; cursor: pointer;
   color: var(--muted); font: 500 var(--text-sm) var(--font-ui); padding: 3px 9.5px; white-space: nowrap;
-  transition: color var(--dur-quick) var(--ease-standard), background var(--dur-quick) var(--ease-standard);
+  transition: color var(--dur-tint) var(--ease-standard), background var(--dur-tint) var(--ease-standard);
 }
 .seg-opt + .seg-opt { border-left: 1px solid var(--line); }
 .seg-opt:hover:not(.on) { color: var(--ink); }
@@ -185,7 +186,7 @@ kbd {
 .shell-crumb-link {
   font: inherit; background: none; border: 0; padding: 0 2px; margin: 0;
   border-radius: var(--radius-sm); color: var(--accent); cursor: pointer;
-  transition: color var(--dur-quick) var(--ease-standard);
+  transition: color var(--dur-tint) var(--ease-standard);
 }
 .shell-crumb-link:hover { color: var(--ink); text-decoration: underline; }
 
@@ -228,3 +229,10 @@ kbd {
 .shell-recordgrid-cell select, .shell-recordgrid-cell input { width: 100%; min-width: 7em; }
 .shell-recordgrid-empty { margin: 6px 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--muted); }
 .shell-recordgrid-add { margin-top: 8px; }
+
+/* Hover tints ease in and out (tokens.css, --dur-tint): a colour that snaps on every pass of the pointer is
+   busier than one that settles. */
+.shell-flag, .shell-fold-cap svg {
+  transition: background-color var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard),
+    border-color var(--dur-tint) var(--ease-standard);
+}

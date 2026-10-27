@@ -25,8 +25,8 @@
   padding: 2px; line-height: 1;
   background: none; border: none; cursor: pointer;
   color: var(--muted); opacity: 0.55;
-  transition: opacity var(--dur-quick, 120ms) var(--ease-standard, ease),
-    color var(--dur-quick, 120ms) var(--ease-standard, ease);
+  transition: opacity var(--dur-tint, 160ms) var(--ease-standard, ease),
+    color var(--dur-tint, 160ms) var(--ease-standard, ease);
 }
 .shell-cmt-msg:hover .shell-cmt-del, .shell-cmt-del:focus-visible { opacity: 1; }
 .shell-cmt-del:hover { opacity: 1; color: var(--danger, #b00); }
@@ -69,3 +69,10 @@
   border-radius: var(--radius-sm); padding: 5px 10px; cursor: pointer;
 }
 .shell-cmt-new:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Hover tints ease in and out (tokens.css, --dur-tint): a colour that snaps on every pass of the pointer is
+   busier than one that settles. */
+.shell-cmt-row, .shell-cmt-new {
+  transition: background-color var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard),
+    border-color var(--dur-tint) var(--ease-standard);
+}

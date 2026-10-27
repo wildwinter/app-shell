@@ -16,7 +16,7 @@
   background: var(--surface);
   border: 1px solid var(--line-soft, var(--line));
   border-radius: var(--radius-md);
-  transition: border-color var(--dur-quick) var(--ease-standard);
+  transition: border-color var(--dur-tint) var(--ease-standard);
 }
 .ext-row.ext-focus { border-color: var(--accent); }
 .ext-row-head { display: flex; align-items: baseline; gap: 10px; }

@@ -834,6 +834,19 @@ update says what's new, in the changelog's own words, and Help ▸ What's New
   the launch answer until the dialog is closed (`WHATS_NEW_CHANNELS.seen`, which
   the launch's `onClose` sends), so a reload at launch doesn't lose it.
 
+## v0.69 (hover that fades)
+
+Unreleased. After step 6 of the October 2026 UI review: controls that appear on
+hover, and hover tints, were blinking in and out at 120ms or snapping with no
+transition at all, and a page of them felt busy. Four tokens give hover its own
+timing (tokens.css): a revealed control fades in over `--dur-reveal` (180ms)
+after `--reveal-delay` (60ms), so a pointer sweeping a page doesn't flicker
+every row, and fades out over `--dur-conceal` (280ms); a hover tint or colour
+eases over `--dur-tint` (160ms). Reduced motion turns all four off. The shell's
+own hover tints use them (nav rows, pane toggles, buttons, settings tabs,
+comment rows, the stepper, the update chip and the rest). Menu and palette rows
+keep their instant highlight: it follows the keyboard, as a native menu does.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

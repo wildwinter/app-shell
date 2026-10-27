@@ -30,9 +30,9 @@
   flex: none; display: inline-flex; align-items: center; justify-content: center;
   background: none; border: 1px solid transparent; border-radius: var(--radius-sm);
   cursor: pointer; color: var(--muted); line-height: 0; padding: 4px;
-  transition: background var(--dur-quick) var(--ease-standard),
-    border-color var(--dur-quick) var(--ease-standard),
-    color var(--dur-quick) var(--ease-standard);
+  transition: background var(--dur-tint) var(--ease-standard),
+    border-color var(--dur-tint) var(--ease-standard),
+    color var(--dur-tint) var(--ease-standard);
 }
 .swin-pin:hover, .swin-close:hover { border-color: var(--line); color: var(--ink); }
 .swin-pin svg { display: block; }
