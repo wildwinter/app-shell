@@ -7,7 +7,7 @@ export default defineConfig({
     "src/updater-view.ts", "src/welcome.ts", "src/kit-gallery.ts", "src/link-status.ts", "src/live-link.ts", "src/property-list.ts", "src/util.ts", "src/keys.ts", "src/problems.ts", "src/value-control.ts", "src/value-rows.ts", "src/extension-copy.ts", "src/window-guard.ts",
     "src/view-protocol.ts", "src/view-client.ts", "src/view-host.ts", "src/view-package.ts", "src/view-host-web.ts", "src/view-preload.ts", "src/contrast.ts", "src/theme.ts", "src/palette-main.ts", "src/whats-new-main.ts", "src/changelog.ts",
     "src/tokens.css", "src/palette.css", "src/controls.css", "src/dialog.css", "src/context-menu.css", "src/pane-shell.css", "src/settings.css", "src/tool-window.css", "src/confirm.css", "src/job.css", "src/tooltip.css", "src/about.css", "src/anchored.css", "src/vc.css", "src/identity.css", "src/notes-editor.css", "src/comments.css", "src/stale.css", "src/save.css", "src/stepper.css", "src/toast.css",
-    "src/extensions-window.css", "src/command-palette.css", "src/whats-new.css", "src/updater.css", "src/welcome.css", "src/kit-gallery.css", "src/link-status.css", "src/keys.css",
+    "src/extensions-window.css", "src/command-palette.css", "src/whats-new.css", "src/updater.css", "src/welcome.css", "src/kit-gallery.css", "src/link-status.css", "src/keys.css", "src/clashes.css",
   ],
   format: ["esm", "cjs"],
   // Declarations only for the TS entries (the dts compiler rejects css roots).

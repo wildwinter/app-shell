@@ -894,6 +894,69 @@ findings, and rulings Q14 and Q16).
   stamp into its model when a character is renamed, and `isColourSlot` checks a
   stored value. Callers that pass only a name are unchanged.
 
+## v0.72 (one clash resolver)
+
+From the hands-on review of October 2026 (ruling Q21). When a merge clashes,
+each app's merged shard keeps your side and records the clash under its
+`unresolved` key, and the author used to settle it by editing files. Now both
+apps settle it in one shell dialog, through an adapter of their own.
+
+- **`openClashResolver({ adapter, returnFocus?, onChange?, onClose? })`** opens
+  "Resolve clashes" on the dialog frame. It lists every clash the adapter gives:
+  where it is, what kind of clash it is, the path, and your side against theirs
+  (long text wraps, a side with no value says "Absent on this side", and the
+  sidecar's detail and the value before the merge show when the adapter passes
+  them). Each clash offers **Keep mine**, **Take theirs** and **Edit**; one the
+  adapter marks as not `settable` (Patter's `moved`, a structural clash) offers
+  Keep mine and Edit. It answers `{ dialog, refresh(), close(), isOpen() }`.
+- **Every decision goes through the app.** The shell never writes: Keep mine
+  and Take theirs call `adapter.resolve(id, "ours" | "theirs")`, and the app
+  makes it one undoable step through its own writer and answers with the
+  clashes left, which the dialog shows (as the comments popover's callbacks
+  do). The buttons rest while a write is in flight; a refusal shows in a toast
+  and leaves the clash there.
+- **Edit, then Mark resolved.** Edit closes the dialog and then calls
+  `adapter.edit(id)`, so the app's own focus lands last. Opened again, that
+  clash shows **Mark resolved** (`adapter.markResolved(id)`), keeping what's
+  there now.
+- **The keyboard.** The first clash takes focus when the list arrives, Up and
+  Down (and Home and End) walk the clashes from a clash or any of its buttons,
+  Tab reaches the buttons, Escape closes, and focus goes back by the frame's
+  rules (`returnFocus`, the opener, its nearest surviving ancestor, the host's
+  fallback). After a decision, focus goes to the clash that took its place; with
+  none left the dialog says "No clashes left." and Close has focus.
+- **`clashBanner({ onResolve, count? })`** is the condition bar an app mounts at
+  the top of its window: "This project has 3 unresolved clashes from a merge."
+  and **Resolve…**. It answers `{ el, update(count) }` and hides at 0; feed it
+  from the resolver's `onChange`.
+- **`PROJECT_MENU.resolveClashes`** ("Resolve Clashes…") and
+  **`resolveClashesMenuItem(count)`**, which adds `enabled: count > 0`.
+- **`clashKindLabel(clash)`** and **`clashCountText(n)`** are the words the
+  dialog and banner use. Style: `clashes.css` (with `dialog.css` and
+  `controls.css`).
+
+```ts
+import { openClashResolver, clashBanner, type ClashAdapter } from "@wildwinter/app-shell";
+import "@wildwinter/app-shell/clashes.css";
+
+const adapter: ClashAdapter = {
+  list: () => api.listClashes(),                 // the unresolved entries, as Clash rows
+  resolve: (id, side) => api.resolveClash(id, side),  // one undo step; answers the clashes left
+  edit: (id) => goToClash(id),
+  markResolved: (id) => api.markClashResolved(id),
+};
+const banner = clashBanner({ onResolve: () => openResolver() });
+topOfWindow.prepend(banner.el);
+const openResolver = () => openClashResolver({ adapter, onChange: (left) => banner.update(left.length) });
+```
+
+A `Clash` is `{ id, where, path, kind, kindLabel?, ours?, theirs?, base?,
+settable, detail? }`: the id is the adapter's own (unique in the project), and
+`ours`, `theirs` and `base` are display text the adapter has already written,
+absent where that side has no value. The shared kinds (`both-changed`,
+`delete-vs-edit`, `added-both`, `structural`) have the shell's words; a
+family's own kind brings a `kindLabel`.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

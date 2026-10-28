@@ -293,7 +293,11 @@
       "import": "./dist/theme.js",
       "require": "./dist/theme.cjs"
     },
-    "./view-preload.cjs": "./dist/view-preload.cjs"
+    "./view-preload.cjs": "./dist/view-preload.cjs",
+    "./clashes.css": {
+      "import": "./dist/clashes.css",
+      "require": "./dist/clashes.css"
+    }
   },
   "files": [
     "dist",

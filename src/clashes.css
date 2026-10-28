@@ -1,0 +1,71 @@
+/* ---------------------------------------------------------------------------
+   The clash resolver and its banner (clashes.ts). The panel, the scrim, the
+   motion and the actions row are the dialog frame's (dialog.css); the buttons
+   are controls.css's `.btn` and `.btn.primary`. Import those two beside this
+   file. Tokens only, so it lands in any palette.
+   --------------------------------------------------------------------------- */
+
+/* Wide enough for two sides of a line of prose next to each other. */
+.shell-clashes { --dialog-width: 680px; }
+
+.shell-clash-status { margin: 0; font: var(--text-md)/1.45 var(--font-ui); color: var(--muted); }
+.shell-clash-status.empty { color: var(--ink); padding: 18px 0; text-align: center; }
+
+.shell-clash-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* One clash: a card on the content tier, so the two sides read as content. */
+.shell-clash {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px;
+  border: var(--hairline) solid var(--line); border-radius: var(--radius-md);
+  background: var(--card);
+}
+
+.shell-clash-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.shell-clash-where { font: var(--weight-strong) var(--text-md)/1.35 var(--font-ui); color: var(--ink); }
+.shell-clash-kind { font: var(--text-sm)/1.35 var(--font-ui); color: var(--warn); }
+.shell-clash-path {
+  margin-top: -4px;
+  font: var(--text-xs)/1.3 var(--font-mono, ui-monospace, monospace); color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.shell-clash-base { font: var(--text-sm)/1.45 var(--font-ui); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Mine against theirs, side by side; one above the other when the dialog is narrow. */
+.shell-clash-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .shell-clash-sides { grid-template-columns: 1fr; } }
+.shell-clash-side { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.shell-clash-side-label { font: var(--weight-medium) var(--text-xs)/1.3 var(--font-ui); color: var(--muted); }
+/* Long text wraps, never scrolls sideways; a line break the value holds is kept. */
+.shell-clash-text {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--ink);
+  font: var(--text-md)/1.45 var(--font-ui);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  max-height: 180px; overflow-y: auto;
+}
+.shell-clash-text.absent { color: var(--muted); font-style: italic; }
+
+.shell-clash-detail { margin: 0; font: var(--text-sm)/1.45 var(--font-ui); color: var(--muted); }
+
+.shell-clash-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+
+/* The banner: a condition on the project, warn-toned like the stale bar. */
+.shell-clash-banner {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: var(--hairline) solid var(--warn);
+  background: color-mix(in oklab, var(--warn) 12%, transparent);
+  color: var(--ink); font: var(--text-md) var(--font-ui);
+}
+.shell-clash-banner[hidden] { display: none; }
+.shell-clash-banner-msg { flex: 1; }
+.shell-clash-banner-go {
+  flex: none; font: inherit; padding: 3px 12px;
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  background: var(--accent); color: var(--on-accent); cursor: pointer;
+  transition: background-color var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard),
+    border-color var(--dur-tint) var(--ease-standard);
+}
+.shell-clash-banner-go:hover { background: color-mix(in oklab, var(--accent) 85%, var(--ink)); }

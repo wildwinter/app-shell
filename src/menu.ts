@@ -228,6 +228,21 @@ export const PUBLISH_MENU: {
   autoRebuild: { label: "Auto Rebuild" },
 };
 
+/** The Project menu items the family shares. Resolve Clashes… opens the clash
+ *  resolver (clashes.ts); build it with `resolveClashesMenuItem(count)`, which
+ *  enables it only while the project holds clashes. */
+export const PROJECT_MENU: {
+  resolveClashes: MenuLabel;
+} = {
+  resolveClashes: { label: "Resolve Clashes\u2026" },
+};
+
+/** Resolve Clashes… as a menu item: enabled only when there are clashes to
+ *  resolve. Spread it beside the click: `{ ...resolveClashesMenuItem(n), click }`. */
+export function resolveClashesMenuItem(count: number): MenuLabel & { enabled: boolean } {
+  return { ...PROJECT_MENU.resolveClashes, enabled: count > 0 };
+}
+
 /** The View menu items beyond the pane toggles (PANE_MENU) and history
  *  (GO_MENU). Cmd+[ is family-reserved for Up a Level, which is why Back
  *  takes Xcode's pair on the mac. */

@@ -109,7 +109,7 @@ export type { StaleBarOptions } from "./stale.js";
 // whatever the app has a queue of (stepper.ts).
 export { renderStepperBar } from "./stepper.js";
 export type { StepperBarOptions, StepperItem, StepperTone } from "./stepper.js";
-export { EDIT_MENU, GO_MENU, FILE_MENU, PLAY_MENU, REVIEW_MENU, PUBLISH_MENU, VIEW_MENU } from "./menu.js";
+export { EDIT_MENU, GO_MENU, FILE_MENU, PLAY_MENU, REVIEW_MENU, PUBLISH_MENU, VIEW_MENU, PROJECT_MENU, resolveClashesMenuItem } from "./menu.js";
 // The updater's view, on the dialog frame: the renderer half the main-process
 // updater (./updater) cannot run without (updater-view.ts).
 export { showUpdaterDialog, feedUpdaterDownloadProgress, showUpdateReady } from "./updater-view.js";
@@ -160,3 +160,8 @@ export type {
 // `extensionRows` (./view-host), and what each button asks for.
 export { extensionsPanel } from "./extensions-panel.js";
 export type { ExtensionRow, ExtensionsPanel, ExtensionsPanelState, ExtensionsPanelActions } from "./extensions-panel.js";
+// The clash resolver: what a merge couldn't settle, listed from the app's adapter and decided one undoable
+// step at a time through the app's writer; and the banner that says the project has some (clashes.ts;
+// style: clashes.css).
+export { openClashResolver, clashBanner, clashKindLabel, clashCountText } from "./clashes.js";
+export type { Clash, ClashSide, ClashAdapter, ClashesAfter, ClashResolver, ClashResolverOptions, ClashBanner, ClashBannerOptions } from "./clashes.js";
