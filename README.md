@@ -847,6 +847,22 @@ own hover tints use them (nav rows, pane toggles, buttons, settings tabs,
 comment rows, the stepper, the update chip and the rest). Menu and palette rows
 keep their instant highlight: it follows the keyboard, as a native menu does.
 
+## v0.70 (what changed outside, and what a change answers)
+
+From the hands-on review of October 2026. **Disk stamps** (`./history`):
+`DiskStamps` remembers what an app last read or wrote, file by file, by
+modification time and size (`fileSignature`), and `changedSince` names a file
+changed outside the app since, so a write built from the old bytes is refused
+rather than throwing the change away; `matches` says whether a walk of the
+project still finds exactly the files noted, unchanged. Both apps use it.
+**The comments popover** redraws from the threads a change answers: `post`,
+`setResolved` and `deleteMessage` may return every thread on the thing as it
+now stands, directly or once the write lands. A reply shows at once, a new
+thread's second post replies to it rather than starting another, and a host
+that hands the popover copies never shows stale ones. **The property list**
+takes `onRename`, fired once when a name edit is committed, for a caller that
+carries every reference to the old name.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),
