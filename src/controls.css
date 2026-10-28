@@ -109,8 +109,9 @@ textarea.field { resize: vertical; }
 /* A quality's value as its ladder (value-control.ts rungStrip): the rungs in order, the current one marked.
    Stage names keep the mono voice values use. An unset value's fallback rung is marked quietly; a value that
    is no longer a stage is shown after the ladder, in the warning colour, until a rung is picked. */
-.shell-rungs { flex-wrap: wrap; }
-.shell-rung { font-family: var(--font-mono); font-weight: 400; padding: 2px 7px; }
+.shell-rungs { flex-wrap: wrap; max-width: 100%; }
+/* A long stage name wraps inside its rung rather than pushing a narrow inspector wider. */
+.shell-rung { font-family: var(--font-mono); font-weight: 400; padding: 2px 7px; white-space: normal; overflow-wrap: anywhere; }
 .shell-rung.on { font-weight: 500; }
 .shell-rung.fallback { color: var(--ink); text-decoration: underline dotted; text-underline-offset: 3px; }
 .shell-rung-default { font-family: var(--font-ui); }
@@ -121,6 +122,9 @@ span.shell-rung { cursor: default; }
    purpose and any message under it. The grid is the app's (it passes its own row class); these are the
    parts both apps share. A flags value is a picker of the declared values: chips, the set ones washed. */
 .shell-fieldrow-body { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+/* Every control in a row stays inside it, however narrow the inspector (the October 2026 hands-on review). */
+.shell-fieldrow-body > * { max-width: 100%; }
+.shell-fieldrow-rungs { min-width: 0; }
 .shell-fieldrow-textual .shell-fieldrow-body { align-items: stretch; }
 .shell-fieldrow-text { min-width: 0; }
 textarea.shell-fieldrow-text { min-height: 3.6em; font-family: inherit; line-height: 1.4; }
@@ -198,7 +202,7 @@ kbd {
 .shell-valuerow-controls { display: inline-flex; gap: 2px; padding-top: 2px; }
 .shell-valuerow-controls:empty { display: none; }
 .shell-valuerow-add { display: inline-flex; align-items: center; gap: 4px; }
-.shell-valuerow-key { min-width: 10em; }
+.shell-valuerow-key { min-width: min(10em, 100%); max-width: 100%; }
 /* The chosen value's own help (a manifest's valueHelp): a line per chosen flag. */
 .shell-fieldrow-valuehelp { white-space: pre-line; }
 

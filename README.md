@@ -957,6 +957,14 @@ absent where that side has no value. The shared kinds (`both-changed`,
 `delete-vs-edit`, `added-both`, `structural`) have the shell's words; a
 family's own kind brings a `kindLabel`.
 
+## v0.73 (unreleased: field rows that fit)
+
+- **Field rows fit a narrow inspector.** At inspector widths of about 220px and below, a quality's rung strip and a
+  map's key field ran past their row and the inspector scrolled sideways. Every control in a field row now stays
+  inside it: the rung strip wraps within the row, a long stage name wraps within its rung, and a key field gives up
+  its 10em when the row is narrower. Measured in Patterpad's preview: 45 to 67px of overflow in a 130px control
+  column before, none after.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),
