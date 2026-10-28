@@ -3,6 +3,12 @@ import { afterEach, describe, it, expect, vi } from "vitest";
 import { mountPaneShell } from "../src/pane-shell.js";
 import { setKeyPlatform } from "../src/keys.js";
 
+const el = (tag: keyof HTMLElementTagNameMap, text = ""): HTMLElement => {
+  const n = document.createElement(tag);
+  n.textContent = text;
+  return n;
+};
+
 afterEach(() => { setKeyPlatform(undefined); });
 
 function mount(initial?: Parameters<typeof mountPaneShell>[1]["initial"], onChange = vi.fn()) {
@@ -172,4 +178,169 @@ describe("mountPaneShell", () => {
     expect(panes.classList.contains("no-inspector")).toBe(false);
     expect(shell.isOpen("inspector")).toBe(true);
   });
+
+  // jsdom implements no `inert` (an inert subtree still takes focus there), so
+  // this reads the Tab order as a browser builds it: every focusable control,
+  // less anything under an `inert` ancestor.
+  const tabbable = (root: ParentNode): HTMLElement[] =>
+    [...root.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]")]
+      .filter((n) => !(n as HTMLButtonElement).disabled && n.tabIndex >= 0 && n.closest("[inert]") === null);
+
+  it("a collapsed pane's controls leave the Tab order, and come back when it opens", () => {
+    // The hands-on review of October 2026: a collapsed pane was hidden with
+    // opacity and pointer-events only, so Tab still walked through its
+    // invisible buttons.
+    const { host, shell } = mount();
+    const inNav = el("button", "Scene one");
+    const inInsp = el("button", "Speaker");
+    shell.nav.append(inNav);
+    shell.inspector.append(inInsp);
+    expect(tabbable(host)).toContain(inNav);
+    shell.togglePane("nav");
+    expect(tabbable(host)).not.toContain(inNav);
+    expect(tabbable(host)).toContain(inInsp);
+    shell.togglePane("nav");
+    expect(tabbable(host)).toContain(inNav);
+    // A hold folds it away just the same, and releasing it gives it back.
+    shell.holdClosed("inspector", true);
+    expect(tabbable(host)).not.toContain(inInsp);
+    shell.holdClosed("inspector", false);
+    expect(tabbable(host)).toContain(inInsp);
+    // The pane toggles themselves stay reachable.
+    expect(tabbable(host).filter((n) => n.classList.contains("pane-toggle"))).toHaveLength(2);
+  });
+
+  it("a pane mounted closed starts out of the Tab order", () => {
+    const { host, shell } = mount({ open: { nav: true, inspector: false } });
+    const inInsp = el("button", "Speaker");
+    shell.inspector.append(inInsp);
+    expect(tabbable(host)).not.toContain(inInsp);
+  });
 });
+
+describe("focusOrToggle (Cmd+1 / Cmd+2)", () => {
+  afterEach(() => { document.body.replaceChildren(); });
+
+  function frame(extra: Partial<Parameters<typeof mountPaneShell>[1]> = {}, initial?: Parameters<typeof mountPaneShell>[1]["initial"]) {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shell = mountPaneShell(host, {
+      nav: { defaultWidth: "224px", label: "navigator" },
+      inspector: { defaultWidth: "384px", label: "inspector" },
+      ...(initial ? { initial } : {}),
+      ...extra,
+    });
+    const editor = el("button", "Editor");
+    shell.centre.append(editor);
+    const first = el("button", "First row");
+    const second = el("button", "Second row");
+    shell.nav.append(el("span", "Scenes"), first, second);
+    return { host, shell, editor, first, second };
+  }
+
+  it("opens a closed pane and moves focus to its first control", () => {
+    const { shell, editor, first } = frame({}, { open: { nav: false, inspector: true } });
+    editor.focus();
+    shell.focusOrToggle("nav");
+    expect(shell.isOpen("nav")).toBe(true);
+    expect(document.activeElement).toBe(first);
+  });
+
+  it("moves focus into an open pane when focus is outside it, and leaves it open", () => {
+    const { shell, editor, first } = frame();
+    editor.focus();
+    shell.focusOrToggle("nav");
+    expect(shell.isOpen("nav")).toBe(true);
+    expect(document.activeElement).toBe(first);
+  });
+
+  it("closes the pane when focus is already inside, and gives focus back to where it was", () => {
+    const { shell, editor, second } = frame();
+    editor.focus();
+    shell.focusOrToggle("nav");          // into the pane
+    second.focus();                      // the person moves about inside it
+    shell.focusOrToggle("nav");          // and presses it again
+    expect(shell.isOpen("nav")).toBe(false);
+    expect(document.activeElement).toBe(editor);
+  });
+
+  it("closing with nothing to go back to lands on the host's focusHome", () => {
+    const home = el("div", "Script");
+    home.tabIndex = -1;
+    const { shell, first } = frame({ focusHome: () => home });
+    document.body.append(home);
+    first.focus();                       // clicked straight in: no earlier place
+    shell.focusOrToggle("nav");
+    expect(shell.isOpen("nav")).toBe(false);
+    expect(document.activeElement).toBe(home);
+  });
+
+  it("falls back to focusHome when the earlier place has gone from the page", () => {
+    const home = el("div", "Script");
+    home.tabIndex = -1;
+    const { shell, editor } = frame({ focusHome: () => home });
+    document.body.append(home);
+    editor.focus();
+    shell.focusOrToggle("nav");
+    editor.remove();                     // re-rendered while focus was away
+    shell.focusOrToggle("nav");
+    expect(document.activeElement).toBe(home);
+  });
+
+  it("without focusHome, falls back to the centre's first control", () => {
+    const { shell, editor, first } = frame();
+    first.focus();
+    shell.focusOrToggle("nav");
+    expect(document.activeElement).toBe(editor);
+  });
+
+  it("focuses the element the host names for a side", () => {
+    const search = el("input");
+    const { shell, editor } = frame({ focusTarget: { nav: () => search } });
+    shell.nav.prepend(el("button", "Before"));
+    shell.nav.append(search);
+    editor.focus();
+    shell.focusOrToggle("nav");
+    expect(document.activeElement).toBe(search);
+  });
+
+  it("an empty pane takes focus itself", () => {
+    const { shell, editor } = frame();
+    editor.focus();
+    shell.focusOrToggle("inspector");
+    expect(document.activeElement).toBe(shell.inspector);
+    shell.focusOrToggle("inspector");
+    expect(shell.isOpen("inspector")).toBe(false);
+    expect(document.activeElement).toBe(editor);
+  });
+
+  it("collapsing a pane that holds focus moves focus out of it", () => {
+    // A collapsed pane is inert, and a browser drops focus inside an inert
+    // subtree to <body>; the shell hands it somewhere useful first.
+    const { shell, editor, first } = frame();
+    editor.focus();
+    shell.focusOrToggle("nav");
+    expect(document.activeElement).toBe(first);
+    shell.togglePane("nav");             // the toggle button, or the menu's plain toggle
+    expect(document.activeElement).toBe(editor);
+  });
+
+  it("does nothing for a pane that isn't offered", () => {
+    const { shell, editor } = frame({ inspector: { defaultWidth: "384px", offered: false } });
+    editor.focus();
+    shell.focusOrToggle("inspector");
+    expect(shell.isOpen("inspector")).toBe(false);
+    expect(document.activeElement).toBe(editor);
+  });
+
+  it("a held pane keeps the plain toggle and leaves focus alone", () => {
+    const { shell, editor } = frame();
+    shell.holdClosed("nav", true);
+    editor.focus();
+    shell.focusOrToggle("nav");
+    expect(shell.state().open.nav).toBe(false);   // the remembered choice flips, as togglePane does
+    expect(shell.isOpen("nav")).toBe(false);
+    expect(document.activeElement).toBe(editor);
+  });
+});
+

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { el, colourIndex, colourFor, PALETTE, PALETTE_SIZE } from "../src/index.js";
+import { el, colourIndex, colourFor, hashColour, isColourSlot, PALETTE, PALETTE_SIZE } from "../src/index.js";
 
 describe("colour hash", () => {
   it("maps a name to a stable slot in range", () => {
@@ -10,6 +10,36 @@ describe("colour hash", () => {
     expect(a).toBeLessThan(PALETTE_SIZE);
     expect(colourFor("docks")).toBe(PALETTE[a]);     // css-var reference
     expect(PALETTE).toHaveLength(PALETTE_SIZE);
+  });
+});
+
+describe("a stored colour", () => {
+  it("answers the stored slot when it is valid, else the name's hash", () => {
+    const hashed = hashColour("Tam");
+    const other = (hashed + 5) % PALETTE_SIZE;
+    expect(colourIndex("Tam")).toBe(hashed);                 // existing callers: unchanged
+    expect(colourIndex("Tam", other)).toBe(other);
+    expect(colourFor("Tam", other)).toBe(`var(--char-${other})`);
+    for (const bad of [undefined, null, -1, PALETTE_SIZE, 2.5, Number.NaN]) {
+      expect(colourIndex("Tam", bad as number | null | undefined)).toBe(hashed);
+      expect(colourFor("Tam", bad as number | null | undefined)).toBe(PALETTE[hashed]);
+    }
+  });
+
+  it("a rename keeps the colour when the old name's hash is stamped", () => {
+    // What an app does at rename time: freeze the slot the old name had.
+    const stamp = hashColour("Tam");
+    expect(colourFor("Tamsin", stamp)).toBe(colourFor("Tam"));
+    // hashColour ignores anything stored: it is the name's own slot.
+    expect(hashColour("Tamsin")).toBe(colourIndex("Tamsin"));
+  });
+
+  it("isColourSlot accepts whole numbers in range only", () => {
+    expect(isColourSlot(0)).toBe(true);
+    expect(isColourSlot(PALETTE_SIZE - 1)).toBe(true);
+    expect(isColourSlot(PALETTE_SIZE)).toBe(false);
+    expect(isColourSlot("3")).toBe(false);
+    expect(isColourSlot(1.5)).toBe(false);
   });
 });
 

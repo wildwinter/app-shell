@@ -863,6 +863,37 @@ that hands the popover copies never shows stale ones. **The property list**
 takes `onRename`, fired once when a name edit is committed, for a caller that
 carries every reference to the old name.
 
+## v0.71 (focus that lands, and a colour that stays)
+
+From the hands-on review of October 2026 (the keyboard and character colour
+findings, and rulings Q14 and Q16).
+
+- **A collapsed pane leaves the Tab order.** The pane shell sets `inert` on a
+  collapsed or held-closed pane and clears it when the pane shows, so Tab no
+  longer walks through controls you can't see. Collapsing a pane that holds
+  focus hands focus out of it first, rather than letting it fall to `<body>`.
+- **Cmd+1 and Cmd+2 move focus into an open pane.** `focusOrToggle(side)` is
+  the one call for a pane's shortcut: a closed pane opens and takes focus, an
+  open one takes focus, and only when focus is already inside does it close,
+  giving focus back to where it was. `focusTarget` names what a side focuses
+  (default: its first control) and `focusHome` where focus lands when the
+  earlier place has gone (default: the centre's first control). `togglePane`
+  and the toggle buttons stay plain toggles.
+- **Focus comes back after a dialog whose opener has gone.** `dialogFrame`
+  (and `confirmDialog`) take `returnFocus`, an element or a function called at
+  close; failing that, the opener; then the nearest ancestor of the opener
+  still in the page that can take focus; then the host's
+  `setDialogFocusFallback`. `canTakeFocus` and `firstFocusable` are exported
+  for hosts that name these targets.
+- **Comments say Resolve and Resolved.** The popover's action is "Resolve"
+  (it said "Mark complete"), and a resolved thread, and its row in the picker,
+  says "Resolved" in words as well as fading.
+- **A character can keep its colour.** `colourIndex(name, stored?)` and
+  `colourFor(name, stored?)` answer a stored palette slot when it is valid and
+  the name's hash otherwise; `hashColour(name)` is the bare hash, for an app to
+  stamp into its model when a character is renamed, and `isColourSlot` checks a
+  stored value. Callers that pass only a name are unchanged.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

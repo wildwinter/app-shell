@@ -108,7 +108,8 @@ describe("what a change answers", () => {
     });
     button("Reopen").click();
     await settle();
-    expect(button("Mark complete")).toBeDefined();
+    expect(button("Resolve")).toBeDefined();
+    expect(document.querySelector(".shell-cmt-state")).toBeNull();
     expect(document.querySelector(".shell-cmt-list.resolved")).toBeNull();
   });
 
@@ -134,5 +135,30 @@ describe("what a change answers", () => {
     release([thread({ messages: [{ ...ian, body: "Too long." }, { ...ian, body: "Posted." }] })]);
     await settle();
     expect(document.querySelector<HTMLTextAreaElement>(".shell-cmt-input")!.value).toBe("Still typing");
+  });
+});
+
+// The hands-on review of October 2026 (Q16): "Resolve" is the action and
+// "Resolved" the state, in both apps; the popover said "Mark complete".
+describe("Resolve and Resolved", () => {
+  const texts = (sel: string): string[] => [...document.querySelectorAll(sel)].map((n) => n.textContent ?? "");
+
+  it("an open thread offers Resolve, and never says Mark complete", () => {
+    show();
+    expect(texts(".shell-cmt-btn")).toEqual(["Reply", "Resolve"]);
+    expect(document.body.textContent).not.toMatch(/complete/i);
+    expect(document.querySelector(".shell-cmt-state")).toBeNull();
+  });
+
+  it("a resolved thread says Resolved, and offers Reopen", () => {
+    show({ threads: [thread({ resolved: true })], showResolved: true });
+    expect(texts(".shell-cmt-state")).toEqual(["Resolved"]);
+    expect(texts(".shell-cmt-btn")).toEqual(["Reply", "Reopen"]);
+  });
+
+  it("a resolved thread's row in the picker says Resolved", () => {
+    show({ threads: [thread({ id: "a", resolved: true }), thread({ id: "b" })], showResolved: true });
+    const rows = [...document.querySelectorAll(".shell-cmt-row")];
+    expect(rows.map((r) => r.querySelector(".shell-cmt-state")?.textContent ?? null)).toEqual(["Resolved", null]);
   });
 });

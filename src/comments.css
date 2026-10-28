@@ -10,6 +10,8 @@
 
 .shell-cmt-list { display: flex; flex-direction: column; gap: 8px; }
 .shell-cmt-list.resolved { opacity: 0.55; }
+/* "Resolved", said in words beside the fade (a resolved thread, and its row in the picker). */
+.shell-cmt-state { flex: none; font: 500 var(--text-xs)/1.2 var(--font-ui); color: var(--muted); }
 .shell-cmt-msg-head { display: flex; gap: 8px; align-items: baseline; }
 /* The delete: QUIET but always there.
    It was rollover-revealed at first, following the grip grammar the lists use,

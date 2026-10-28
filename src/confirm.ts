@@ -15,6 +15,7 @@
 
 import { el } from "./dom.js";
 import { dialogFrame } from "./dialog.js";
+import type { ReturnFocus } from "./dialog.js";
 
 export interface ConfirmOptions {
   title: string;
@@ -29,6 +30,9 @@ export interface ConfirmOptions {
   /** The destructive button's label, which names its object ("Delete scene",
    *  "Remove language"). */
   confirmLabel: string;
+  /** Where focus goes when it closes, ahead of the opener (see
+   *  `DialogFrameOptions.returnFocus`). */
+  returnFocus?: ReturnFocus;
 }
 
 /** Resolves true on confirm; false on Cancel / Esc / backdrop. */
@@ -45,6 +49,7 @@ export function confirmDialog(opts: ConfirmOptions): Promise<boolean> {
     };
     const frame = dialogFrame({
       title: opts.title, className: "confirm-dialog",
+      ...(opts.returnFocus ? { returnFocus: opts.returnFocus } : {}),
       onClose: () => finish(false),   // Esc, or closed by someone else
     });
     const cancel = el("button", "btn confirm-btn cancel", "Cancel");

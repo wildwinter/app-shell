@@ -10,7 +10,10 @@
 //
 // What the frame owns: the backdrop, the panel, the enter and exit motion
 // (closeWithExit), Escape, and giving focus back to whatever had it when the
-// dialog opened. What it does not own: the content classes, the buttons'
+// dialog opened, or, when that has gone from the page (an inspector that
+// re-rendered under the dialog), to the caller's `returnFocus`, the nearest
+// surviving ancestor that can take focus, or the host's fallback
+// (`setDialogFocusFallback`). What it does not own: the content classes, the buttons'
 // meaning, and when to close. The caller keeps those.
 //
 // Styles ship as dialog.css. The action buttons are expected to wear `.btn`
@@ -19,6 +22,22 @@
 
 import { el } from "./dom.js";
 import { closeWithExit } from "./exit.js";
+import { canTakeFocus } from "./focus.js";
+
+/** An element to give focus to when a dialog closes, or a function asked for
+ *  one at that moment (so it can find what a re-render put in the opener's
+ *  place). */
+export type ReturnFocus = HTMLElement | (() => HTMLElement | null | undefined);
+
+let hostFallback: (() => HTMLElement | null | undefined) | null = null;
+
+/** The host's last resort for focus after any dialog closes (the main editing
+ *  area, say), when neither the dialog's `returnFocus`, its opener nor any
+ *  ancestor of the opener still in the page can take it. One per window; null
+ *  clears it. */
+export function setDialogFocusFallback(fallback: (() => HTMLElement | null | undefined) | null): void {
+  hostFallback = fallback;
+}
 
 export interface DialogFrameOptions {
   /** The heading. Also the dialog's accessible name. */
@@ -30,6 +49,13 @@ export interface DialogFrameOptions {
   className?: string;
   /** Runs once, after the dialog has left the document, however it closed. */
   onClose?: () => void;
+  /** Where focus goes when the dialog closes, ahead of the opener: for a
+   *  caller that knows the opener will be re-rendered. A function is called
+   *  at close. An answer that can't take focus (null, detached, disabled) is
+   *  passed over, and the frame goes on to the opener, then the nearest
+   *  ancestor of the opener still in the page that can take focus, then the
+   *  host's `setDialogFocusFallback`. */
+  returnFocus?: ReturnFocus;
 }
 
 export interface DialogFrame {
@@ -38,7 +64,8 @@ export interface DialogFrame {
   readonly body: HTMLElement;
   /** Fill this with the buttons, right-aligned; empty, it draws nothing. */
   readonly actions: HTMLElement;
-  /** Show modally. Records what had focus so `close()` can give it back. */
+  /** Show modally. Records what had focus (and its ancestors) so `close()`
+   *  can give it back. */
   open(): void;
   /** Play the exit, tear down, restore focus. Idempotent. */
   close(): void;
@@ -59,14 +86,26 @@ export function dialogFrame(opts: DialogFrameOptions): DialogFrame {
 
   let state: "closed" | "open" | "closing" = "closed";
   let opener: Element | null = null;
+  // The opener's ancestors as they were at open, nearest first: once the
+  // opener is detached, its own parent chain ends at the detached subtree.
+  let openerLine: Element[] = [];
+
+  const giveFocusBack = (): void => {
+    const given = typeof opts.returnFocus === "function" ? opts.returnFocus() : opts.returnFocus;
+    const candidates: Array<Element | null | undefined> = [given, opener];
+    for (const n of openerLine) if (n.isConnected) candidates.push(n);
+    candidates.push(hostFallback?.());
+    candidates.find(canTakeFocus)?.focus();
+  };
 
   const teardown = (): void => {
     dialog.remove();
     // Back to the control that opened this. The platform does it for a plain
     // dialog.close(), but the exit motion ends in a remove(), and a removed
     // dialog restores nothing.
-    if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    giveFocusBack();
     opener = null;
+    openerLine = [];
     state = "closed";
     opts.onClose?.();
   };
@@ -88,6 +127,8 @@ export function dialogFrame(opts: DialogFrameOptions): DialogFrame {
     open() {
       if (state !== "closed") return;
       opener = document.activeElement;
+      openerLine = [];
+      for (let n = opener?.parentElement ?? null; n && n !== document.body; n = n.parentElement) openerLine.push(n);
       state = "open";
       dialog.showModal();
     },

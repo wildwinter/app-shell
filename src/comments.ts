@@ -162,6 +162,7 @@ export function openComments(opts: CommentsOptions): void {
         const row = el("button", { className: `shell-cmt-row${thread.resolved === true ? " resolved" : ""}` },
           el("span", { className: "shell-cmt-row-author", text: thread.messages[0]?.author ?? "Someone" }),
           el("span", { className: "shell-cmt-row-gist", text: gist(thread) }),
+          ...(thread.resolved === true ? [el("span", { className: "shell-cmt-state", text: "Resolved" })] : []),
           ...(thread.messages.length > 1
             ? [el("span", { className: "shell-cmt-row-count", text: `${thread.messages.length}` })] : []),
         );
@@ -184,6 +185,9 @@ export function openComments(opts: CommentsOptions): void {
         body.append(el("blockquote", { className: "shell-cmt-quote", text: quote }));
       }
       const list = el("div", { className: `shell-cmt-list${thread.resolved === true ? " resolved" : ""}` });
+      // The state in words, not only the fade: "Resolve" is the action,
+      // "Resolved" the state, in both apps (the hands-on review, Q16).
+      if (thread.resolved === true) body.append(el("div", { className: "shell-cmt-state", text: "Resolved" }));
       thread.messages.forEach((message, index) => {
         const head = el("div", { className: "shell-cmt-msg-head" },
           el("span", { className: "shell-cmt-author", text: message.author === "" ? "Someone" : message.author }),
@@ -236,7 +240,7 @@ export function openComments(opts: CommentsOptions): void {
 
     if (thread) {
       const resolved = thread.resolved === true;
-      const toggle = el("button", { className: "shell-cmt-btn", text: resolved ? "Reopen" : "Mark complete" });
+      const toggle = el("button", { className: "shell-cmt-btn", text: resolved ? "Reopen" : "Resolve" });
       toggle.addEventListener("click", () => {
         const answer = opts.setResolved(thread.id, !resolved);
         // A resolved thread hides, so there is nothing left to look at.

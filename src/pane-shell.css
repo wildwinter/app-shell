@@ -62,6 +62,8 @@
 .pane-centre { min-width: 0; min-height: 0; overflow: auto; }
 
 .panes > .pane { transition: opacity var(--dur-panel) var(--ease-standard); }
+/* Faded out here; pane-shell.ts also sets `inert` on a collapsed pane, which takes its controls out of the
+   Tab order (opacity and pointer-events alone leave them reachable from the keyboard). */
 .panes.no-nav > .pane-nav, .panes.no-inspector > .pane-inspector { opacity: 0; pointer-events: none; }
 
 /* Drag seams over each side pane's inner edge, tracking the grid columns. The

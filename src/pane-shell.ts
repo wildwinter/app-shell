@@ -3,12 +3,16 @@
 // pane toggles, a nav | centre | inspector grid whose side panes collapse and
 // resize, and width/open-state persistence via a host callback. The host fills
 // the pane bodies + top-bar slots and owns its own keyboard accelerators
-// (call togglePane); the frame owns layout, collapse, drag-resize, and state.
+// (call focusOrToggle for a pane's shortcut, togglePane for a plain flip); the
+// frame owns layout, collapse, drag-resize, state, and where focus goes when a
+// pane opens or closes. A collapsed pane is `inert`: out of the Tab order and
+// out of the accessibility tree.
 //
 // The frame CSS ships alongside as pane-shell.css (import it once at the app
 // root). It reads the shared token grammar (tokens.css).
 // ---------------------------------------------------------------------------
 
+import { canTakeFocus, firstFocusable } from "./focus.js";
 import { iconNode } from "./icons.js";
 import { isKeyCombo, tipWithKey } from "./keys.js";
 import { ensureTooltipHost } from "./tooltip.js";
@@ -63,6 +67,16 @@ export interface PaneShellOptions {
    *  (Patterpad's `props-doc-open`), so its rules ride the shell's collapse
    *  rather than a second copy of it. */
   collapseAlso?: Partial<Record<PaneSide, string>>;
+  /** What `focusOrToggle` moves focus to in a side. Default: the first
+   *  control a Tab would reach in the pane, or the pane body itself when it
+   *  has none. Called at the moment of the move, so it can name whatever the
+   *  pane holds now (a search box, the selected row). A null answer, or one
+   *  that can't take focus, falls back to the default. */
+  focusTarget?: Partial<Record<PaneSide, () => HTMLElement | null | undefined>>;
+  /** Where focus goes when a pane that holds it closes and the place it came
+   *  from has gone (or there never was one): the main editing area, as the
+   *  host knows it. Default: the first control in the centre pane. */
+  focusHome?: () => HTMLElement | null | undefined;
 }
 
 export interface PaneShell {
@@ -77,6 +91,13 @@ export interface PaneShell {
   readonly centre: HTMLElement;
   readonly inspector: HTMLElement;
   togglePane(side: PaneSide): void;
+  /** A pane's keyboard shortcut (Cmd+1 / Cmd+2). Closed: opens it and moves
+   *  focus into it. Open with focus elsewhere: moves focus into it. Open with
+   *  focus already inside: closes it and gives focus back to where it was
+   *  before it came in (or `focusHome`). A pane that isn't offered is ignored;
+   *  one held closed flips its remembered state, as togglePane does, and
+   *  leaves focus alone. The toggle buttons stay plain toggles. */
+  focusOrToggle(side: PaneSide): void;
   setPaneOpen(side: PaneSide, open: boolean): void;
   /** Whether the pane is showing: open, and not held closed. */
   isOpen(side: PaneSide): boolean;
@@ -106,6 +127,8 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
   const width: Partial<Record<PaneSide, number>> = { ...(opts.initial?.width ?? {}) };
   const held: Record<PaneSide, boolean> = { nav: false, inspector: false };
   const showing = (side: PaneSide): boolean => open[side] && !held[side];
+  /** Where focus was before focusOrToggle brought it into each side. */
+  const cameFrom: Partial<Record<PaneSide, HTMLElement>> = {};
 
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string): HTMLElementTagNameMap[K] => {
     const n = document.createElement(tag);
@@ -172,9 +195,31 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
   // never called initTooltips() still draws the rollover.
   ensureTooltipHost();
 
+  const paneOf = (side: PaneSide): HTMLElement => (side === "nav" ? navPane : inspPane);
+  const innerOf = (side: PaneSide): HTMLElement => (side === "nav" ? navInner : inspInner);
+  const focusIn = (side: PaneSide): boolean => paneOf(side).contains(document.activeElement);
+
+  /** Give focus back from a side that is closing: to where it came from, if
+   *  that is still there to take it, else the host's home, else the centre. */
+  function focusOut(side: PaneSide): void {
+    const back = cameFrom[side];
+    delete cameFrom[side];
+    const home = opts.focusHome?.();
+    const target = [back, home, firstFocusable(centre)]
+      .find((n) => canTakeFocus(n) && !paneOf(side).contains(n));
+    if (target) target.focus();
+    else (document.activeElement as HTMLElement | null)?.blur?.();
+  }
+
   function apply(): void {
     for (const side of ["nav", "inspector"] as const) {
       const collapsed = !showing(side);
+      // A browser drops focus inside an inert subtree to <body>: hand it
+      // somewhere useful first.
+      if (collapsed && focusIn(side)) focusOut(side);
+      // Hidden by opacity alone, a pane's controls would stay in the Tab
+      // order; inert takes them out (and out of the accessibility tree).
+      paneOf(side).toggleAttribute("inert", collapsed);
       panes.classList.toggle(collapseClass[side], collapsed);
       const also = opts.collapseAlso?.[side];
       if (also) panes.classList.toggle(also, collapsed);
@@ -198,6 +243,25 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
     persist();
   }
   function togglePane(side: PaneSide): void { if (offered(side)) setPaneOpen(side, !open[side]); }
+  function focusInto(side: PaneSide): void {
+    const named = opts.focusTarget?.[side]?.();
+    const target = (canTakeFocus(named) && paneOf(side).contains(named) ? named : null) ?? firstFocusable(innerOf(side));
+    if (target) { target.focus(); return; }
+    // Nothing to land on: the pane body itself, reachable from script only.
+    const inner = innerOf(side);
+    if (!inner.hasAttribute("tabindex")) inner.tabIndex = -1;
+    inner.focus();
+  }
+  function focusOrToggle(side: PaneSide): void {
+    if (!offered(side)) return;
+    if (held[side]) { togglePane(side); return; }
+    if (showing(side) && focusIn(side)) { setPaneOpen(side, false); return; }   // apply() gives focus back
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== document.body) cameFrom[side] = active;
+    else delete cameFrom[side];
+    setPaneOpen(side, true);
+    focusInto(side);
+  }
   function holdClosed(side: PaneSide, next: boolean): void {
     if (held[side] === next) return;
     held[side] = next;
@@ -247,7 +311,7 @@ export function mountPaneShell(host: HTMLElement, opts: PaneShellOptions): PaneS
   return {
     root, topbar, topbarLead, topbarTrail,
     nav: navInner, centre, inspector: inspInner,
-    togglePane, setPaneOpen, isOpen: showing, holdClosed, resetWidths, state: snapshot,
+    togglePane, focusOrToggle, setPaneOpen, isOpen: showing, holdClosed, resetWidths, state: snapshot,
     destroy: () => { root.remove(); },
   };
 }

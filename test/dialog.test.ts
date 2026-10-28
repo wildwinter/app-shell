@@ -2,7 +2,8 @@
 // modally, Escape closes through the frame, focus goes back to the opener.
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { dialogFrame } from "../src/dialog.js";
+import { dialogFrame, setDialogFocusFallback } from "../src/dialog.js";
+import { confirmDialog } from "../src/confirm.js";
 import { el } from "../src/dom.js";
 
 beforeAll(() => {
@@ -83,3 +84,90 @@ describe("dialogFrame", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+describe("dialogFrame: focus when the opener has gone", () => {
+  // The hands-on review of October 2026: Patterpad's inspector re-renders after
+  // a commit, so the button that opened a dialog is no longer in the page when
+  // it closes, and focus fell to <body>.
+  afterEach(() => { setDialogFocusFallback(null); });
+
+  /** An inspector-like panel: a focusable section holding a row with a button. */
+  function inspector() {
+    const panel = el("section", "inspector");
+    panel.tabIndex = -1;
+    const row = el("div", "row");
+    const opener = el("button", "", "Edit…");
+    row.append(opener);
+    panel.append(row);
+    document.body.append(panel);
+    opener.focus();
+    return { panel, row, opener };
+  }
+
+  it("falls back to the nearest ancestor of the opener still in the page that can take focus", () => {
+    const { panel, row } = inspector();
+    const frame = dialogFrame({ title: "Edit" });
+    frame.open();
+    row.remove();                                   // the commit re-renders the inspector
+    panel.append(el("div", "row", "fresh"));
+    frame.close();
+    expect(document.activeElement).toBe(panel);
+  });
+
+  it("takes returnFocus first: an element, or a function called at close", () => {
+    const { panel, row, opener } = inspector();
+    const fresh = el("button", "", "Edit…");
+    const frame = dialogFrame({ title: "Edit", returnFocus: () => fresh });
+    frame.open();
+    row.remove();
+    panel.append(fresh);                            // only exists once the dialog has closed over it
+    frame.close();
+    expect(document.activeElement).toBe(fresh);
+
+    // An element, given up front, wins even over a connected opener.
+    const other = el("button", "", "Other");
+    document.body.append(other, opener);
+    opener.focus();
+    const second = dialogFrame({ title: "Again", returnFocus: other });
+    second.open();
+    second.close();
+    expect(document.activeElement).toBe(other);
+  });
+
+  it("passes over a returnFocus that can't take focus", () => {
+    const { opener } = inspector();
+    const frame = dialogFrame({ title: "Edit", returnFocus: () => el("button", "", "never mounted") });
+    frame.open();
+    frame.close();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it("uses the host's fallback when nothing near the opener is left", () => {
+    const editor = el("div", "editor");
+    editor.tabIndex = -1;
+    document.body.append(editor);
+    setDialogFocusFallback(() => editor);
+    const holder = el("div", "holder");
+    const opener = el("button", "", "Open");
+    holder.append(opener);
+    document.body.append(holder);
+    opener.focus();
+    const frame = dialogFrame({ title: "Edit" });
+    frame.open();
+    holder.remove();
+    frame.close();
+    expect(document.activeElement).toBe(editor);
+  });
+
+  it("the shell's own dialogs take returnFocus through to the frame (confirm)", async () => {
+    const { panel, row } = inspector();
+    const fresh = el("button", "", "Delete");
+    const answer = confirmDialog({ title: "Delete?", confirmLabel: "Delete", returnFocus: () => fresh });
+    row.remove();
+    panel.append(fresh);
+    document.querySelector<HTMLButtonElement>(".confirm-btn.cancel")!.click();
+    await answer;
+    expect(document.activeElement).toBe(fresh);
+  });
+});
+

@@ -5,7 +5,7 @@
 
 export { el } from "./dom.js";
 export type { Child, ElProps } from "./dom.js";
-export { colourIndex, colourFor, PALETTE, PALETTE_SIZE } from "./colour.js";
+export { colourIndex, colourFor, hashColour, isColourSlot, PALETTE, PALETTE_SIZE } from "./colour.js";
 // The family's icon vocabulary: an icon is a word, and two apps must spell it
 // the same way (icons.ts). Drawn (Lucide, vendored) since 0.39: `iconNode` is
 // the way to draw one; `icon` is the deprecated glyph table.
@@ -38,8 +38,10 @@ export type { PinButtonOptions, PinButton, ToolWindowHeadOptions, FollowButtonOp
 export { confirmDialog } from "./confirm.js";
 // The one modal skeleton (title, sub, body, actions, scrim, motion, focus
 // return) every dialog in the family sits on, the shell's own included.
-export { dialogFrame } from "./dialog.js";
-export type { DialogFrame, DialogFrameOptions } from "./dialog.js";
+export { dialogFrame, setDialogFocusFallback } from "./dialog.js";
+export type { DialogFrame, DialogFrameOptions, ReturnFocus } from "./dialog.js";
+// Where keyboard focus can go (for a pane's focusTarget, a dialog's returnFocus).
+export { canTakeFocus, firstFocusable } from "./focus.js";
 // The floating-layer lifecycle popups and menus share (floating.ts), and the
 // right-click menu + anchored popover built on the same idea (context-menu.ts).
 export { createFloating } from "./floating.js";
