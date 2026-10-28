@@ -226,3 +226,52 @@ describe("a list of another noun, with free names", () => {
     expect(onChange).toHaveBeenCalled();
   });
 });
+
+// A property renamed in place (the hands-on review of October 2026): Storyletter, and Patterpad after it,
+// carry every reference to the old name, so the list says once, on commit, what was renamed.
+describe("onRename", () => {
+  type Decl = { name: string; type: string };
+  const mount = (onRename: (d: Decl, from: string, to: string) => void, decls: Decl[] = [{ name: "gold", type: "number" }, { name: "mood", type: "string" }]) => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    mountPropertyList(host, decls, { onRename });
+    return [...host.querySelectorAll<HTMLInputElement>("input.set-name")];
+  };
+  const typeName = (input: HTMLInputElement, text: string): void => {
+    input.value = text;
+    input.dispatchEvent(new Event("input"));
+  };
+  const enter = (input: HTMLInputElement): void => { input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" })); };
+
+  it("fires once when the edit is committed, with the name the row had and the new one", () => {
+    const onRename = vi.fn();
+    const [gold] = mount(onRename);
+    gold!.dispatchEvent(new Event("focus"));
+    typeName(gold!, "coi");
+    typeName(gold!, "coins");
+    expect(onRename).not.toHaveBeenCalled();
+    enter(gold!);
+    gold!.dispatchEvent(new Event("blur"));
+    expect(onRename).toHaveBeenCalledTimes(1);
+    expect(onRename.mock.calls[0]!.slice(1)).toEqual(["gold", "coins"]);
+  });
+
+  it("doesn't fire for a name unchanged, emptied, or taken by another row", () => {
+    const onRename = vi.fn();
+    const [gold] = mount(onRename);
+    gold!.dispatchEvent(new Event("focus"));
+    gold!.dispatchEvent(new Event("blur"));
+    typeName(gold!, "mood");
+    gold!.dispatchEvent(new Event("blur"));
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it("names a new row rather than renaming it", () => {
+    const onRename = vi.fn();
+    const [blank] = mount(onRename, [{ name: "", type: "number" }]);
+    blank!.dispatchEvent(new Event("focus"));
+    typeName(blank!, "gold");
+    blank!.dispatchEvent(new Event("blur"));
+    expect(onRename).not.toHaveBeenCalled();
+  });
+});

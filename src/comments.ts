@@ -57,6 +57,9 @@ const gist = (thread: Comment): string => {
   return first.length > 60 ? `${first.slice(0, 57)}…` : first;
 };
 
+/** What a change answers: every thread on the thing as it now stands, or nothing (see `post`). */
+export type ThreadsAfter = Comment[] | void | Promise<Comment[] | void>;
+
 export interface CommentsOptions {
   anchor: HTMLElement;
   /** What is being discussed, for the panel's title. */
@@ -67,8 +70,13 @@ export interface CommentsOptions {
   showResolved: boolean;
   /** A fresh thread id, minted by the caller so main never has to. */
   newThreadId: () => string;
-  post: (threadId: string, body: string) => void;
-  setResolved: (threadId: string, resolved: boolean) => void;
+  /**
+   * Post a message. Each of these three may answer with every thread on this thing as it now stands (directly,
+   * or once its write lands), and the panel shows that: a reply appears under the thread it was posted to, and
+   * a host that hands the panel copies never shows stale ones. Answering nothing leaves the panel as it was.
+   */
+  post: (threadId: string, body: string) => ThreadsAfter;
+  setResolved: (threadId: string, resolved: boolean) => ThreadsAfter;
   /**
    * Withdraw one message. Absent = the host does not offer deletion.
    *
@@ -82,7 +90,7 @@ export interface CommentsOptions {
    * be left (which covers the common case of withdrawing a comment nobody had
    * replied to).
    */
-  deleteMessage?: (threadId: string, index: number) => void;
+  deleteMessage?: (threadId: string, index: number) => ThreadsAfter;
   /** Where the panel sits: "centre" for a point on a canvas (see anchored.ts). */
   prefer?: "left" | "below" | "centre";
   /**
@@ -107,7 +115,9 @@ export interface CommentsOptions {
 }
 
 export function openComments(opts: CommentsOptions): void {
-  const visible = opts.threads.filter((t) => opts.showResolved || t.resolved !== true);
+  let threads = opts.threads;
+  const shown = (): Comment[] => threads.filter((t) => opts.showResolved || t.resolved !== true);
+  const visible = shown();
   const panel = openAnchoredPanel({
     anchor: opts.anchor, className: "comments", title: "Comments", width: 320,
     // Below its button (the topline), unlike Patterpad's inspector rows which
@@ -119,28 +129,47 @@ export function openComments(opts: CommentsOptions): void {
   if (!panel) return;      // the same anchor again: that click closed it
   const { body, close } = panel;
 
-  // Which thread is on screen. A brand-new one until it is posted: it exists
-  // only here, which is why nothing is written when the panel closes unposted.
-  let open: Comment | undefined = visible.length === 1 ? visible[0] : undefined;
+  // Which thread is on screen, by id, so a fresh list of threads finds it again.
+  // A brand-new one until it is posted: it exists only here, which is why
+  // nothing is written when the panel closes unposted. Once its first message
+  // is posted it has an id, and every later post replies to it rather than
+  // starting another thread.
+  let openId: string | undefined = visible.length === 1 ? visible[0]!.id : undefined;
   let composing = visible.length === 0;
+  let closed = false;
+  const shut = (): void => { closed = true; close(); };
+
+  /** Take what a change answered: the threads as they now stand, shown. */
+  const after = (answer: ThreadsAfter): void => {
+    void Promise.resolve(answer).then((next) => {
+      if (!next || closed || !body.isConnected) return;
+      threads = next;
+      // The thread on screen went (its last readable message withdrawn): nothing left to read.
+      if (openId !== undefined && !composing && !threads.some((t) => t.id === openId)) { shut(); return; }
+      render();
+    });
+  };
 
   const render = (): void => {
+    // What is being typed survives a refresh that lands under it.
+    const draft = (body.querySelector("textarea.shell-cmt-input") as HTMLTextAreaElement | null)?.value ?? "";
     body.replaceChildren();
+    const open = openId === undefined ? undefined : threads.find((t) => t.id === openId);
 
     if (!composing && open === undefined) {
       // More than one: pick.
-      for (const thread of visible) {
+      for (const thread of shown()) {
         const row = el("button", { className: `shell-cmt-row${thread.resolved === true ? " resolved" : ""}` },
           el("span", { className: "shell-cmt-row-author", text: thread.messages[0]?.author ?? "Someone" }),
           el("span", { className: "shell-cmt-row-gist", text: gist(thread) }),
           ...(thread.messages.length > 1
             ? [el("span", { className: "shell-cmt-row-count", text: `${thread.messages.length}` })] : []),
         );
-        row.addEventListener("click", () => { open = thread; render(); });
+        row.addEventListener("click", () => { openId = thread.id; render(); });
         body.append(row);
       }
       const fresh = el("button", { className: "shell-cmt-new", text: "New comment" });
-      fresh.addEventListener("click", () => { open = undefined; composing = true; render(); });
+      fresh.addEventListener("click", () => { openId = undefined; composing = true; render(); });
       body.append(fresh);
       return;
     }
@@ -166,7 +195,7 @@ export function openComments(opts: CommentsOptions): void {
           const bin = el("button", { className: "shell-cmt-del" }, iconNode("close", 12));
           bin.dataset.tip = "Delete this comment";
           bin.setAttribute("aria-label", "Delete this comment");
-          bin.addEventListener("click", () => opts.deleteMessage?.(thread.id, index));
+          bin.addEventListener("click", () => after(opts.deleteMessage?.(thread.id, index)));
           head.append(bin);
         }
         list.append(el("div", { className: `shell-cmt-msg${message.deleted === true ? " gone" : ""}` },
@@ -178,6 +207,7 @@ export function openComments(opts: CommentsOptions): void {
 
     const input = el("textarea", { className: "shell-cmt-input" });
     input.rows = 2;
+    input.value = draft;
     input.placeholder = thread ? "Reply…" : "Comment…";
     input.addEventListener("keydown", (e) => {
       e.stopPropagation();
@@ -190,9 +220,13 @@ export function openComments(opts: CommentsOptions): void {
     const submit = (andClose: boolean): void => {
       const text = input.value.trim();
       if (text === "") return;
-      const id = thread?.id ?? opts.newThreadId();
-      opts.post(id, text);
-      if (andClose) close(); else { input.value = ""; }
+      // A new thread takes its id now and keeps it: a second post replies to it.
+      const id = openId ?? opts.newThreadId();
+      openId = id;
+      composing = false;
+      input.value = "";
+      const answer = opts.post(id, text);
+      if (andClose) shut(); else after(answer);
     };
 
     const actions = el("div", { className: "shell-cmt-actions" });
@@ -204,9 +238,9 @@ export function openComments(opts: CommentsOptions): void {
       const resolved = thread.resolved === true;
       const toggle = el("button", { className: "shell-cmt-btn", text: resolved ? "Reopen" : "Mark complete" });
       toggle.addEventListener("click", () => {
-        opts.setResolved(thread.id, !resolved);
+        const answer = opts.setResolved(thread.id, !resolved);
         // A resolved thread hides, so there is nothing left to look at.
-        if (!resolved) close(); else render();
+        if (!resolved) shut(); else { render(); after(answer); }
       });
       actions.append(toggle);
     }

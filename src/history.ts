@@ -26,8 +26,8 @@
 // Main-process code: it reads and writes files.
 // ---------------------------------------------------------------------------
 
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename } from "node:path";
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import { deleteFileAsync, writeTextFilesAsync } from "@wildwinter/simple-vc-lib";
 import type { VCWriteOutcome } from "@wildwinter/simple-vc-lib";
 
@@ -106,6 +106,65 @@ export function writeFailure(results: VCWriteOutcome[]): string {
   };
   if (refused.length > 0) return `nothing was saved: ${refused.map(say).join("; ")}`;
   return `couldn't save ${failed.map(say).join("; ") || "the project"}`;
+}
+
+// --- disk stamps ---------------------------------------------------------------------------------------
+// An app builds each write from the files as it last read them, a whole shard at a time, so writing over a
+// file that has changed since (a pull in a terminal, a synced folder, another app) would silently throw that
+// change away (the hands-on review, 2026-10). The stamps remember what the app last read or wrote, file by
+// file, and a write asks them first. The undo's drift check above compares content; this compares a stat,
+// so it costs nothing to ask before every write.
+
+/** A file's modification time and size as one string, or "gone" when it isn't there. */
+export function fileSignature(path: string): string {
+  try { const st = statSync(path); return `${st.mtimeMs}\u0000${st.size}`; } catch { return "gone"; }
+}
+
+/** What an app last read or wrote, by file, to tell a file changed outside it since. */
+export class DiskStamps {
+  private readonly seen = new Map<string, string>();
+
+  /** Remember these files as they are now: call it right after reading or writing them. */
+  note(paths: Iterable<string>): void {
+    for (const path of paths) { const file = resolve(path); this.seen.set(file, fileSignature(file)); }
+  }
+
+  /** Forget these files: the next write of them isn't checked until they're read again. */
+  forget(paths: Iterable<string>): void {
+    for (const path of paths) this.seen.delete(resolve(path));
+  }
+
+  /** Forget every file (another project, or a fresh read of the whole of this one). */
+  clear(): void { this.seen.clear(); }
+
+  /** Is this file remembered? */
+  has(path: string): boolean { return this.seen.has(resolve(path)); }
+
+  /**
+   * The first of `paths` that has changed since it was noted, or undefined. A file never noted is asked
+   * about only when `covers` says the app would have read it, and then it was expected not to exist: a file
+   * that has appeared since counts as changed.
+   */
+  changedSince(paths: Iterable<string>, covers?: (file: string) => boolean): string | undefined {
+    for (const path of paths) {
+      const file = resolve(path);
+      const was = this.seen.get(file) ?? (covers?.(file) ? "gone" : undefined);
+      if (was !== undefined && fileSignature(file) !== was) return file;
+    }
+    return undefined;
+  }
+
+  /** Are the noted files exactly `paths`, each unchanged? False when one has changed, appeared, or gone. */
+  matches(paths: Iterable<string>): boolean {
+    let count = 0;
+    for (const path of paths) {
+      const file = resolve(path);
+      const was = this.seen.get(file);
+      if (was === undefined || fileSignature(file) !== was) return false;
+      count++;
+    }
+    return count === this.seen.size;
+  }
 }
 
 /** How many steps Undo keeps: ProseMirror's default depth, the same in both apps. A step holds whole files

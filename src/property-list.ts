@@ -169,6 +169,13 @@ export interface PropertyListOptions<T extends PropertyDeclLike> extends Default
    * the same edit as the declaration; absent, it is an ordinary change.
    */
   onStageRename?: (decl: T, from: string, to: string) => void;
+  /**
+   * A declaration was renamed: fired once when a name edit is committed (Enter, or leaving the field), not per
+   * keystroke, and only when the committed name differs from the one the row had when editing began, isn't
+   * empty, and isn't another row's. A row that had no name yet is being named, not renamed. The edit itself
+   * still reaches `onChange` as it is typed; this lets the caller carry every reference to the old name.
+   */
+  onRename?: (decl: T, from: string, to: string) => void;
   /** A quality's stages were reordered (after `onChange`). `note` is a quiet
    *  line under the stages for the caller to fill, such as how many gates
    *  compare against the ladder. */
@@ -210,6 +217,20 @@ export function mountPropertyList<T extends PropertyDeclLike>(host: HTMLElement,
       bindPropertyName(name, (v) => { p.name = v; changed(); }, { hint: PROPERTY_NAME_HINT });
     }
     guard.track(name);
+    if (opts.onRename) {
+      // The name the row had when editing began; a commit that differs from it is a rename.
+      let begun = p.name;
+      name.addEventListener("focus", () => { begun = p.name; });
+      const commit = (): void => {
+        const from = begun, to = p.name;
+        begun = to;
+        if (from === "" || to === "" || to === from) return;
+        if (decls.some((d) => d !== p && d.name === to)) return;
+        opts.onRename!(p, from, to);
+      };
+      name.addEventListener("keydown", (e) => { if (e.key === "Enter") commit(); });
+      name.addEventListener("blur", commit);
+    }
 
     const type = el("select", "field set-type");
     for (const [v, label] of types) type.append(option(v, label, v === p.type));
