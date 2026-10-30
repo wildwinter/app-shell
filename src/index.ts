@@ -17,11 +17,13 @@ export { PANE_MENU } from "./menu.js";
 export type { MenuLabel, MenuCommand } from "./menu.js";
 export { PALETTE_CHANNELS } from "./menu.js";
 export { iconBtn, labelled, labelledToggle, moveItem, tagChips, stageChips, wireReorder } from "./dom.js";
-export type { StageChipsOptions } from "./dom.js";
+export type { StageChipsOptions, ReorderOptions } from "./dom.js";
 export type { FieldHint, LabelledToggleOptions } from "./dom.js";
 // Separators are drawn: a metadata line and a breadcrumb as DOM, never a "·"
 // or "›" in a string (dom.ts, controls.css).
 export { metaLine, breadcrumb } from "./dom.js";
+// The tree pattern's keys for a navigator drawn as a tree (tree-keys.ts).
+export { rove, treeKey, treeRows, wireTreeKeys } from "./tree-keys.js";
 export type { Crumb } from "./dom.js";
 // Keyboard hints from one helper, "⌘" on a Mac and "Ctrl" elsewhere (keys.ts +
 // keys.css). Also its own entry, @wildwinter/app-shell/keys.

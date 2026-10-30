@@ -319,7 +319,14 @@ export function stageChips(holder: { stages?: string[] }, onChange?: () => void,
 // midpoint test knows what is being carried without a dataTransfer round trip.
 let reorderDragId: string | null = null;
 const clearDropMarks = (host: ParentNode): void =>
-  host.querySelectorAll(".drop-before, .drop-after").forEach((e) => e.classList.remove("drop-before", "drop-after"));
+  host.querySelectorAll(".drop-before, .drop-after, .drop-into").forEach((e) => e.classList.remove("drop-before", "drop-after", "drop-into"));
+
+export interface ReorderOptions {
+  /** Makes `el` a container too (a folder row): its middle half takes a drop
+   *  INTO it, wearing `.drop-into`, and a drop there calls this instead of
+   *  `onMove`. Its top and bottom quarters still mean before and after. */
+  onInto?: (id: string, targetId: string) => void;
+}
 
 /**
  * Make `el` a drag source and a drop target for HTML5 drag-to-reorder among
@@ -329,11 +336,11 @@ const clearDropMarks = (host: ParentNode): void =>
  * targetId)` and the caller reorders its model and re-renders.
  *
  * Storyletter's `wireCardDrag`, lifted (ui-review-2026-09, finding 30);
- * Patterpad's `wireSceneDrag` is the same idea fixed on "y". The marks are
- * classes only: the app draws them (Patterpad's `box-shadow: 0 -2px 0 0
- * var(--accent)` pair is the family's look).
+ * Patterpad's scene list uses it too, with `onInto` for its folders. The
+ * marks are classes only: the app draws them (Patterpad's `box-shadow: 0 -2px
+ * 0 0 var(--accent)` pair is the family's look).
  */
-export function wireReorder(el: HTMLElement, id: string, axis: "x" | "y", onMove: (id: string, before: boolean, targetId: string) => void): void {
+export function wireReorder(el: HTMLElement, id: string, axis: "x" | "y", onMove: (id: string, before: boolean, targetId: string) => void, opts: ReorderOptions = {}): void {
   el.draggable = true;
   el.dataset["reorderId"] = id;
   const host = (): ParentNode => el.parentElement ?? el;
@@ -347,16 +354,18 @@ export function wireReorder(el: HTMLElement, id: string, axis: "x" | "y", onMove
     e.preventDefault();
     if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
     const r = el.getBoundingClientRect();
-    const before = axis === "y" ? e.clientY < r.top + r.height / 2 : e.clientX < r.left + r.width / 2;
+    const at = axis === "y" ? (e.clientY - r.top) / (r.height || 1) : (e.clientX - r.left) / (r.width || 1);
     clearDropMarks(host());
-    el.classList.add(before ? "drop-before" : "drop-after");
+    el.classList.add(opts.onInto && at >= 0.25 && at <= 0.75 ? "drop-into" : at < 0.5 ? "drop-before" : "drop-after");
   });
-  el.addEventListener("dragleave", () => el.classList.remove("drop-before", "drop-after"));
+  el.addEventListener("dragleave", () => el.classList.remove("drop-before", "drop-after", "drop-into"));
   el.addEventListener("drop", (e) => {
     e.preventDefault();
+    const into = el.classList.contains("drop-into");
     const before = el.classList.contains("drop-before");
     clearDropMarks(host());
-    if (reorderDragId && reorderDragId !== id) onMove(reorderDragId, before, id);
+    if (!reorderDragId || reorderDragId === id) return;
+    if (into) opts.onInto?.(reorderDragId, id); else onMove(reorderDragId, before, id);
   });
 }
 

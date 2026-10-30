@@ -965,6 +965,17 @@ family's own kind brings a `kindLabel`.
   its 10em when the row is narrower. Measured in Patterpad's preview: 45 to 67px of overflow in a 130px control
   column before, none after.
 
+## v0.74 (unreleased: a navigator drawn as a tree)
+
+- **Tree keys.** `wireTreeKeys(host, toggle)`, `treeKey`, `treeRows`, and `rove` give a navigator drawn as a tree one
+  tab stop and the arrow keys: Up and Down between visible rows, Right to open a row or step into it, Left to close
+  it or step out, Home and End. Rows say what they are in the DOM (`role="treeitem"`, `aria-level`, and
+  `aria-expanded` on a row with children), and a row found again after a redraw carries `data-nav-key`. Lifted from
+  Storyletter's navigator for Patterpad's scene folders.
+- **Drop into a row.** `wireReorder` takes an optional `{ onInto }`. A row wired with it is a container, such as a
+  folder: its middle half takes a drop into it, wearing `.drop-into`, and calls `onInto(draggedId, targetId)`. Its
+  top and bottom quarters still mean before and after. Existing callers don't change.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

@@ -193,3 +193,45 @@ describe("wireReorder", () => {
     a!.dispatchEvent(drag("dragend", {}));
   });
 });
+
+describe("wireReorder with onInto (a container row, as a folder)", () => {
+  const drag = (type: string, clientY?: number): Event => {
+    const e = new MouseEvent(type, { bubbles: true, cancelable: true, ...(clientY !== undefined ? { clientY } : {}) });
+    Object.defineProperty(e, "dataTransfer", { value: null });
+    return e;
+  };
+  const setup = (): { a: HTMLElement; folder: HTMLElement; onMove: ReturnType<typeof vi.fn>; onInto: ReturnType<typeof vi.fn> } => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const onMove = vi.fn(), onInto = vi.fn();
+    const a = document.createElement("div"), folder = document.createElement("div");
+    host.append(a, folder);
+    wireReorder(a, "a", "y", onMove);
+    wireReorder(folder, "f", "y", onMove, { onInto });
+    folder.getBoundingClientRect = () => ({ top: 100, left: 0, width: 100, height: 20, right: 100, bottom: 120, x: 0, y: 100, toJSON() { return {}; } } as DOMRect);
+    return { a, folder, onMove, onInto };
+  };
+
+  it("takes a drop in its middle half into it", () => {
+    const { a, folder, onMove, onInto } = setup();
+    a.dispatchEvent(drag("dragstart"));
+    folder.dispatchEvent(drag("dragover", 110));
+    expect(folder.classList.contains("drop-into")).toBe(true);
+    folder.dispatchEvent(drag("drop"));
+    expect(onInto).toHaveBeenCalledWith("a", "f");
+    expect(onMove).not.toHaveBeenCalled();
+    expect(folder.classList.contains("drop-into")).toBe(false);
+  });
+
+  it("still means before and after at its top and bottom quarters", () => {
+    const { a, folder, onMove, onInto } = setup();
+    a.dispatchEvent(drag("dragstart"));
+    folder.dispatchEvent(drag("dragover", 102));
+    expect(folder.classList.contains("drop-before")).toBe(true);
+    folder.dispatchEvent(drag("dragover", 118));
+    expect(folder.classList.contains("drop-after")).toBe(true);
+    folder.dispatchEvent(drag("drop"));
+    expect(onMove).toHaveBeenCalledWith("a", false, "f");
+    expect(onInto).not.toHaveBeenCalled();
+  });
+});
