@@ -18,6 +18,17 @@
 // opening and, when the bold is a phrase rather than a sentence, the rest of
 // its first sentence. Fixes are a count. A version can pick its own list with
 // a `### Highlights` section, which then replaces the automatic one.
+//
+// A version can also carry an `### Announcement`: hand-written news, such as a
+// new member of the family, which What's New draws as a callout above every
+// version it shows. Each entry is a bold title and the words after it, links
+// kept:
+//
+//   ### Announcement
+//   - **Meet Patterstage.** Patter stories, staged. [Find out more](https://...)
+//
+// It goes with its version: shown on the first launch after that update, and
+// in Help ▸ What's New while the version is one of the latest three.
 // ---------------------------------------------------------------------------
 
 /** One entry's lead, as What's New shows it: `lead` was bold in the
@@ -26,6 +37,14 @@
 export interface ChangelogLead {
   lead: string;
   rest: string;
+}
+
+/** A hand-written announcement: `title` was bold in the changelog, and `body`
+ *  is the rest of the entry, with its `[links](url)` and `code` kept for the
+ *  dialog to draw ("" when the title stands alone). */
+export interface ChangelogAnnouncement {
+  title: string;
+  body: string;
 }
 
 export interface ChangelogVersion {
@@ -38,6 +57,8 @@ export interface ChangelogVersion {
   headlines: ChangelogLead[];
   /** How many entries the Fixed section has. */
   fixes: number;
+  /** The version's Announcement entries, in changelog order. */
+  announcements: ChangelogAnnouncement[];
 }
 
 /** One top-level entry, for checking: its section, its first line, and its lead if it has one. */
@@ -63,6 +84,13 @@ export function leadOf(text: string): ChangelogLead | undefined {
   const end = /^(.*?[.!?])(\s|$)/s.exec(after);
   // A sentence that introduces nested points ends on a colon; on its own, in What's New, it ends.
   return { lead, rest: (end ? end[1]! : after).replace(/:$/, ".") };
+}
+
+/** An Announcement entry: its bold title, and the rest with links kept. */
+function announcementOf(text: string): ChangelogAnnouncement {
+  const m = /^\*\*(.+?)\*\*(.*)$/s.exec(text.trim());
+  if (!m) return { title: clean(text), body: "" };
+  return { title: clean(m[1]!), body: m[2]!.replace(/\*\*|__/g, "").replace(/\s+/g, " ").trim() };
 }
 
 /** Markdown the dialog doesn't draw: links keep their words, emphasis goes. */
@@ -121,6 +149,7 @@ export function parseChangelog(md: string): ChangelogVersion[] {
       ...(date ? { date } : {}),
       headlines: shown.map((e) => e.lead ?? { lead: clean(e.text), rest: "" }),
       fixes: entries.filter((e) => e.section === "fixed").length,
+      announcements: entries.filter((e) => e.section === "announcement").map((e) => announcementOf(e.text)),
     };
   });
 }

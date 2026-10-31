@@ -92,3 +92,31 @@ describe("which versions", () => {
     expect(latestVersions(all, "0.39.0").map((v) => v.version)).toEqual(["0.39.0", "0.10.0"]);
   });
 });
+
+describe("announcements", () => {
+  const md = `## [0.41.0] - 2026-11-02
+### Announcement
+- **Meet Patterstage.** Patter stories, staged in **Unity** and Godot.
+  [Find out more](https://patterstage.test) or run \`npm i\`.
+- **A plain title**
+### Added
+- **The palette.** Cmd+K.
+## [0.40.0] - 2026-10-28
+### Added
+- **Older.** Old.
+`;
+  const [v41, v40] = parseChangelog(md);
+
+  it("reads each entry's bold title and the rest, links and code kept, apart from the headlines", () => {
+    expect(v41!.announcements).toEqual([
+      { title: "Meet Patterstage.", body: "Patter stories, staged in Unity and Godot. [Find out more](https://patterstage.test) or run `npm i`." },
+      { title: "A plain title", body: "" },
+    ]);
+    expect(v41!.headlines).toEqual([{ lead: "The palette.", rest: "" }]);
+    expect(v40!.announcements).toEqual([]);
+  });
+
+  it("holds an announcement to the release check's rule: a bold title", () => {
+    expect(entriesWithoutLead(`## [1.0.0] - 2026-11-02\n### Announcement\n- No title here.\n`, "1.0.0").map((e) => e.text)).toEqual(["No title here."]);
+  });
+});

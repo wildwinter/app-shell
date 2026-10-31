@@ -976,6 +976,26 @@ family's own kind brings a `kindLabel`.
   folder: its middle half takes a drop into it, wearing `.drop-into`, and calls `onInto(draggedId, targetId)`. Its
   top and bottom quarters still mean before and after. Existing callers don't change.
 
+## v0.75 (an announcement in What's New)
+
+- **An announcement.** A version's changelog can carry a `### Announcement`
+  section: hand-written news, such as a new member of the family. What's New
+  draws each entry as a callout above every version it shows, so it reads as a
+  banner even when several versions show together. Each entry is a bold title
+  and the words after it, with `[links](https://...)` and `code` kept; a web
+  link opens through the app's `openExternal`, and any other link keeps only
+  its words. It goes with its version: shown on the first launch after that
+  update, and in Help ▸ What's New until three newer versions have shipped.
+  `parseChangelog` gives each version's `announcements` (`{ title, body }`),
+  apart from its headlines, and `entriesWithoutLead` holds them to the same
+  rule as every entry: a bold title.
+
+  ```markdown
+  ## [0.41.0] - 2026-11-05
+  ### Announcement
+  - **Meet Patterstage.** Patter stories, staged in Unity, Unreal, and Godot. [Find out more](https://...)
+  ```
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

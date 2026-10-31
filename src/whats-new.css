@@ -1,8 +1,14 @@
 /* What's New (whats-new.ts): each version's headlines in a list, a count of its
-   fixes and a link to the full notes, and the tickbox at the foot. The panel and
+   fixes and a link to the full notes, and the tickbox at the foot. An announcement
+   is a callout above the versions. The panel and
    the actions row are the dialog frame's (dialog.css); the button is `.btn`. */
 .whatsnew-dialog { --dialog-width: 520px; }
 .whatsnew-dialog .shell-dialog-body { display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+.whatsnew-announcement { padding: 10px 12px; border-radius: var(--radius-md); background: var(--accent-soft, color-mix(in oklab, var(--accent) 10%, transparent)); border: var(--hairline) solid color-mix(in oklab, var(--accent) 35%, transparent); }
+.whatsnew-announcement p { margin: 0; font: var(--text-md)/1.45 var(--font-ui); color: var(--ink-read, var(--ink)); }
+.whatsnew-announcement strong { font-weight: 600; color: var(--ink); }
+.whatsnew-announcement code { font: var(--text-sm) var(--font-mono); }
+.whatsnew-announcement a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .whatsnew-version { display: flex; flex-direction: column; gap: 6px; }
 .whatsnew-head { margin: 0; font: 600 var(--text-md) var(--font-ui); color: var(--ink); }
 .whatsnew-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }

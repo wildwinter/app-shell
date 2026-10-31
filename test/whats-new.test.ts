@@ -73,3 +73,47 @@ describe("Help > What's New", () => {
     expect(document.querySelector<HTMLInputElement>(".whatsnew-show input")!.checked).toBe(false);
   });
 });
+
+describe("an announcement", () => {
+  const md = `## [0.42.0] - 2026-11-09
+### Added
+- **Newest.** New.
+## [0.41.0] - 2026-11-02
+### Announcement
+- **Meet Patterstage.** Staged in \`Unity\`. [Find out more](https://patterstage.test), [or not](javascript:void).
+### Added
+- **The palette.** Cmd+K.
+## [0.40.0] - 2026-10-28
+### Changed
+- **Quieter.** Corners.
+## [0.39.0] - 2026-10-22
+### Changed
+- **Older.** Old.
+`;
+  const callouts = (): string[] => [...document.querySelectorAll(".whatsnew-announcement")].map((a) => a.textContent!);
+
+  it("sits above every version shown, with its web link opening through the bridge and no other", () => {
+    const openExternal = vi.fn();
+    whatsNewAfterUpdate({ version: "0.42.0", previous: "0.40.0", show: true }, { ...base, changelog: md, openExternal });
+    expect(callouts()).toEqual(["Meet Patterstage. Staged in Unity. Find out more, or not."]);
+    const body = document.querySelector(".whatsnew-dialog .shell-dialog-body")!;
+    expect(body.firstElementChild!.classList.contains("whatsnew-announcement")).toBe(true);
+    const links = document.querySelectorAll<HTMLAnchorElement>(".whatsnew-announcement a");
+    expect(links.length).toBe(1);
+    expect(document.querySelector(".whatsnew-announcement code")?.textContent).toBe("Unity");
+    links[0]!.click();
+    expect(openExternal).toHaveBeenCalledWith("https://patterstage.test/");
+  });
+
+  it("goes with its version: not after an update past it, and gone from Help three versions on", () => {
+    whatsNewAfterUpdate({ version: "0.42.0", previous: "0.41.0", show: true }, { ...base, changelog: md });
+    expect(callouts()).toEqual([]);
+    document.body.replaceChildren();
+    openWhatsNew({ ...base, changelog: md, version: "0.42.0", show: true });
+    expect(callouts().length).toBe(1);
+    document.body.replaceChildren();
+    const later = `## [0.45.0] - 2026-11-30\n### Added\n- **A.** A.\n## [0.44.0] - 2026-11-23\n### Added\n- **B.** B.\n## [0.43.0] - 2026-11-16\n### Added\n- **C.** C.\n${md}`;
+    openWhatsNew({ ...base, changelog: later, version: "0.45.0", show: true });
+    expect(callouts()).toEqual([]);
+  });
+});

@@ -11,13 +11,18 @@
 // first. A tickbox, "Show what's new after updates", ticked by default, turns
 // the launch dialog off; Help ▸ What's New still opens it.
 //
+// A version's Announcement (hand-written news, such as a new member of the
+// family) is a callout above every version shown, so it reads as a banner even
+// when several versions show together. It goes with its version: it leaves
+// Help ▸ What's New once three newer versions have shipped.
+//
 // The main half (whats-new-main.ts) remembers which version last ran and the
 // tickbox, and answers WHATS_NEW_CHANNELS.state once per launch.
 // ---------------------------------------------------------------------------
 
 import { el } from "./dom.js";
 import { dialogFrame } from "./dialog.js";
-import { latestVersions, parseChangelog, versionsSince, type ChangelogLead, type ChangelogVersion } from "./changelog.js";
+import { latestVersions, parseChangelog, versionsSince, type ChangelogAnnouncement, type ChangelogLead, type ChangelogVersion } from "./changelog.js";
 
 export { WHATS_NEW_CHANNELS, type WhatsNewState } from "./whats-new-channels.js";
 import type { WhatsNewState } from "./whats-new-channels.js";
@@ -80,6 +85,28 @@ function inline(into: HTMLElement, text: string): void {
   });
 }
 
+/** An announcement as the dialog draws it: the title strong, then the body,
+ *  whose web links open through the app's bridge (any other link keeps only its words). */
+function announcementNode(a: ChangelogAnnouncement, openExternal: (url: string) => void): HTMLElement {
+  const box = el("div", "whatsnew-announcement");
+  const p = el("p");
+  const strong = el("strong");
+  inline(strong, a.title);
+  p.append(strong);
+  if (a.body) p.append(" ");
+  a.body.split(/(\[[^\]]+\]\([^)]*\))/).forEach((part) => {
+    const m = /^\[([^\]]+)\]\(([^)]*)\)$/.exec(part);
+    if (!m) { inline(p, part); return; }
+    if (!/^https?:\/\//.test(m[2]!)) { inline(p, m[1]!); return; }
+    const link = el("a", undefined, m[1]!);
+    link.href = m[2]!;
+    link.addEventListener("click", (e) => { e.preventDefault(); openExternal(link.href); });
+    p.append(link);
+  });
+  box.append(p);
+  return box;
+}
+
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
 function showWhatsNew(versions: ChangelogVersion[], opts: WhatsNewOptions): void {
@@ -87,6 +114,7 @@ function showWhatsNew(versions: ChangelogVersion[], opts: WhatsNewOptions): void
   if (versions.length === 0) {
     frame.body.append(el("p", "whatsnew-empty", `There are no release notes for ${opts.appName} ${opts.version} yet.`));
   }
+  for (const a of versions.flatMap((v) => v.announcements)) frame.body.append(announcementNode(a, opts.openExternal));
   for (const v of versions) {
     const section = el("section", "whatsnew-version");
     const head = el("h3", "whatsnew-head", opts.appName === "" ? v.version : `${opts.appName} ${v.version}`);
