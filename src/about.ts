@@ -3,7 +3,7 @@
 // the grey OS panel (design-language, "coherent to the edges").
 //
 // Patterpad's, generalised. Theirs reuses its updater-dialog chrome and hard
-// codes the PatterKit wordmark; the shell takes the wordmark as markup from the
+// codes the Patterkit wordmark; the shell takes the wordmark as markup from the
 // app, because that is the one part that is genuinely per-product. Everything
 // else - the layout, the type, the link handling, the single Close - is the
 // family's, so two apps' About boxes are recognisably siblings.
