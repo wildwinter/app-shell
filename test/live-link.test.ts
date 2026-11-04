@@ -1,7 +1,8 @@
 // The live link server against a fake game, with a small protocol plugged in:
 // nothing reaches the protocol before a hello, the hello's build is judged
 // (match / stale / unknown), one game at a time, pushBundle is gated on the
-// build the game reported and shows stale until it re-hellos, web pages are
+// build the game reported and shows stale until it re-hellos, send reaches only
+// a game that has said hello, web pages are
 // refused, a taken port leaves it off, and the status walks off -> listening ->
 // connected -> listening -> off.
 
@@ -161,6 +162,19 @@ describe("the live link server", () => {
     h.server.pushBundle("h2", "{}");   // in sync: not pushed again
     await new Promise((r) => setTimeout(r, 50));
     expect(g.received).toHaveLength(1);
+    g.close();
+  });
+
+  it("sends the protocol's own messages only to a game that has said hello", async () => {
+    const h = await up("h1");
+    expect(h.server.send({ t: "play", id: "p1" })).toBe(false);   // nobody connected
+    const g = await game(h.port);
+    expect(h.server.send({ t: "play", id: "p1" })).toBe(false);   // connected, no hello yet
+    g.send({ t: "hello", build: "h1" });
+    await h.until(() => last(h.statuses).state === "connected");
+    expect(h.server.send({ t: "play", id: "p2" })).toBe(true);
+    await h.until(() => g.received.length === 1);
+    expect(JSON.parse(g.received[0]!)).toEqual({ t: "play", id: "p2" });
     g.close();
   });
 

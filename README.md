@@ -996,6 +996,13 @@ family's own kind brings a `kindLabel`.
   - **Meet Patterstage.** Patter stories, staged in Unity, Unreal, and Godot. [Find out more](https://...)
   ```
 
+## v0.76 (the live link sends the protocol's own messages)
+
+- **`send(msg)`** on the live link server sends the connected game one of the
+  protocol's own messages, such as Patterpad's request to play a block in the
+  game. It returns `false`, and sends nothing, when no game has said hello.
+  `pushBundle` is unchanged.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

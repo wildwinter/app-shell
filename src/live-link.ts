@@ -86,6 +86,10 @@ export interface LiveLinkServer<X extends object = object> {
    *  no game has said hello, or when it already runs this build. The game
    *  applies it and re-hellos with the new build; until then it shows stale. */
   pushBundle(build: string, data: string): void;
+  /** Send the connected game one of the protocol's own messages (a JSON
+   *  object with its `t`). False, and nothing sent, when no game has said
+   *  hello. */
+  send(msg: LiveLinkMessage): boolean;
 }
 
 export function createLiveLinkServer<X extends object = object>(opts: LiveLinkServerOptions<X>): LiveLinkServer<X> {
@@ -140,6 +144,10 @@ export function createLiveLinkServer<X extends object = object>(opts: LiveLinkSe
       // Until the game re-hellos with the new build it is on the old one, and
       // the chip says so rather than keep the match it had at the hello.
       if (connected.build !== "stale") { connected = { ...connected, build: "stale" }; push(); }
+    },
+    send(msg: LiveLinkMessage): boolean {
+      if (!client || !connected) return false;   // nothing connected, or no hello yet
+      try { client.send(JSON.stringify(msg)); return true; } catch { return false; /* socket went away */ }
     },
     start(): void {
       if (wss) return;
