@@ -2,7 +2,7 @@
 // its 1000ms revert, and the toggle round trip.
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mountLinkStatus, linkStatusClass, linkStatusTip, linkAddress } from "../src/link-status.js";
+import { mountLinkStatus, linkStatusClass, linkStatusTip, linkAddress, UNPUBLISHED_TIP } from "../src/link-status.js";
 
 beforeEach(() => { vi.useFakeTimers(); });
 afterEach(() => { vi.useRealTimers(); document.body.replaceChildren(); });
@@ -27,6 +27,8 @@ describe("the state table", () => {
       .toBe("Live Link is connected on a different build, so save or rebuild to re-sync. Click to stop.");
     expect(linkStatusTip({ state: "connected", port: 1, note: "Boxes: inn, road." }))
       .toBe("Live Link is connected. Boxes: inn, road. Click to stop.");
+    expect(linkStatusTip({ state: "connected", port: 1, build: "match", unpublished: true }))
+      .toBe("Live Link is connected and in sync. The game is running edits you haven't published. Publish to keep them after the run. Click to stop.");
   });
 
   it("derives the address from the port, or takes the one given", () => {
@@ -60,6 +62,22 @@ describe("mountLinkStatus", () => {
     chip.apply({ state: "error", message: "x" });
     expect(toggle.className).toBe("linkstatus-toggle off");
     expect(url.hidden).toBe(true);
+  });
+
+  it("shows Unpublished edits only while a connected game runs them", () => {
+    const chip = mountLinkStatus(document.body, { onToggle: () => {} });
+    chip.setVisible(true);
+    const edits = chip.el.querySelector<HTMLElement>(".linkstatus-unpublished")!;
+    expect(edits.textContent).toBe("Unpublished edits");
+    expect(edits.dataset["tip"]).toBe(UNPUBLISHED_TIP);
+    expect(edits.hidden).toBe(true);
+    chip.apply({ state: "connected", port: 1, build: "match", unpublished: true });
+    expect(edits.hidden).toBe(false);
+    chip.apply({ state: "connected", port: 1, build: "match" });
+    expect(edits.hidden).toBe(true);
+    chip.apply({ state: "connected", port: 1, unpublished: true });
+    chip.apply({ state: "listening", port: 1 });
+    expect(edits.hidden).toBe(true);
   });
 
   it("toggles through onToggle and applies what comes back", async () => {

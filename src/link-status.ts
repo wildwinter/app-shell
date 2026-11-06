@@ -28,6 +28,9 @@ export type LinkStatus =
       build?: "match" | "stale" | "unknown";
       /** One extra sentence for the tip (Storyletter names the live boxes). */
       note?: string;
+      /** The game runs edits pushed to it that haven't been published: shown
+       *  beside the chip until the writer publishes. */
+      unpublished?: boolean;
     };
 
 /** The chip's colour class for a state: the four. */
@@ -73,10 +76,14 @@ export function linkStatusTip(s: LinkStatus): string {
       const build = s.build === "stale" ? " on a different build, so save or rebuild to re-sync"
         : s.build === "match" ? " and in sync" : "";
       const note = s.note ? ` ${s.note}` : "";
-      return `Live Link is connected${who}${build}.${note} Click to stop.`;
+      const edits = s.unpublished ? ` ${UNPUBLISHED_TIP}` : "";
+      return `Live Link is connected${who}${build}.${note}${edits} Click to stop.`;
     }
   }
 }
+
+/** What the unpublished-edits marker says, on its own and in the chip's tip. */
+export const UNPUBLISHED_TIP = "The game is running edits you haven't published. Publish to keep them after the run.";
 
 /** The address a game connects to. */
 export function linkAddress(s: LinkStatus): string | undefined {
@@ -96,8 +103,12 @@ export function mountLinkStatus(host: HTMLElement, opts: LinkStatusOptions): Lin
   const wrap = el("div", "linkstatus"); wrap.hidden = true;
   const url = el("button", "linkstatus-url"); url.type = "button"; url.hidden = true;
   const toggle = el("button", "linkstatus-toggle off"); toggle.type = "button"; toggle.append(iconNode("connect"));
+  // While the game runs pushed edits that aren't published: a word, not just a
+  // tip, since the edits are lost at the end of the run.
+  const edits = el("span", "linkstatus-unpublished", "Unpublished edits"); edits.hidden = true;
+  edits.dataset["tip"] = UNPUBLISHED_TIP; edits.setAttribute("role", "status");
   if (opts.label !== undefined) wrap.append(el("span", "linkstatus-word", opts.label));
-  wrap.append(...(opts.lead ?? []), url, toggle);
+  wrap.append(edits, ...(opts.lead ?? []), url, toggle);
   host.append(wrap);
 
   let status: LinkStatus = { state: "off" };
@@ -130,6 +141,7 @@ export function mountLinkStatus(host: HTMLElement, opts: LinkStatusOptions): Lin
       url.dataset["tip"] = "Click to copy the Live Link address";
       url.hidden = false;
     } else url.hidden = true;
+    edits.hidden = !(status.state === "connected" && status.unpublished === true);
     publishReserve();
   };
   const apply = (s: LinkStatus): void => { status = s; render(); };

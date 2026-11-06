@@ -7,12 +7,19 @@
 //
 // - loopback only, and refused to any Origin that isn't this machine
 //   (isLocalOrigin), so a web page can't take the slot;
-// - one game at a time: a new connection replaces the old;
+// - one game at a time: a new connection replaces the old, which is closed
+//   with code 4000 ("replaced") so a client that retries knows not to;
 // - nothing is honoured before a hello, which names the build the game runs,
 //   judged against the project's (match / stale / unknown);
 // - the status off -> listening -> connected, or error, pushed to the app;
 // - pushBundle, gated on the build the game reported, and the build shown as
 //   stale until the game re-hellos with the one it was sent;
+// - a game that says hello on an older build (it started from an older
+//   published bundle, or reconnected after edits) is offered the current one
+//   once, through onStaleHello;
+// - while the game runs a bundle this server pushed that isn't the published
+//   one, the status says so (unpublished), so the writer knows the run's edits
+//   are lost unless they publish;
 // - a bind failure (the port is taken) leaves the server off, not dead "on".
 //
 // What the game sends after its hello (Patterpad's frames, Storyletter's
@@ -35,7 +42,16 @@ export type LiveLinkServerStatus<X extends object = object> =
   | { state: "off" }
   | { state: "error"; message: string }
   | { state: "listening"; port: number }
-  | ({ state: "connected"; port: number; project?: string; build: LiveLinkBuild } & X);
+  | ({
+      state: "connected"; port: number; project?: string; build: LiveLinkBuild;
+      /** The game runs a bundle pushed to it that isn't the one last published:
+       *  its edits stop at the end of the run unless the writer publishes. */
+      unpublished?: true;
+    } & X);
+
+/** The close code a replaced game is closed with: a client that retries stops
+ *  on it, so two running games don't take turns knocking each other off. */
+export const LIVE_LINK_REPLACED = 4000;
 
 /** A hello, as the server read it. */
 export interface LiveLinkHello {
@@ -72,6 +88,17 @@ export interface LiveLinkServerOptions<X extends object = object> {
   protocol: (link: { pushStatus(): void }) => LiveLinkProtocol<X>;
   /** The latest status, for the app's windows and menu. */
   onStatus: (status: LiveLinkServerStatus<X>) => void;
+  /** A hello on a build that isn't the project's, the first hello on its
+   *  connection: the app compiles and pushes its current bundle (pushBundle),
+   *  so a game that connected behind the editor catches up without waiting
+   *  for the next save. Once per connection, so a bundle the game can't take
+   *  isn't pushed again and again. */
+  onStaleHello?: () => void;
+  /** The hash of the bundle last published to disk, null when there's none
+   *  known. With it, the connected status says `unpublished` while the game
+   *  runs a bundle this server pushed that isn't that one. Read at each status,
+   *  so keep it cheap. */
+  publishedBuildHash?: () => string | null;
 }
 
 export interface LiveLinkServer<X extends object = object> {
@@ -82,6 +109,9 @@ export interface LiveLinkServer<X extends object = object> {
   /** Send the status again while a game is connected: something the protocol
    *  shows changed outside a message (the app followed another flow). */
   pushStatus(): void;
+  /** The build the connected game last said it runs; null when no game has
+   *  said hello. */
+  gameBuild(): string | null;
   /** Push a freshly compiled bundle to the connected game. Nothing happens when
    *  no game has said hello, or when it already runs this build. The game
    *  applies it and re-hellos with the new build; until then it shows stale. */
@@ -99,6 +129,15 @@ export function createLiveLinkServer<X extends object = object>(opts: LiveLinkSe
   // Set by a hello: nothing else is honoured until it is.
   let connected: { project?: string; build: LiveLinkBuild } | null = null;
   let clientBuild: string | null = null;   // the build the game reported: gates pushBundle
+  let staleOffered = false;                // onStaleHello has run on this connection
+  // The builds this server pushed, newest last, kept across connections (a
+  // game that reconnects still runs the one it was sent). A few are enough:
+  // only the one the game runs matters.
+  const pushed: string[] = [];
+  const unpublished = (): boolean => {
+    if (!opts.publishedBuildHash || clientBuild === null || !pushed.includes(clientBuild)) return false;
+    return opts.publishedBuildHash() !== clientBuild;
+  };
 
   const status = (): LiveLinkServerStatus<X> => {
     if (!wss) return { state: "off" };
@@ -107,6 +146,7 @@ export function createLiveLinkServer<X extends object = object>(opts: LiveLinkSe
       ...protocol.describe(),
       state: "connected", port, build: connected.build,
       ...(connected.project !== undefined ? { project: connected.project } : {}),
+      ...(unpublished() ? { unpublished: true as const } : {}),
     };
   };
   const push = (): void => opts.onStatus(status());
@@ -131,16 +171,19 @@ export function createLiveLinkServer<X extends object = object>(opts: LiveLinkSe
     connected = { build, ...(project !== undefined ? { project } : {}) };
     protocol.hello({ build, ...(project !== undefined ? { project } : {}), msg: m });
     push();
+    if (build === "stale" && !staleOffered) { staleOffered = true; opts.onStaleHello?.(); }
   };
 
   return {
     isOn: () => wss !== null,
     status,
     pushStatus,
+    gameBuild: () => (connected ? clientBuild : null),
     pushBundle(build: string, data: string): void {
       if (!client || !connected) return;   // nothing connected, or no hello yet
       if (clientBuild === build) return;   // the game already runs this build
-      try { client.send(JSON.stringify({ t: "bundle", v: 1, build, data })); } catch { /* socket went away */ }
+      try { client.send(JSON.stringify({ t: "bundle", v: 1, build, data })); } catch { return; /* socket went away */ }
+      if (!pushed.includes(build)) { pushed.push(build); if (pushed.length > 8) pushed.shift(); }
       // Until the game re-hellos with the new build it is on the old one, and
       // the chip says so rather than keep the match it had at the hello.
       if (connected.build !== "stale") { connected = { ...connected, build: "stale" }; push(); }
@@ -171,9 +214,10 @@ export function createLiveLinkServer<X extends object = object>(opts: LiveLinkSe
         if (!client) { const s = wss; wss = null; try { s?.close(); } catch { /* already closing */ } }
       });
       wss.on("connection", (ws) => {
-        // One game at a time: a new connection replaces the old.
-        if (client) { try { client.close(); } catch { /* gone */ } }
-        client = ws; forget();
+        // One game at a time: a new connection replaces the old, told so with
+        // its own close code so a retrying client stays away.
+        if (client) { try { client.close(LIVE_LINK_REPLACED, "replaced"); } catch { /* gone */ } }
+        client = ws; forget(); staleOffered = false;
         ws.on("message", (data) => handleMessage(data.toString()));
         ws.on("close", () => { if (client === ws) { client = null; forget(); push(); } });
         ws.on("error", () => { /* a flaky client must not take the editor down */ });

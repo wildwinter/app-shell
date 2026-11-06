@@ -2,13 +2,15 @@
 // nothing reaches the protocol before a hello, the hello's build is judged
 // (match / stale / unknown), one game at a time, pushBundle is gated on the
 // build the game reported and shows stale until it re-hellos, send reaches only
-// a game that has said hello, web pages are
+// a game that has said hello, a replaced game is closed with 4000, a stale
+// hello is offered the current bundle once per connection, the status says
+// unpublished while the game runs a pushed bundle that isn't published, web pages are
 // refused, a taken port leaves it off, and the status walks off -> listening ->
 // connected -> listening -> off.
 
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
-import { createLiveLinkServer, type LiveLinkMessage, type LiveLinkServer, type LiveLinkServerStatus } from "../src/live-link.js";
+import { createLiveLinkServer, LIVE_LINK_REPLACED, type LiveLinkMessage, type LiveLinkServer, type LiveLinkServerStatus } from "../src/live-link.js";
 
 /** A port per test, high and random, so parallel files don't collide. */
 const freePort = (): number => 40000 + Math.floor(Math.random() * 20000);
@@ -23,11 +25,15 @@ interface Harness {
   hellos: string[];
   resets: () => number;
   setHash(h: string | null): void;
+  setPublished(h: string | null): void;
+  staleHellos: () => number;
   until(pred: () => boolean): Promise<void>;
 }
 
 function harness(hash: string | null = "h1", port = freePort()): Harness {
   let current = hash;
+  let published: string | null = null;
+  let staleHellos = 0;
   let resets = 0;
   const statuses: LiveLinkServerStatus<Extra>[] = [];
   const messages: LiveLinkMessage[] = [];
@@ -35,6 +41,8 @@ function harness(hash: string | null = "h1", port = freePort()): Harness {
   const server = createLiveLinkServer<Extra>({
     port,
     currentBuildHash: () => current,
+    publishedBuildHash: () => published,
+    onStaleHello: () => { staleHellos++; },
     onStatus: (s) => statuses.push(s),
     protocol: ({ pushStatus }) => ({
       hello: (h) => { hellos.push(h.build); },
@@ -47,6 +55,8 @@ function harness(hash: string | null = "h1", port = freePort()): Harness {
     server, port, statuses, messages, hellos,
     resets: () => resets,
     setHash: (h) => { current = h; },
+    setPublished: (h) => { published = h; },
+    staleHellos: () => staleHellos,
     until: (pred) => new Promise((resolve, reject) => {
       const started = Date.now();
       const tick = (): void => {
@@ -134,7 +144,8 @@ describe("the live link server", () => {
     first.send({ t: "hello", build: "h1", project: "one" });
     await h.until(() => last(h.statuses).state === "connected");
     const second = await game(h.port);
-    await new Promise<void>((resolve) => first.ws.once("close", () => resolve()));
+    const code = await new Promise<number>((resolve) => first.ws.once("close", (c) => resolve(c)));
+    expect(code).toBe(LIVE_LINK_REPLACED);
     await h.until(() => last(h.statuses).state === "listening");
     second.send({ t: "hello", build: "h1", project: "two" });
     await h.until(() => last(h.statuses).state === "connected");
@@ -209,6 +220,53 @@ describe("the live link server", () => {
     g.send({ t: "hello", build: "h1" });
     await h.until(() => last(h.statuses).state === "connected");
     g.close();
+  });
+
+  it("offers a stale hello the current bundle once per connection, and gives the game's build", async () => {
+    const h = await up("h2");
+    const g = await game(h.port);
+    expect(h.server.gameBuild()).toBeNull();
+    g.send({ t: "hello", build: "h1" });
+    await h.until(() => h.staleHellos() === 1);
+    expect(h.server.gameBuild()).toBe("h1");
+    g.send({ t: "hello", build: "h1" });   // the push didn't take: not offered again
+    await h.until(() => h.hellos.length === 2);
+    expect(h.staleHellos()).toBe(1);
+    g.close();
+    await h.until(() => last(h.statuses).state === "listening");
+    expect(h.server.gameBuild()).toBeNull();
+    const again = await game(h.port);       // a new connection is offered again
+    again.send({ t: "hello", build: "h1" });
+    await h.until(() => h.staleHellos() === 2);
+    again.send({ t: "hello", build: "h2" }); // a matching hello isn't offered
+    await h.until(() => h.hellos.length === 4);
+    expect(h.staleHellos()).toBe(2);
+    again.close();
+  });
+
+  it("says unpublished while the game runs a pushed bundle that isn't the published one", async () => {
+    const h = await up("h1");
+    h.setPublished("h1");
+    const g = await game(h.port);
+    g.send({ t: "hello", build: "h1" });
+    await h.until(() => last(h.statuses).state === "connected");
+    expect(last(h.statuses)).not.toHaveProperty("unpublished");
+    h.setHash("h2");
+    h.server.pushBundle("h2", "{}");
+    g.send({ t: "hello", build: "h2" });   // the game took it
+    await h.until(() => h.hellos.length === 2);
+    expect(last(h.statuses)).toMatchObject({ build: "match", unpublished: true });
+    h.setPublished("h2");                  // the writer published
+    h.server.pushStatus();
+    expect(last(h.statuses)).not.toHaveProperty("unpublished");
+    g.close();
+    await h.until(() => last(h.statuses).state === "listening");
+    h.setPublished("h1");                  // a game that reconnects on the pushed build still shows it
+    const again = await game(h.port);
+    again.send({ t: "hello", build: "h2" });
+    await h.until(() => last(h.statuses).state === "connected");
+    expect(last(h.statuses)).toMatchObject({ unpublished: true });
+    again.close();
   });
 
   it("reports an error and stays off when the port is taken", async () => {

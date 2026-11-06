@@ -1003,6 +1003,47 @@ family's own kind brings a `kindLabel`.
   game. It returns `false`, and sends nothing, when no game has said hello.
   `pushBundle` is unchanged.
 
+## v0.77 (a live link games can come back to)
+
+- **A replaced game is told so.** The server still takes one game at a time;
+  the one a new connection replaces is now closed with code 4000 (`"replaced"`,
+  exported as `LIVE_LINK_REPLACED`). A client that retries stops on it, so two
+  running games don't take turns knocking each other off. Patterplay's and
+  Storylets' clients reconnect to one rule (1 s doubling to 10 s, a hello again
+  with the open flows), which stops on 4000.
+- **`onStaleHello`** (option): called when a game says hello on a build that
+  isn't the project's, the first hello on its connection. The app compiles and
+  pushes its current bundle, so a game started from an older bundle, or one
+  that reconnected after edits, catches up without waiting for the next save.
+  Once per connection, so a bundle the game can't take isn't pushed in a loop.
+- **`gameBuild()`** on the server: the build the connected game last said it
+  runs, null with no game.
+- **Unpublished edits.** With the **`publishedBuildHash`** option (the hash of
+  the bundle on disk), the connected status carries `unpublished: true` while
+  the game runs a bundle this server pushed that isn't that one. The chip shows
+  **Unpublished edits** beside it, and the tip says the game is running edits
+  that haven't been published (`UNPUBLISHED_TIP`). Call `pushStatus()` after a
+  publish so it clears.
+- **`@wildwinter/app-shell/sibling-app`** (main process, Node only): finding and
+  starting the other family app, which Patterpad (Show Card in Storyletter) and
+  Storyletter (Show Scene in Patterpad) each had a copy of. `SIBLING_APPS` (each
+  app's name and bundle id), `appExecutable`, `findApp` (the remembered path,
+  then the fixed places, then Spotlight on macOS, asynchronously and only after
+  a miss, so it never freezes the app), `launchApp` (`<project> --at <address>`,
+  detached, never `open -a`), the Locate words and picker options
+  (`locateCopy`, `locateDialogOptions`), and **`locateApp`**, the one flow: found,
+  else asked in the window, picked, and remembered, given the app's `ask`,
+  `pick`, and `remember`.
+- **The window prompt**, so main can ask a question in the app's own chrome,
+  never a system message box (Patterpad's, now the family's):
+  `@wildwinter/app-shell/prompt-main`'s `createWindowPrompt({ window })` gives
+  `ask(prompt)` and `tell(title, sub, body?)`; the window draws it with
+  `promptDialog` (from the package's root); the preload wires the two over
+  `PROMPT_CHANNELS` (`@wildwinter/app-shell/prompt-channels`, with
+  `onPromptRequest` for a preload whose build bundles app-shell). The channels
+  are `app:prompt` and `app:promptReply`. A sandboxed preload that can't load
+  the package names them itself; pin them to `PROMPT_CHANNELS` in a test.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),

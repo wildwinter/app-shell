@@ -134,7 +134,7 @@ export type { Welcome, WelcomeOptions, WelcomeAction, WelcomeRecent, WelcomeGrou
 export { openKitGallery, kitTile } from "./kit-gallery.js";
 export type { KitGallery, KitGalleryOptions, KitGallerySection, KitGalleryItem, KitGalleryChoice } from "./kit-gallery.js";
 // The live-link chip (link-status.ts + link-status.css).
-export { mountLinkStatus, linkStatusClass, linkStatusTip, linkAddress } from "./link-status.js";
+export { mountLinkStatus, linkStatusClass, linkStatusTip, linkAddress, UNPUBLISHED_TIP } from "./link-status.js";
 export type { LinkStatus, LinkStatusClass, LinkStatusOptions, LinkStatusChip } from "./link-status.js";
 // The property declaration list (property-list.ts), on the settings row kit.
 export { mountPropertyList, defaultControl, PROPERTY_TYPES } from "./property-list.js";
@@ -167,3 +167,6 @@ export type { ExtensionRow, ExtensionsPanel, ExtensionsPanelState, ExtensionsPan
 // style: clashes.css).
 export { openClashResolver, clashBanner, clashKindLabel, clashCountText } from "./clashes.js";
 export type { Clash, ClashSide, ClashAdapter, ClashesAfter, ClashResolver, ClashResolverOptions, ClashBanner, ClashBannerOptions } from "./clashes.js";
+export { promptDialog } from "./prompt.js";
+export { PROMPT_CHANNELS, onPromptRequest } from "./prompt-channels.js";
+export type { AppPrompt, PromptIpc } from "./prompt-channels.js";

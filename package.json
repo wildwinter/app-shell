@@ -159,6 +159,21 @@
       "import": "./dist/whats-new-main.js",
       "require": "./dist/whats-new-main.cjs"
     },
+    "./sibling-app": {
+      "types": "./dist/sibling-app.d.ts",
+      "import": "./dist/sibling-app.js",
+      "require": "./dist/sibling-app.cjs"
+    },
+    "./prompt-main": {
+      "types": "./dist/prompt-main.d.ts",
+      "import": "./dist/prompt-main.js",
+      "require": "./dist/prompt-main.cjs"
+    },
+    "./prompt-channels": {
+      "types": "./dist/prompt-channels.d.ts",
+      "import": "./dist/prompt-channels.js",
+      "require": "./dist/prompt-channels.cjs"
+    },
     "./changelog": {
       "types": "./dist/changelog.d.ts",
       "import": "./dist/changelog.js",

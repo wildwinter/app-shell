@@ -33,3 +33,11 @@
 .linkstatus-toggle.listening { color: var(--warn); border-color: var(--warn); background: color-mix(in oklab, var(--warn) 12%, var(--surface)); }
 .linkstatus-toggle.live { color: var(--ok); border-color: var(--ok); background: color-mix(in oklab, var(--ok) 14%, var(--surface)); }
 .linkstatus-toggle.stale { color: var(--danger); border-color: var(--danger); background: color-mix(in oklab, var(--danger) 12%, var(--surface)); }
+
+/* The game runs pushed edits that aren't published (link-status.ts). */
+.linkstatus-unpublished {
+  font: var(--text-xs) var(--font-ui); color: var(--warn); user-select: none;
+  border: 1px solid color-mix(in oklab, var(--warn) 55%, var(--line)); border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--warn) 10%, var(--surface)); padding: 1px 6px;
+}
+.linkstatus-unpublished[hidden] { display: none; }
