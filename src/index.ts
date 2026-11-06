@@ -170,3 +170,5 @@ export type { Clash, ClashSide, ClashAdapter, ClashesAfter, ClashResolver, Clash
 export { promptDialog } from "./prompt.js";
 export { PROMPT_CHANNELS, onPromptRequest } from "./prompt-channels.js";
 export type { AppPrompt, PromptIpc } from "./prompt-channels.js";
+export { externalLinkAllowed, releaseNotesUrl } from "./external-links.js";
+export type { ExternalLinkRules } from "./external-links.js";

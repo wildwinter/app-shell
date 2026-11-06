@@ -1044,6 +1044,17 @@ family's own kind brings a `kindLabel`.
   are `app:prompt` and `app:promptReply`. A sandboxed preload that can't load
   the package names them itself; pin them to `PROMPT_CHANNELS` in a test.
 
+## v0.78 (links that leave the app)
+
+- **`@wildwinter/app-shell/external-links`** (also from the package's root):
+  `externalLinkAllowed(url, { links, repo, sites })`, the family's rule for
+  what the renderer may open in the browser: the exact About links, the app's
+  own GitHub release pages (`https://github.com/<repo>/releases/tag/v<version>`),
+  and pages on the app's own sites. https only, no credentials. And
+  `releaseNotesUrl(repo, version)`, the release page What's New's "Full release
+  notes" links to. Both apps let out only their About links, so that link (and
+  any link in a changelog announcement) did nothing.
+
 ## Roadmap
 
 Later slices lift the rest of the common shell from Patterpad (canonical),
