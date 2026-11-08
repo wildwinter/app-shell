@@ -139,13 +139,16 @@ export function leadOf(text: string, cap = PREVIEW_WORDS): ChangelogLead | undef
   const after = clean(m[2]!).replace(/:$/, ".");
   let rest = "";
   let count = words(lead);
-  sentences(after).forEach((s, i) => {
-    // The bold is a phrase: the sentence runs on after it, so the first always completes it.
+  const parts = sentences(after);
+  for (let i = 0; i < parts.length; i++) {
+    const s = parts[i]!;
+    // The bold is a phrase: the sentence runs on after it, so the first always completes it. After that the
+    // preview stops at the first sentence that would pass the cap: never a later one with the middle left out.
     const completes = i === 0 && !boldIsSentence;
-    if (!completes && count + words(s) > cap) return;
+    if (!completes && count + words(s) > cap) break;
     rest = rest ? `${rest} ${s}` : s;
     count += words(s);
-  });
+  }
   return { lead, rest };
 }
 

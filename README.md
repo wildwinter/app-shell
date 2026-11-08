@@ -1074,6 +1074,9 @@ first (proving app-agnosticism); Patterpad follows - see
 
 ## v1.1 (What's New reads like it was written for you)
 
+v1.1.1: a preview stops at the first sentence that would pass the cap; 1.1.0 skipped it and went on to shorter
+ones after it, leaving the middle out.
+
 Ian, 2026-11-08, on the first What's new page: "make it human friendly; a short lede and a quick idea of what
 that means, nothing mechanical." The writing half is patterkit `design/changelog-writing.md`; this is the
 display half, in `./changelog` and the dialog:

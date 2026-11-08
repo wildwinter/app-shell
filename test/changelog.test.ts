@@ -59,6 +59,8 @@ describe("the previews", () => {
     expect(leadOf(`**A lede.** ${six} ${six} ${six}`, 16)).toEqual({ lead: "A lede.", rest: `${six} ${six}` });
     expect(leadOf("**A phrase** that runs on for one two three four five six seven eight words. Then more.", 6)).toEqual({ lead: "A phrase", rest: "that runs on for one two three four five six seven eight words." });
     expect(leadOf("**Versions.** 1.0.1 and 1.0.2 are fixes, in `a.b` too. Done.")).toEqual({ lead: "Versions.", rest: "1.0.1 and 1.0.2 are fixes, in `a.b` too. Done." });
+    // A long sentence in the middle ends the preview; a short one after it is never shown with the middle left out.
+    expect(leadOf(`**A lede.** Short. ${six} ${six} Tiny.`, 8)).toEqual({ lead: "A lede.", rest: "Short." });
   });
 });
 
