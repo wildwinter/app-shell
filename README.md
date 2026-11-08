@@ -1072,6 +1072,25 @@ first (proving app-agnosticism); Patterpad follows - see
   1.x goes with the family's 1.x. (1.0.0 also raised the `@wildwinter/simple-vc-lib` peer to `>=1.0.0`;
   1.0.1 puts it back to `>=0.5.0`. simple-vc-lib isn't part of the family's 1.0 and stays at 0.5.x.)
 
+## v1.1 (What's New reads like it was written for you)
+
+Ian, 2026-11-08, on the first What's new page: "make it human friendly; a short lede and a quick idea of what
+that means, nothing mechanical." The writing half is patterkit `design/changelog-writing.md`; this is the
+display half, in `./changelog` and the dialog:
+
+- **Each entry's preview** is its bold lede and the rest of its first paragraph, whole sentences, up to about
+  forty words (`PREVIEW_WORDS`), not the first sentence alone. `leadOf(text, cap?)`.
+- **Breaking first, marked.** A `### Breaking` entry's preview comes before Added, Changed and Removed, with
+  `breaking: true` and a "Breaking" tag in the dialog (`.whatsnew-tag`).
+- **Fixes show by their previews** under a small "Fixed" heading (`ChangelogVersion.fixed`,
+  `.whatsnew-sub`, `.whatsnew-fixed`); `fixes` is still their count.
+- **A carrier version is one line.** A version whose only entries say another release is inside
+  ("Patterplay 0.46.0 inside", "Nothing changed in the runtime") has `carrier: true` and is drawn as one line,
+  the version in front (`.whatsnew-carrier`), rather than a heading of its own.
+- **`changelogProblems(md, version)`** is the release check: an entry with no bold lede, a lede over
+  `LEDE_WORDS` (12), a bare label with nothing after it, or a package name in the lede, each with the words to
+  say to the person releasing. `entriesWithoutLead` stays for the first of those.
+
 ## Third-party
 
 The icon vocabulary (`iconNode`, `iconSvg` in `src/icons.ts`) vendors drawings

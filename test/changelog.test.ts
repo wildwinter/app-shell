@@ -1,6 +1,6 @@
 // The changelog as What's New reads it (the October 2026 UI review, step 5a).
 import { describe, expect, it } from "vitest";
-import { compareVersions, entriesWithoutLead, latestVersions, leadOf, parseChangelog, versionsSince } from "../src/changelog.js";
+import { changelogProblems, compareVersions, entriesWithoutLead, latestVersions, leadOf, parseChangelog, versionsSince } from "../src/changelog.js";
 
 const MD = `# Changelog
 
@@ -46,13 +46,19 @@ const MD = `# Changelog
 - **Ten.** A double-digit minor.
 `;
 
-describe("the leads", () => {
-  it("takes a bold sentence alone, and a bold phrase with the rest of its sentence", () => {
-    expect(leadOf("**Extension views.** An extension can now")).toEqual({ lead: "Extension views.", rest: "" });
-    expect(leadOf("**File ▸ Extensions…** opens a tool window. It stays.")).toEqual({ lead: "File ▸ Extensions…", rest: "opens a tool window." });
-    expect(leadOf("**Undo instead of \"Are you sure?\"** Deletes report.")).toEqual({ lead: "Undo instead of \"Are you sure?\"", rest: "" });
+describe("the previews", () => {
+  it("takes the bold lede and the rest of the first paragraph, whole sentences", () => {
+    expect(leadOf("**Extension views.** An extension can now")).toEqual({ lead: "Extension views.", rest: "An extension can now" });
+    expect(leadOf("**File ▸ Extensions…** opens a tool window. It stays.")).toEqual({ lead: "File ▸ Extensions…", rest: "opens a tool window. It stays." });
+    expect(leadOf("**Undo instead of \"Are you sure?\"** Deletes report.")).toEqual({ lead: "Undo instead of \"Are you sure?\"", rest: "Deletes report." });
     expect(leadOf("**The Extensions window** lists them, and is where you manage them:")).toEqual({ lead: "The Extensions window", rest: "lists them, and is where you manage them." });
     expect(leadOf("A bare fix")).toBeUndefined();
+  });
+  it("stops at a sentence end before the cap, and always completes a bold phrase", () => {
+    const six = "One two three four five six.";
+    expect(leadOf(`**A lede.** ${six} ${six} ${six}`, 16)).toEqual({ lead: "A lede.", rest: `${six} ${six}` });
+    expect(leadOf("**A phrase** that runs on for one two three four five six seven eight words. Then more.", 6)).toEqual({ lead: "A phrase", rest: "that runs on for one two three four five six seven eight words." });
+    expect(leadOf("**Versions.** 1.0.1 and 1.0.2 are fixes, in `a.b` too. Done.")).toEqual({ lead: "Versions.", rest: "1.0.1 and 1.0.2 are fixes, in `a.b` too. Done." });
   });
 });
 
@@ -64,6 +70,46 @@ describe("parseChangelog", () => {
     expect(v40.headlines.map((h) => h.lead)).toEqual(["Extension views.", "File ▸ Extensions…", "Undo instead of \"Are you sure?\"", "Quieter corners"]);
     expect(v40.headlines[3]!.rest).toBe(", and white fields.");
     expect(v40.fixes).toBe(2);
+    expect(v40.fixed.map((h) => h.lead)).toEqual(["Checkboxes follow the palette", "A bare fix with no bold."]);
+    expect(v40.carrier).toBe(false);
+  });
+  it("puts Breaking first and marks it, and folds a version that only carries another release", () => {
+    const md = `## [0.45.0] - 2026-11-05
+### Breaking
+- **Timing is a speed.** Not syllables.
+### Changed
+- **Patterplay 0.45.0 inside**, with the timing above.
+## [0.44.0] - 2026-11-04
+### Changed
+- **Patterplay 0.44.0 inside**, for lip-sync.
+## [0.46.2] - 2026-11-06
+### Changed
+- **Nothing changed in the runtime**, which went out with Ogg Vorbis.
+### Fixed
+- **A fix.** Fixed.
+`;
+    const [v45, v44, v462] = parseChangelog(md);
+    expect(v45!.headlines).toEqual([{ lead: "Timing is a speed.", rest: "Not syllables.", breaking: true }, { lead: "Patterplay 0.45.0 inside", rest: ", with the timing above." }]);
+    expect(v45!.carrier).toBe(false);
+    expect(v44!.carrier).toBe(true);
+    expect(v462!.carrier).toBe(false);
+  });
+  it("refuses what reads as written for the makers, not the reader", () => {
+    const md = `## [1.0.0] - 2026-11-08
+### Changed
+- **1.0.0.**
+- **A lede that goes on and on and on for far too many words to be a lede at all.** Then more.
+- **@patterkit/ops 1.0.0** is out.
+- **Fine.** A sentence after it.
+- No lede.
+`;
+    expect(changelogProblems(md, "1.0.0").map((p) => [p.entry.text.slice(0, 12), p.problem.split(/[;:]/)[0]])).toEqual([
+      ["**1.0.0.**", "a label with nothing after it"],
+      ["**A lede tha", "the lede runs to 20 words"],
+      ["**@patterkit", "a package name in the lede"],
+      ["No lede.", "no bold lede for What's New to show"],
+    ]);
+    expect(changelogProblems(MD, "0.39.0")).toEqual([]);
   });
   it("leaves nested points to the full notes, and lets Highlights choose", () => {
     expect(all[1]!.headlines.some((h) => h.lead.startsWith("Add Extension"))).toBe(false);
@@ -112,7 +158,7 @@ describe("announcements", () => {
       { title: "Meet Patterstage.", body: "Patter stories, staged in Unity and Godot. [Find out more](https://patterstage.test) or run `npm i`." },
       { title: "A plain title", body: "" },
     ]);
-    expect(v41!.headlines).toEqual([{ lead: "The palette.", rest: "" }]);
+    expect(v41!.headlines).toEqual([{ lead: "The palette.", rest: "Cmd+K." }]);
     expect(v40!.announcements).toEqual([]);
   });
 

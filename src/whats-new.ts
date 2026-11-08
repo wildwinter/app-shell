@@ -1,9 +1,12 @@
 // ---------------------------------------------------------------------------
 // What's New (the October 2026 UI review, step 5a): the first launch after an
-// update says what's new in it, in the changelog's own headlines, and Help ▸
+// update says what's new in it, in the changelog's own words, and Help ▸
 // What's New shows the latest at any time. It tells people what's new, not
-// what moved inside: each Added, Changed and Removed entry's lead, the fixes
-// as a count, and a link to the full release notes.
+// what moved inside: each entry's preview (its bold lede and the start of its
+// first paragraph; changelog.ts), Breaking ones first and marked, the fixes
+// the same way under their own heading, and a link to the full release notes.
+// A version that only carries another release ("Patterplay 0.46.0 inside") is
+// one line, not a heading.
 //
 // The changelog is built into the app (the renderer imports CHANGELOG.md as
 // text), so nothing here needs the network. A fresh install shows nothing:
@@ -66,9 +69,10 @@ export function openWhatsNew(opts: WhatsNewOptions): void {
   showWhatsNew(latestVersions(parseChangelog(opts.changelog), opts.version), opts);
 }
 
-/** A lead as the dialog draws it: the bold part strong, `code` as code. */
+/** A preview as the dialog draws it: the bold part strong, `code` as code, a Breaking one marked. */
 function leadNode(h: ChangelogLead): HTMLElement {
   const li = el("li", "whatsnew-item");
+  if (h.breaking) li.append(el("span", "whatsnew-tag", "Breaking"));
   const strong = el("strong");
   inline(strong, h.lead);
   li.append(strong);
@@ -107,8 +111,6 @@ function announcementNode(a: ChangelogAnnouncement, openExternal: (url: string) 
   return box;
 }
 
-const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
-
 function showWhatsNew(versions: ChangelogVersion[], opts: WhatsNewOptions): void {
   const frame = dialogFrame({ title: `What’s new in ${opts.appName}`, className: "whatsnew-dialog", ...(opts.onClose ? { onClose: opts.onClose } : {}) });
   if (versions.length === 0) {
@@ -116,16 +118,27 @@ function showWhatsNew(versions: ChangelogVersion[], opts: WhatsNewOptions): void
   }
   for (const a of versions.flatMap((v) => v.announcements)) frame.body.append(announcementNode(a, opts.openExternal));
   for (const v of versions) {
+    const link = el("a", undefined, "Full release notes");
+    link.href = opts.releaseNotes(v.version);
+    link.addEventListener("click", (e) => { e.preventDefault(); opts.openExternal(link.href); });
+    if (v.carrier) {
+      // Only another release inside this one: the version, what it carried, and the link, on one line.
+      const p = el("p", "whatsnew-carrier");
+      p.append(el("strong", undefined, v.version), " ");
+      inline(p, v.headlines.map((h) => (h.rest ? `${h.lead}${/^[,;:.)]/.test(h.rest) ? "" : " "}${h.rest}` : h.lead)).join(" "));
+      p.append(" ", link);
+      frame.body.append(p);
+      continue;
+    }
     const section = el("section", "whatsnew-version");
     const head = el("h3", "whatsnew-head", opts.appName === "" ? v.version : `${opts.appName} ${v.version}`);
     section.append(head);
     if (v.headlines.length) section.append(el("ul", "whatsnew-list", ...v.headlines.map(leadNode)));
-    const foot = el("p", "whatsnew-foot");
-    if (v.fixes) foot.append(`${v.headlines.length ? "And " : ""}${plural(v.fixes, "fix", "fixes")}. `);
-    const link = el("a", undefined, "Full release notes");
-    link.href = opts.releaseNotes(v.version);
-    link.addEventListener("click", (e) => { e.preventDefault(); opts.openExternal(link.href); });
-    foot.append(link);
+    if (v.fixed.length) {
+      section.append(el("p", "whatsnew-sub", "Fixed"));
+      section.append(el("ul", "whatsnew-list whatsnew-fixed", ...v.fixed.map(leadNode)));
+    }
+    const foot = el("p", "whatsnew-foot", link);
     section.append(foot);
     frame.body.append(section);
   }

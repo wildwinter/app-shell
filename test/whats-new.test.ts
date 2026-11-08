@@ -26,13 +26,15 @@ const dlg = (): HTMLDialogElement | null => document.querySelector("dialog.whats
 const heads = (): string[] => [...document.querySelectorAll(".whatsnew-head")].map((h) => h.textContent!);
 
 describe("after an update", () => {
-  it("shows every version since the last run, newest first, with fixes as a count and a link", () => {
+  it("shows every version since the last run, newest first, with each preview, the fixes under their heading, and a link", () => {
     expect(whatsNewAfterUpdate({ version: "0.41.0", previous: "0.39.0", show: true }, base)).toBe(true);
     expect(dlg()?.querySelector(".shell-dialog-title")?.textContent).toBe("What’s new in Patterpad");
     expect(heads()).toEqual(["Patterpad 0.41.0", "Patterpad 0.40.0"]);
-    expect([...document.querySelectorAll(".whatsnew-item")].map((i) => i.textContent)).toEqual(["The palette.", "Quieter corners, and white fields."]);
+    expect([...document.querySelectorAll(".whatsnew-item")].map((i) => i.textContent)).toEqual(["The palette. Cmd+K.", "A fix. Fixed.", "Quieter corners, and white fields."]);
+    expect(document.querySelector(".whatsnew-sub")?.textContent).toBe("Fixed");
+    expect(document.querySelectorAll(".whatsnew-fixed .whatsnew-item").length).toBe(1);
     const foot = document.querySelector(".whatsnew-foot")!;
-    expect(foot.textContent).toBe("And 1 fix. Full release notes");
+    expect(foot.textContent).toBe("Full release notes");
     foot.querySelector("a")!.click();
     expect(base.openExternal).toHaveBeenCalledWith("https://example.test/v0.41.0");
   });

@@ -123,8 +123,8 @@ export type { CommandPaletteOptions, PaletteItem } from "./command-palette.js";
 // the changelog reader (pure, for release scripts too) is ./changelog.
 export { openWhatsNew, whatsNewAfterUpdate, WHATS_NEW_CHANNELS } from "./whats-new.js";
 export type { WhatsNewOptions, WhatsNewState } from "./whats-new.js";
-export { parseChangelog, versionsSince, latestVersions, compareVersions, entriesWithoutLead } from "./changelog.js";
-export type { ChangelogVersion, ChangelogLead, ChangelogEntry } from "./changelog.js";
+export { parseChangelog, versionsSince, latestVersions, compareVersions, entriesWithoutLead, changelogProblems, leadOf, PREVIEW_WORDS, LEDE_WORDS } from "./changelog.js";
+export type { ChangelogVersion, ChangelogLead, ChangelogEntry, ChangelogProblem } from "./changelog.js";
 export type { UpdaterViewOptions, UpdaterLink, UpdateReadyOptions } from "./updater-view.js";
 export type { UpdaterDownloadProgress, UpdaterPromptOptions, UpdaterReadyInfo } from "./updater.js";
 // No project open: the welcome (welcome.ts + welcome.css).
