@@ -1068,8 +1068,9 @@ first (proving app-agnosticism); Patterpad follows - see
 - **1.0.0.** The API of 0.78.0, unchanged, declared settled. From here the version follows
   semver: a patch fixes, a minor adds, and a major removes or changes a meaning (patterkit
   `design/release-1-0-readiness-2026-11.md`, section F).
-- **Peers at 1.x.** The optional peer on `@wildwinter/toolkit` reads `>=1.0.0 <2.0.0`, and the
-  one on `@wildwinter/simple-vc-lib` `>=1.0.0`: the shell's 1.x goes with the libraries' 1.x.
+- **Peers at 1.x.** The optional peer on `@wildwinter/toolkit` reads `>=1.0.0 <2.0.0`: the shell's
+  1.x goes with the family's 1.x. (1.0.0 also raised the `@wildwinter/simple-vc-lib` peer to `>=1.0.0`;
+  1.0.1 puts it back to `>=0.5.0`. simple-vc-lib isn't part of the family's 1.0 and stays at 0.5.x.)
 
 ## Third-party
 
