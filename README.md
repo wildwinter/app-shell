@@ -957,7 +957,7 @@ absent where that side has no value. The shared kinds (`both-changed`,
 `delete-vs-edit`, `added-both`, `structural`) have the shell's words; a
 family's own kind brings a `kindLabel`.
 
-## v0.73 (unreleased: field rows that fit)
+## v0.73 (field rows that fit)
 
 - **Field rows fit a narrow inspector.** At inspector widths of about 220px and below, a quality's rung strip and a
   map's key field ran past their row and the inspector scrolled sideways. Every control in a field row now stays
@@ -965,7 +965,7 @@ family's own kind brings a `kindLabel`.
   its 10em when the row is narrower. Measured in Patterpad's preview: 45 to 67px of overflow in a 130px control
   column before, none after.
 
-## v0.74 (unreleased: a navigator drawn as a tree)
+## v0.74 (a navigator drawn as a tree)
 
 - **Tree keys.** `wireTreeKeys(host, toggle)`, `treeKey`, `treeRows`, and `rove` give a navigator drawn as a tree one
   tab stop and the arrow keys: Up and Down between visible rows, Right to open a row or step into it, Left to close
@@ -1063,6 +1063,14 @@ palette, and version control's renderer half. Storylet Studio migrates each
 first (proving app-agnosticism); Patterpad follows - see
 `patterkit/design/from-storylets/patterpad-onto-the-shell.md` for that order.
 
+## v1.0 (the 1.0 release)
+
+- **1.0.0.** The API of 0.78.0, unchanged, declared settled. From here the version follows
+  semver: a patch fixes, a minor adds, and a major removes or changes a meaning (patterkit
+  `design/release-1-0-readiness-2026-11.md`, section F).
+- **Peers at 1.x.** The optional peer on `@wildwinter/toolkit` reads `>=1.0.0 <2.0.0`, and the
+  one on `@wildwinter/simple-vc-lib` `>=1.0.0`: the shell's 1.x goes with the libraries' 1.x.
+
 ## Third-party
 
 The icon vocabulary (`iconNode`, `iconSvg` in `src/icons.ts`) vendors drawings
@@ -1077,5 +1085,5 @@ Icons and Contributors; some of those derive from Feather, MIT, Copyright (c)
 npm run release -- minor   # bumps, commits, pushes, tags, creates a GH Release
 ```
 
-Creating the Release triggers `publish.yml`, which publishes to npm. Requires an
-`NPM_TOKEN` repo secret with publish rights to the `@wildwinter` scope.
+Creating the Release triggers `publish.yml`, which publishes to npm through npm's trusted
+publishing (OIDC): no token is stored anywhere.
