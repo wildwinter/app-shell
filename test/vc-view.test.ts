@@ -126,10 +126,11 @@ describe("lockControls", () => {
     expect((document.getElementById("edit") as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it("always leaves an extension section's fold live: it only changes what is shown", () => {
-    document.body.innerHTML = `<div id="h"><button id="fold" class="shell-fold-cap"></button><button id="edit"></button></div>`;
+  it("always leaves an extension section's fold and a closed group's disclosure live: they only change what is shown", () => {
+    document.body.innerHTML = `<div id="h"><button id="fold" class="shell-fold-cap"></button><button id="group" class="shell-group-cap"></button><button id="edit"></button></div>`;
     lockControls(document.getElementById("h")!, true, "");
     expect((document.getElementById("fold") as HTMLButtonElement).disabled).toBe(false);
+    expect((document.getElementById("group") as HTMLButtonElement).disabled).toBe(false);
     expect((document.getElementById("edit") as HTMLButtonElement).disabled).toBe(true);
   });
 });

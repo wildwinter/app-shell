@@ -107,8 +107,9 @@ export function paintVcBadges(root: ParentNode, shards: VcMap): void {
 type Disableable = HTMLButtonElement | HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 /** The shell's own controls that only change what is shown, so a lock never
- *  turns them off: an extension section's fold (value-fold.ts). */
-const ALWAYS_LIVE = ".shell-fold-cap";
+ *  turns them off: an extension section's fold, and a closed group's disclosure
+ *  (value-fold.ts). */
+const ALWAYS_LIVE = ".shell-fold-cap, .shell-group-cap";
 
 /** Turn a region's editing controls off - or back on, but only the ones WE
  *  turned off, so a control disabled for its own reasons (the first card's

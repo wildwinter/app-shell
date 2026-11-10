@@ -1109,6 +1109,8 @@ until the author leaves the node.
   per view, with `sweep()` after each redraw.
 - `extensionFold()` takes `closed` in `section()` and uses its own `groups` while a section is open. Folded, the
   section shows the set fields under plain headings, as before.
+- `lockControls` leaves the disclosure live, as it does the section's caption (1.2.1: 1.2.0 turned it off in a
+  locked view, so a closed group's other fields couldn't be seen there).
 
 ```ts
 const groups = fieldGroups();   // Project Settings' own, kept across redraws
