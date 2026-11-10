@@ -1120,7 +1120,7 @@ holder.append(...groups.rows({
 }));
 ```
 
-## v1.3 (field help as a tooltip; lists and maps as tables)
+## v1.3 (field help as a tooltip; lists and maps as tables; a pick that takes any text)
 
 From Pattershot's briefs `field-help-as-a-tooltip` and `lists-and-maps-as-tables-in-settings`, at Ian's request
 (2026-11-10): an extension with a few dozen fields ran to screens of help paragraphs and stacked rows.

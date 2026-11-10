@@ -342,7 +342,7 @@
   },
   "peerDependencies": {
     "@wildwinter/simple-vc-lib": ">=0.5.0",
-    "@wildwinter/toolkit": ">=1.0.0 <2.0.0",
+    "@wildwinter/toolkit": ">=1.2.0 <2.0.0",
     "electron": ">=28",
     "electron-updater": ">=6",
     "ws": ">=8"
@@ -369,7 +369,7 @@
     "@wildwinter/expr": "^1.0.0",
     "@wildwinter/scoperegistry": "^1.0.0",
     "@wildwinter/simple-vc-lib": "^0.5.2",
-    "@wildwinter/toolkit": "^1.0.0",
+    "@wildwinter/toolkit": "^1.2.0",
     "electron": "42.6.0",
     "electron-updater": "^6.8.9",
     "jsdom": "^25.0.0",
