@@ -495,8 +495,8 @@ export function valueRows(): ValueRows {
 
 // An extension's section folded to the fields a node sets (value-fold.ts), under this entry so a host takes
 // the rows and the fold together.
-export { isSet, extensionFold, foldCaption } from "./value-fold.js";
-export type { ExtensionFold, FoldSectionOptions } from "./value-fold.js";
+export { isSet, extensionFold, fieldGroups, foldCaption } from "./value-fold.js";
+export type { ExtensionFold, FieldGroups, FoldSectionOptions, GroupRowsOptions } from "./value-fold.js";
 
 // A map of records (record-map.ts): the inspector's summary and the helper window's grid.
 export { isRecordMap, recordMapGrid, recordMapKeyLabel, recordMapSummary, valueText } from "./record-map.js";

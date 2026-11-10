@@ -3,7 +3,7 @@
 // (F5), and a nested value set or not as a whole (F6).
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { extensionFold, foldCaption, isSet, type FoldSectionOptions } from "../src/value-rows.js";
+import { extensionFold, fieldGroups, foldCaption, isSet, type FoldSectionOptions, type GroupRowsOptions } from "../src/value-rows.js";
 import type { ValueDecl } from "../src/value-rows.js";
 
 afterEach(() => { document.body.replaceChildren(); });
@@ -114,5 +114,80 @@ describe("the folded section", () => {
   it("words the caption one way", () => {
     expect(foldCaption("Pattershot", 0)).toBe("Pattershot");
     expect(foldCaption("Pattershot", 3)).toBe("Pattershot (3 set)");
+  });
+});
+
+// A group that starts closed (the manifest's `groups`, Pattershot's brief extension-closed-field-groups): its
+// heading a disclosure counting what's set, with only the set fields under it, until opened.
+describe("closed groups", () => {
+  const style: ValueDecl = { name: "style", type: "text", group: "More" } as ValueDecl;
+  const lens: ValueDecl = { name: "lens", type: "number", group: "More" } as ValueDecl;
+  const fields = [target, { ...mood, group: "Feeling" } as ValueDecl, style, lens];
+  const row = (d: ValueDecl): HTMLElement => { const r = document.createElement("div"); r.className = "row"; r.dataset["field"] = d.name; return r; };
+  const group = (g: string): HTMLElement => { const h = document.createElement("h4"); h.textContent = g; return h; };
+  const closed = (g: string): boolean => g === "More";
+  const opts = (node: string, entry: Record<string, unknown> | undefined, extra: Partial<GroupRowsOptions> = {}): GroupRowsOptions =>
+    ({ extension: "pattershot", node, fields, entry, row, group, closed, ...extra });
+  const holder = (els: HTMLElement[]): HTMLElement => { const d = document.createElement("div"); d.append(...els); document.body.append(d); return d; };
+  const shownOf = (h: HTMLElement): string[] => [...h.querySelectorAll<HTMLElement>(".row")].map((r) => r.dataset["field"]!);
+  const capOf = (h: HTMLElement): HTMLButtonElement => h.querySelector<HTMLButtonElement>(".shell-group-cap")!;
+
+  it("draws a closed group as its heading with a disclosure, and an open one as a plain heading", () => {
+    const h = holder(fieldGroups().rows(opts("n1", undefined)));
+    expect(shownOf(h)).toEqual(["target", "mood"]);
+    expect([...h.querySelectorAll("h4")].map((x) => x.textContent)).toEqual(["Feeling", "More"]);
+    expect(h.querySelectorAll(".shell-group-cap")).toHaveLength(1);
+    expect(capOf(h).getAttribute("aria-expanded")).toBe("false");
+    expect(capOf(h).closest("h4")?.classList.contains("shell-group")).toBe(true);
+  });
+
+  it("counts what a closed group holds and shows those fields, so a set value is never hidden", () => {
+    const h = holder(fieldGroups().rows(opts("n1", { lens: 35 })));
+    expect(capOf(h).textContent).toBe("More (1 set)");
+    expect(shownOf(h)).toEqual(["target", "mood", "lens"]);
+  });
+
+  it("opens to every field on a click, and stays open from node to node and per extension", () => {
+    const groups = fieldGroups();
+    const h = holder(groups.rows(opts("n1", undefined)));
+    capOf(h).click();
+    expect(shownOf(h)).toEqual(["target", "mood", "style", "lens"]);
+    expect(capOf(h).getAttribute("aria-expanded")).toBe("true");
+    expect(groups.isOpen("pattershot", "More")).toBe(true);
+    expect(shownOf(holder(groups.rows(opts("n2", undefined))))).toEqual(["target", "mood", "style", "lens"]);
+    expect(shownOf(holder(groups.rows(opts("n2", undefined, { extension: "other" }))))).toEqual(["target", "mood"]);
+  });
+
+  it("keeps a value cleared while closed until the author leaves the node", () => {
+    const groups = fieldGroups();
+    expect(shownOf(holder(groups.rows(opts("n1", { style: "wide" }))))).toEqual(["target", "mood", "style"]);
+    groups.sweep();
+    expect(shownOf(holder(groups.rows(opts("n1", {}))))).toEqual(["target", "mood", "style"]);
+    groups.sweep();
+    groups.rows(opts("n2", undefined));
+    groups.sweep();
+    groups.sweep();
+    expect(shownOf(holder(groups.rows(opts("n1", {}))))).toEqual(["target", "mood"]);
+  });
+
+  it("is plain headings when nothing is closed", () => {
+    const h = holder(fieldGroups().rows(opts("n1", undefined, { closed: undefined })));
+    expect(shownOf(h)).toEqual(["target", "mood", "style", "lens"]);
+    expect(h.querySelectorAll(".shell-group-cap")).toHaveLength(0);
+  });
+
+  it("applies within an open section, and not while it's folded", () => {
+    const fold = extensionFold();
+    const sec = (entry: Record<string, unknown> | undefined): HTMLElement => holder([fold.section({
+      extension: "pattershot", caption: "Pattershot", node: "n1", fields, entry, row, group, closed,
+    })]);
+    const folded = sec({ lens: 35 });
+    expect(shownOf(folded)).toEqual(["lens"]);
+    expect(folded.querySelectorAll(".shell-group-cap")).toHaveLength(0);
+    fold.setOpen("pattershot", true);
+    const open = sec({ lens: 35 });
+    expect(shownOf(open)).toEqual(["target", "mood", "lens"]);
+    expect(capOf(open).textContent).toBe("More (1 set)");
+    expect(fold.groups.isOpen("pattershot", "More")).toBe(false);
   });
 });

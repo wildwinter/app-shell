@@ -1094,6 +1094,30 @@ display half, in `./changelog` and the dialog:
   `LEDE_WORDS` (12), a bare label with nothing after it, or a package name in the lede, each with the words to
   say to the person releasing. `entriesWithoutLead` stays for the first of those.
 
+## v1.2 (a group of fields that starts closed)
+
+**A closed group** (`@wildwinter/app-shell/value-rows`; Pattershot's brief extension-closed-field-groups,
+2026-11-10): a manifest's `groups` can say a group of fields starts closed (toolkit 1.1.0, `groupClosed`). Such a
+group is its heading with a disclosure and the same count as the section's caption ("More (2 set)"), and only the
+fields the node sets, until the author opens it to every field. The rules are the fold's: a group stays open or
+closed per extension and group for the session, from node to node; a value cleared while it's closed keeps its row
+until the author leaves the node.
+
+- `fieldGroups()` draws a list of rows so: every field in the manifest's order, a heading wherever the group
+  changes, a closed group's heading given a disclosure button (`.shell-group-cap`, inside the host's own heading,
+  which gains `.shell-group`). Opening one redraws its rows in place. Project Settings uses it directly, one kept
+  per view, with `sweep()` after each redraw.
+- `extensionFold()` takes `closed` in `section()` and uses its own `groups` while a section is open. Folded, the
+  section shows the set fields under plain headings, as before.
+
+```ts
+const groups = fieldGroups();   // Project Settings' own, kept across redraws
+holder.append(...groups.rows({
+  extension: x.id, node: nodeId, fields, entry, row, group: (name) => heading(name),
+  closed: (name) => groupClosed(manifest, name),
+}));
+```
+
 ## Third-party
 
 The icon vocabulary (`iconNode`, `iconSvg` in `src/icons.ts`) vendors drawings
