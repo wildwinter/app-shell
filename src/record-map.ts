@@ -15,9 +15,10 @@
 
 import { defaultOf, pickChoices } from "@wildwinter/toolkit/extensions";
 import type { TypeDecl } from "@wildwinter/toolkit/extensions";
-import { el, iconBtn } from "./dom.js";
+import { el, iconBtn, moveItem } from "./dom.js";
+import { captionHelp } from "./field-help.js";
 import { fieldRowFocus } from "./value-control.js";
-import { valueRow, type ValueAdapter, type ValueDecl, type ValueRowHandle } from "./value-rows.js";
+import { freshItem, valueRow, type ValueAdapter, type ValueDecl, type ValueRowHandle } from "./value-rows.js";
 import { isSet } from "./value-fold.js";
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -25,6 +26,11 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 /** A map whose values are records: edited in the grid, summarised in the inspector. */
 export function isRecordMap(decl: ValueDecl): boolean {
   return decl.type === "map" && decl.of?.type === "record";
+}
+
+/** A list whose items are records: a grid too, where there's room (Project Settings). */
+export function isRecordList(decl: ValueDecl): boolean {
+  return decl.type === "list" && decl.of?.type === "record";
 }
 
 /** A map key's name: a node's from the host, else the key itself. */
@@ -154,12 +160,7 @@ export function recordMapGrid(initial: RecordMapGridOptions): RecordMapGrid {
 
     const hr = el("tr");
     hr.append(el("th", "shell-recordgrid-keyhead", recordMapKeyHeading(decl)));
-    for (const f of fields) {
-      const th = el("th", undefined, f.label ?? f.name);
-      const help = f.help ?? f.purpose;
-      if (help) th.dataset["tip"] = help;
-      hr.append(th);
-    }
+    for (const f of fields) hr.append(columnHead(f));
     hr.append(el("th", "shell-recordgrid-tools"));
     head.replaceChildren(hr);
 
@@ -226,4 +227,109 @@ export function recordMapGrid(initial: RecordMapGridOptions): RecordMapGrid {
 function recordMapKeyHeading(decl: ValueDecl): string {
   const to = decl.key?.type === "reference" ? decl.key.to : undefined;
   return to ? to.charAt(0).toUpperCase() + to.slice(1) : "Key";
+}
+
+/** A grid's column heading: the field's name, with its help on a "?" (field-help.ts). */
+function columnHead(f: ValueDecl): HTMLElement {
+  const th = el("th", undefined, f.label ?? f.name);
+  captionHelp(th, f.help ?? f.purpose ?? "");
+  return th;
+}
+
+/**
+ * A list of records as a grid: a row per item, a column per record field, each cell the row value-rows draws
+ * for that field, and each row's move and remove tools; the add button under it. As `recordMapGrid`, it keeps
+ * its cells across `update`. A list with ids keeps each item's cells by its id, else by its place.
+ */
+export function recordListGrid(initial: RecordMapGridOptions): RecordMapGrid {
+  let opts = initial;
+  const root = el("div", "shell-recordgrid shell-recordgrid-list");
+  const table = el("table", "shell-recordgrid-table");
+  const head = el("thead");
+  const body = el("tbody");
+  table.append(head, body);
+  const adder = el("div", "shell-recordgrid-add");
+  const empty = el("p", "shell-recordgrid-empty");
+  root.append(table, empty, adder);
+  const cells = new Map<string, ValueRowHandle>();
+
+  const editable = (): boolean => opts.onCommit !== undefined && opts.disabled !== true;
+  const held = (): unknown[] => (Array.isArray(opts.value) ? opts.value : []);
+  const commit = (next: unknown[]): void => {
+    const v = next.length > 0 ? next : undefined;
+    opts = { ...opts, value: v };
+    draw();
+    opts.onCommit?.(v);
+  };
+
+  const draw = (): void => {
+    const decl = opts.decl;
+    const fields = decl.of?.fields ?? [];
+    const items = held();
+    const hr = el("tr");
+    for (const f of fields) hr.append(columnHead(f));
+    hr.append(el("th", "shell-recordgrid-tools"));
+    head.replaceChildren(hr);
+
+    const used = new Set<string>();
+    const rows = items.map((item, i) => {
+      const record = isObject(item) ? item : {};
+      const rowKey = decl.id !== undefined && typeof record[decl.id] === "string" ? `id:${record[decl.id] as string}` : `i:${i}`;
+      const tr = el("tr");
+      for (const f of fields) {
+        const id = `${rowKey}\u0000${f.name}`;
+        used.add(id);
+        const o = {
+          decl: f, value: record[f.name],
+          ...(opts.adapter ? { adapter: opts.adapter } : {}),
+          ...(opts.disabled !== undefined ? { disabled: opts.disabled } : {}),
+          ...(opts.controlClassName !== undefined ? { controlClassName: opts.controlClassName } : {}),
+          ...(editable() ? {
+            onCommit: (v: unknown) => {
+              const next = [...held()];
+              const rec: Record<string, unknown> = { ...(isObject(next[i]) ? next[i] as Record<string, unknown> : {}) };
+              if (v === undefined) delete rec[f.name]; else rec[f.name] = v;
+              next[i] = rec;
+              commit(next);
+            },
+          } : {}),
+          className: "shell-recordgrid-cell",
+        };
+        const had = cells.get(id);
+        let cellEl: HTMLElement;
+        if (had && had.el.dataset["type"] === f.type) {
+          fieldRowFocus.settle(had.el); had.update(o); fieldRowFocus.restore(had.el); cellEl = had.el;
+        } else {
+          const handle = valueRow(o);
+          handle.el.dataset["type"] = f.type;
+          cells.set(id, handle);
+          cellEl = handle.el;
+        }
+        const td = el("td");
+        td.append(cellEl);
+        tr.append(td);
+      }
+      const tools = el("td", "shell-recordgrid-tools");
+      if (editable()) {
+        tools.append(
+          iconBtn("up", "Move up", () => { const next = [...held()]; if (moveItem(next, i, -1)) commit(next); }, i === 0),
+          iconBtn("down", "Move down", () => { const next = [...held()]; if (moveItem(next, i, 1)) commit(next); }, i === items.length - 1),
+          iconBtn("close", "Remove", () => commit(held().filter((_, j) => j !== i)), false, true),
+        );
+      }
+      tr.append(tools);
+      return tr;
+    });
+    for (const id of [...cells.keys()]) if (!used.has(id)) cells.delete(id);
+    body.replaceChildren(...rows);
+    table.hidden = items.length === 0;
+    empty.textContent = items.length === 0 ? "None yet." : "";
+    empty.hidden = items.length !== 0;
+
+    adder.replaceChildren();
+    if (editable()) adder.append(iconBtn("add", "Add", () => commit([...held(), freshItem(decl, held())])));
+  };
+
+  draw();
+  return { el: root, update: (o) => { opts = o; draw(); } };
 }

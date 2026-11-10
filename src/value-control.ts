@@ -18,6 +18,7 @@
 // can take it.
 // ---------------------------------------------------------------------------
 
+import { captionHelp, helpOnKeyboardFocus } from "./field-help.js";
 import { el, tagChips } from "./dom.js";
 
 /** A declaration as these controls read it: a property's, a field's or a game-data field's. */
@@ -272,11 +273,14 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
   const caption = el("span", `shell-fieldrow-label${opts.labelClassName ? ` ${opts.labelClassName}` : ""}`);
   caption.id = `shell-fr-${Math.random().toString(36).slice(2, 9)}`;
   const body = el("div", "shell-fieldrow-body");
-  const purpose = el("p", "shell-fieldrow-purpose");
+  // The field's help is the control's description, read by a screen reader, and shown by the caption's "?" and on
+  // keyboard focus rather than drawn under every field (field-help.ts).
+  const purpose = el("p", "shell-fieldrow-purpose shell-fieldrow-described");
   const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp");
   const problem = el("p", "shell-fieldrow-problem");
   problem.setAttribute("role", "status");
   row.append(caption, body);
+  helpOnKeyboardFocus(row, () => opts.decl.purpose ?? "");
 
   let shape = "";
   /** Redraw the control for the current value; set by whichever control is built. */
@@ -442,6 +446,7 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
     const label = next.label ?? decl.name;
     if (typeof label === "string") caption.textContent = label; else caption.replaceChildren(label);
     caption.className = `shell-fieldrow-label${next.labelClassName ? ` ${next.labelClassName}` : ""}`;
+    captionHelp(caption, decl.purpose ?? "");
     row.className = `shell-fieldrow${next.className ? ` ${next.className}` : ""}`;
     const nextShape = controlShape(next);
     opts = next;

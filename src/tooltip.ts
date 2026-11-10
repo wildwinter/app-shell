@@ -165,6 +165,18 @@ export function tipAt(key: string, rect: TipRect, text: string): void {
 export function hideTip(): void { hide(); }
 
 /**
+ * Show `text` above `anchor` after the usual wait, as if it carried that `data-tip`, without giving it one: a
+ * field's help shown when its control takes keyboard focus, where hovering the control should show nothing.
+ * Anchored to the element, so a tip inside a modal dialog is drawn in the dialog's top layer. Taken down by the
+ * usual blur, pointer, and Escape handling.
+ */
+export function tipFor(anchor: HTMLElement, text: string): void {
+  if (text === "") return;
+  hide();
+  timer = window.setTimeout(() => { timer = 0; if (anchor.isConnected) paint(anchor, text); }, SHOW_DELAY);
+}
+
+/**
  * Mount the renderer because something is about to speak the grammar.
  *
  * The themed tooltip is not a feature a host turns on; it is the renderer for a grammar the shell's own

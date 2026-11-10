@@ -28,13 +28,17 @@ import { defaultOf, pickChoices, valueProblems } from "@wildwinter/toolkit/exten
 import type { PickSource, TypeDecl, ValueContext } from "@wildwinter/toolkit/extensions";
 import { el, iconBtn, moveItem } from "./dom.js";
 import { fieldRow, fieldRowFocus, valueHelpText } from "./value-control.js";
+import { captionHelp, helpOnKeyboardFocus } from "./field-help.js";
+import { isRecordMap, recordMapGrid, recordListGrid, isRecordList } from "./record-map.js";
+import type { RecordMapGrid } from "./record-map.js";
 import type { FieldDeclLike, FieldRowHandle, FieldValue } from "./value-control.js";
 
 /** A declaration of any type, as an extension's manifest writes it. */
 export interface ValueDecl extends FieldDeclLike {
   /** The caption; the name when absent. */
   label?: string;
-  /** A sentence or two shown under the control (an extension's `help`, a field's `purpose`). */
+  /** A sentence or two about the field (an extension's `help`, a field's `purpose`): the caption's "?" and the
+   *  control's description, shown on hover and on keyboard focus. */
   help?: string;
   /** A reference's node kind. */
   to?: string;
@@ -97,6 +101,9 @@ export interface ValueRowOptions {
   className?: string;
   labelClassName?: string;
   controlClassName?: string;
+  /** Lay a map or a list of records out as a table, a column per field, as Project Settings has room for; else
+   *  each record is stacked rows, as a narrow inspector wants. */
+  tables?: boolean;
 }
 
 export interface ValueRowHandle {
@@ -174,11 +181,13 @@ function referenceRow(initial: ValueRowOptions): ValueRowHandle {
   const caption = el("span", "shell-fieldrow-label");
   const body = el("div", "shell-fieldrow-body");
   const sel = el("select", "field shell-fieldrow-select");
-  const help = el("p", "shell-fieldrow-purpose");
+  const help = el("p", "shell-fieldrow-purpose shell-fieldrow-described");
   const problem = el("p", "shell-fieldrow-problem");
   problem.setAttribute("role", "status");
+  describe(caption, sel, help, problem);
   body.append(sel, help, problem);
   row.append(caption, body);
+  helpOnKeyboardFocus(row, () => opts.decl.help ?? opts.decl.purpose ?? "");
   sel.addEventListener("change", () => {
     const v = sel.value === "" ? undefined : sel.value;
     opts = { ...opts, value: v };
@@ -188,8 +197,7 @@ function referenceRow(initial: ValueRowOptions): ValueRowHandle {
   const draw = (o: ValueRowOptions): void => {
     opts = o;
     row.className = `shell-fieldrow shell-valuerow-ref${o.className ? ` ${o.className}` : ""}`;
-    const label = o.label ?? nameOf(o.decl);
-    if (typeof label === "string") caption.textContent = label; else caption.replaceChildren(label);
+    drawCaption(caption, o);
     if (o.controlClassName) sel.className = `shell-fieldrow-select ${o.controlClassName}`;
     const nodes = o.adapter!.nodes(o.decl.to ?? "");
     const held = typeof o.value === "string" ? o.value : "";
@@ -205,7 +213,6 @@ function referenceRow(initial: ValueRowOptions): ValueRowHandle {
     sel.value = held;
     sel.disabled = o.onCommit === undefined || o.disabled === true;
     help.textContent = o.decl.help ?? o.decl.purpose ?? "";
-    help.hidden = help.textContent === "";
     const words = o.replaceProblem ?? [ownProblems(o.decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
     problem.textContent = words;
     problem.hidden = words === "";
@@ -213,6 +220,22 @@ function referenceRow(initial: ValueRowOptions): ValueRowHandle {
   };
   draw(initial);
   return { el: row, update: draw };
+}
+
+/** A row's caption: its label in the app's label class, with the help mark when the field has help. */
+function drawCaption(caption: HTMLElement, o: ValueRowOptions): void {
+  const label = o.label ?? nameOf(o.decl);
+  if (typeof label === "string") caption.textContent = label; else caption.replaceChildren(label);
+  caption.className = `shell-fieldrow-label${o.labelClassName ? ` ${o.labelClassName}` : ""}`;
+  captionHelp(caption, o.decl.help ?? o.decl.purpose ?? "");
+}
+
+/** Name a control by its caption and describe it by its help and its problem, as the field row does. */
+function describe(caption: HTMLElement, control: HTMLElement, help: HTMLElement, problem: HTMLElement): void {
+  caption.id = `shell-vr-${Math.random().toString(36).slice(2, 9)}`;
+  help.id = `${caption.id}-p`; problem.id = `${caption.id}-m`;
+  control.setAttribute("aria-labelledby", caption.id);
+  control.setAttribute("aria-describedby", `${help.id} ${problem.id}`);
 }
 
 /**
@@ -231,12 +254,14 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
   const caption = el("span", "shell-fieldrow-label");
   const body = el("div", "shell-fieldrow-body");
   const sel = el("select", "field shell-fieldrow-select");
-  const help = el("p", "shell-fieldrow-purpose");
+  const help = el("p", "shell-fieldrow-purpose shell-fieldrow-described");
   const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp");
   const problem = el("p", "shell-fieldrow-problem");
   problem.setAttribute("role", "status");
+  describe(caption, sel, help, problem);
   body.append(sel, help, valueHelp, problem);
   row.append(caption, body);
+  helpOnKeyboardFocus(row, () => opts.decl.help ?? opts.decl.purpose ?? "");
   sel.addEventListener("change", () => {
     const v = sel.value === "" ? undefined : sel.value;
     opts = { ...opts, value: v };
@@ -244,12 +269,11 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
     opts.onCommit?.(v);
   });
   const groupName = (s: PickSource): string | undefined =>
-    "to" in s ? (s.to === "cast" ? "Cast" : s.to.charAt(0).toUpperCase() + s.to.slice(1)) : "list" in s ? s.list : undefined;
+    "to" in s ? (s.to === "cast" ? "Cast" : s.to.charAt(0).toUpperCase() + s.to.slice(1)) : "list" in s ? s.list : (s as { keys?: string }).keys; // keys: toolkit 1.2.0
   const draw = (o: ValueRowOptions): void => {
     opts = o;
     row.className = `shell-fieldrow shell-valuerow-pick${o.className ? ` ${o.className}` : ""}`;
-    const label = o.label ?? nameOf(o.decl);
-    if (typeof label === "string") caption.textContent = label; else caption.replaceChildren(label);
+    drawCaption(caption, o);
     if (o.controlClassName) sel.className = `shell-fieldrow-select ${o.controlClassName}`;
     const adapter = o.adapter;
     const choices = pickChoices(o.decl as unknown as TypeDecl, {
@@ -285,7 +309,6 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
     sel.value = held;
     sel.disabled = o.onCommit === undefined || o.disabled === true;
     help.textContent = o.decl.help ?? o.decl.purpose ?? "";
-    help.hidden = help.textContent === "";
     // The chosen word's own help, as an enum's value has (a pick's help describes its fixed words only).
     valueHelp.textContent = valueHelpText(o.decl, o.value);
     valueHelp.hidden = valueHelp.textContent === "";
@@ -301,22 +324,37 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
 /** A part of a structured value: a row, keyed so it is the same element next time. */
 interface Part { key: string; handle: ValueRowHandle; holder: HTMLElement; tools: HTMLElement }
 
-/** A record, a map or a list: a caption, then its parts, each a row of its own, with the controls the type
- *  calls for (add and remove for a map; add, remove and move for a list). */
+/** The types a list's or a map's entry is one control of: drawn as a table row (key or number, value, tools). */
+const ONE_CONTROL = new Set([...SCALARS, "reference", "pick"]);
+
+/**
+ * A record, a map or a list: a caption, then its parts, with the controls the type calls for (add and remove for
+ * a map; add, remove and move for a list). A list or a map of single values is a table: each entry's number or
+ * key, its value, and its tools on one row, the adder as the last. With `tables`, a map or a list of records is
+ * the record grid, a column per field; else each record is stacked rows. A record's own fields are rows.
+ */
 function structuredRow(initial: ValueRowOptions): ValueRowHandle {
   let opts = initial;
   const row = el("div", "shell-fieldrow shell-valuerow");
   const caption = el("span", "shell-fieldrow-label");
   const body = el("div", "shell-fieldrow-body shell-valuerow-parts");
-  const help = el("p", "shell-fieldrow-purpose");
+  const help = el("p", "shell-fieldrow-purpose shell-fieldrow-described");
   const problem = el("p", "shell-fieldrow-problem");
   problem.setAttribute("role", "status");
+  caption.id = `shell-vr-${Math.random().toString(36).slice(2, 9)}`;
+  help.id = `${caption.id}-p`;
+  body.setAttribute("role", "group");
+  body.setAttribute("aria-labelledby", caption.id);
+  body.setAttribute("aria-describedby", help.id);
   const adder = el("div", "shell-valuerow-add");
   row.append(caption, body);
+  helpOnKeyboardFocus(row, () => opts.decl.help ?? opts.decl.purpose ?? "");
   const parts = new Map<string, Part>();
   /** The parts kept from the last draw, whose focus goes back to them once they are in the page again. */
   let kept: HTMLElement[] = [];
   let addKey = "";
+  /** The record grid, when this is a table of records: kept across draws, as the parts are. */
+  let grid: { kind: "map" | "list"; handle: RecordMapGrid } | undefined;
 
   const editable = (): boolean => opts.onCommit !== undefined && opts.disabled !== true;
   const commit = (v: unknown): void => { opts = { ...opts, value: v }; draw(opts); opts.onCommit?.(v); };
@@ -342,13 +380,29 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
     return holder;
   };
 
+  /** The record grid for a map or a list of records, drawn in place of the parts. */
+  const recordGrid = (o: ValueRowOptions, kind: "map" | "list"): HTMLElement => {
+    const gridOpts = {
+      decl: o.decl, value: o.value,
+      ...(editable() ? { onCommit: (v: unknown) => { opts = { ...opts, value: v }; opts.onCommit?.(v); } } : {}),
+      ...(o.adapter ? { adapter: o.adapter } : {}),
+      ...(o.disabled !== undefined ? { disabled: o.disabled } : {}),
+      ...(o.controlClassName !== undefined ? { controlClassName: o.controlClassName } : {}),
+    };
+    if (grid?.kind === kind) { grid.handle.update(gridOpts); return grid.handle.el; }
+    grid = { kind, handle: kind === "map" ? recordMapGrid(gridOpts) : recordListGrid(gridOpts) };
+    return grid.handle.el;
+  };
+
   const draw = (o: ValueRowOptions): void => {
     opts = o;
     kept = [];
     const decl = o.decl;
+    const table = decl.type !== "record" && decl.of !== undefined && ONE_CONTROL.has(decl.of.type);
     row.className = `shell-fieldrow shell-valuerow shell-valuerow-${decl.type}${o.className ? ` ${o.className}` : ""}`;
-    const label = o.label ?? nameOf(decl);
-    if (typeof label === "string") caption.textContent = label; else caption.replaceChildren(label);
+    drawCaption(caption, o);
+    body.className = `shell-fieldrow-body shell-valuerow-parts${table ? " shell-valuerow-table" : ""}`;
+    help.textContent = decl.help ?? decl.purpose ?? "";
     const used = new Set<string>();
     const rows: HTMLElement[] = [];
     const child = (key: string, childDecl: ValueDecl, value: unknown, onCommit: (v: unknown) => void, controls?: HTMLElement[], childLabel?: string, extraProblem?: string): void => {
@@ -361,8 +415,21 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
         ...(childLabel !== undefined ? { label: childLabel } : {}),
         ...(extraProblem ? { problem: extraProblem } : {}),
         ...(o.controlClassName !== undefined ? { controlClassName: o.controlClassName } : {}),
+        // A table row's key or number, and a record's field names, are the parts' own captions: the app's label
+        // class is for the field's.
+        ...(o.tables ? { tables: true } : {}),
       }, controls));
     };
+
+    const asGrid = o.tables === true && (isRecordMap(decl) ? "map" : isRecordList(decl) ? "list" : undefined);
+    if (asGrid) {
+      parts.clear();
+      body.replaceChildren(recordGrid(o, asGrid));
+      body.append(help);
+      sayProblem(o);
+      return;
+    }
+    grid = undefined;
 
     if (decl.type === "record") {
       const value = isObject(o.value) ? o.value : undefined;
@@ -435,34 +502,38 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
         }, controls, itemLabel);
       });
       adder.replaceChildren();
-      if (editable()) {
-        adder.append(iconBtn("add", "Add", () => {
-          const fresh = defaultOf(decl.of as unknown as TypeDecl);
-          if (decl.id !== undefined && isObject(fresh)) {
-            const taken = new Set(value.map((x) => (isObject(x) ? x[decl.id!] : undefined)));
-            let n = value.length + 1;
-            while (taken.has(`item-${n}`)) n++;
-            fresh[decl.id] = `item-${n}`;
-          }
-          commit([...value, fresh]);
-        }));
-      }
+      if (editable()) adder.append(iconBtn("add", "Add", () => commit([...value, freshItem(decl, value)])));
     }
 
     for (const key of [...parts.keys()]) if (!used.has(key)) parts.delete(key);
     body.replaceChildren(...rows);
     if (decl.type !== "record" && editable()) body.append(adder);
-    help.textContent = decl.help ?? decl.purpose ?? "";
-    if (help.textContent !== "") body.append(help);
-    const words = o.replaceProblem ?? [ownProblems(decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
+    body.append(help);
+    sayProblem(o);
+    for (const k of kept) fieldRowFocus.restore(k);
+  };
+
+  const sayProblem = (o: ValueRowOptions): void => {
+    const words = o.replaceProblem ?? [ownProblems(o.decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
     problem.textContent = words;
     problem.hidden = words === "";
     body.append(problem);
     row.classList.toggle("has-problem", words !== "");
-    for (const k of kept) fieldRowFocus.restore(k);
   };
   draw(initial);
   return { el: row, update: draw };
+}
+
+/** A new item for a list: its type's default, and, in a list with ids, an id no item has yet. */
+export function freshItem(decl: ValueDecl, value: readonly unknown[]): unknown {
+  const fresh = defaultOf(decl.of as unknown as TypeDecl);
+  if (decl.id !== undefined && isObject(fresh)) {
+    const taken = new Set(value.map((x) => (isObject(x) ? x[decl.id!] : undefined)));
+    let n = value.length + 1;
+    while (taken.has(`item-${n}`)) n++;
+    fresh[decl.id] = `item-${n}`;
+  }
+  return fresh;
 }
 
 /** A cache of value rows for a host that redraws its whole view (as `fieldRows` is for the scalar row). */
@@ -499,5 +570,5 @@ export { isSet, extensionFold, fieldGroups, foldCaption } from "./value-fold.js"
 export type { ExtensionFold, FieldGroups, FoldSectionOptions, GroupRowsOptions } from "./value-fold.js";
 
 // A map of records (record-map.ts): the inspector's summary and the helper window's grid.
-export { isRecordMap, recordMapGrid, recordMapKeyLabel, recordMapSummary, valueText } from "./record-map.js";
+export { isRecordMap, isRecordList, recordMapGrid, recordListGrid, recordMapKeyLabel, recordMapSummary, valueText } from "./record-map.js";
 export type { RecordMapGrid, RecordMapGridOptions } from "./record-map.js";

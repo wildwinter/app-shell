@@ -129,6 +129,21 @@ span.shell-rung { cursor: default; }
 .shell-fieldrow-text { min-width: 0; }
 textarea.shell-fieldrow-text { min-height: 3.6em; font-family: inherit; line-height: 1.4; }
 .shell-fieldrow-purpose { margin: 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--muted); max-width: 60ch; }
+/* A field's help is the control's description, for a screen reader, and the caption's "?" (field-help.ts): not a
+   paragraph under every field. Hidden from sight, not from the accessibility tree. */
+.shell-fieldrow-described {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+/* A caption with help: its rollover is the help, and a small "?" after it says so (hidden from a screen reader,
+   which reads the help as the control's description). */
+.has-help { cursor: help; }
+.has-help::after {
+  content: "?" / ""; display: inline-flex; align-items: center; justify-content: center; vertical-align: 1px;
+  box-sizing: border-box; width: 14px; height: 14px; margin-left: 4px; border: 1px solid var(--line); border-radius: 50%;
+  font: 600 var(--text-xs)/1 var(--font-ui); color: var(--muted);
+}
+.has-help:hover::after { color: var(--ink); border-color: var(--muted); }
 .shell-fieldrow-problem { margin: 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--warn, var(--danger, var(--accent))); }
 .shell-fieldrow.has-problem .shell-fieldrow-text { border-color: var(--warn, var(--danger)); }
 .shell-flags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
@@ -196,7 +211,36 @@ kbd {
 
 /* Structured values (record, map, list): the parts, each a field row of its own, indented under the
    caption, with a map's and a list's own controls beside each part. */
-.shell-valuerow-parts { gap: 6px; padding-left: 10px; border-left: 1px solid var(--line, color-mix(in oklab, var(--ink) 14%, transparent)); }
+/* A list, a map, or a record: its parts under its caption, which sits at the top of the field however long the
+   list. A field's controls share one left edge, so a list's sit where a single field's do; only a record inside
+   one is set in, with a rule, so its fields read as one thing. */
+.shell-fieldrow.shell-valuerow > .shell-fieldrow-label { align-self: start; padding-top: 5px; }
+.shell-valuerow-parts { gap: 6px; }
+.shell-valuerow-parts .shell-valuerow-parts:not(.shell-valuerow-table) {
+  padding-left: 10px; border-left: 1px solid var(--line, color-mix(in oklab, var(--ink) 14%, transparent));
+}
+/* A list or a map of single values is a table: number or key, value, tools, one entry a row, the adder last. The
+   parts and their rows give their cells to the one grid, so every row's columns line up. */
+.shell-valuerow-table {
+  display: grid; grid-template-columns: max-content minmax(8em, max-content) max-content;
+  justify-content: start; align-items: start; column-gap: 8px; row-gap: 4px;
+}
+.shell-valuerow-table > .shell-valuerow-part,
+.shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow { display: contents; }
+.shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-label {
+  grid-column: 1; padding-top: 5px; max-width: 14em; overflow-wrap: anywhere;
+}
+.shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-body { grid-column: 2; }
+/* A table's value fills its column, so the tools sit beside it, whatever width the app gives its controls. */
+.shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-body { align-items: stretch; }
+.shell-valuerow-table .shell-fieldrow-body > :is(input, select, textarea) { width: 100%; box-sizing: border-box; }
+.shell-valuerow-table > .shell-valuerow-part > .shell-valuerow-controls { grid-column: 3; padding-top: 2px; }
+.shell-valuerow-table > :not(.shell-valuerow-part) { grid-column: 1 / -1; }
+/* A list's numbers are its order, not names: quiet, and lined up on the right. */
+.shell-valuerow-list > .shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-label {
+  justify-self: end; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.shell-valuerow-parts > .shell-recordgrid { width: 100%; }
 .shell-valuerow-part { display: flex; align-items: flex-start; gap: 6px; width: 100%; }
 .shell-valuerow-part > .shell-fieldrow { flex: 1; min-width: 0; }
 .shell-valuerow-controls { display: inline-flex; gap: 2px; padding-top: 2px; }

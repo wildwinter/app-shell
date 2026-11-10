@@ -1120,6 +1120,33 @@ holder.append(...groups.rows({
 }));
 ```
 
+## v1.3 (field help as a tooltip; lists and maps as tables)
+
+From Pattershot's briefs `field-help-as-a-tooltip` and `lists-and-maps-as-tables-in-settings`, at Ian's request
+(2026-11-10): an extension with a few dozen fields ran to screens of help paragraphs and stacked rows.
+
+- **A field's help is the caption's rollover**, not a paragraph under the control: a small "?" follows a caption
+  that has help, and hovering the caption shows it in the themed tooltip. A keyboard user gets it above the control
+  when the control takes focus (not on a click). The help stays in the page, visually hidden, as the control's
+  description, so a screen reader still reads it. A record grid's column headings carry their field's help the same
+  way. What a chosen value means (`valueHelp`) and a field's problem stay under the control.
+- **A list or a map of single values is a table**: each entry's number or key, its value, and its tools on one row,
+  in one grid so every row's columns line up, with the adder as the last row. A list's numbers are quiet and lined up
+  on the right.
+- **`tables: true` on a value row** lays a map of records (`recordMapGrid`) or a list of records (`recordListGrid`,
+  new, with move and remove tools per row) out as a grid, a column per field, for a page with room (Project
+  Settings). Without it, a record is stacked rows, as a narrow inspector wants.
+- **Captions sit at the top of a list or a map**, however long it is, and every row honours the app's
+  `labelClassName` (a pick, a reference, a list, a map and a record used to ignore it, so their captions looked
+  unlike a plain field's). A list's controls share the left edge of a plain field's; only a record inside one is set
+  in with a rule.
+- `tipFor(anchor, text)` shows a tip for an element without giving it a `data-tip`, drawn in a modal dialog's top
+  layer when the anchor is in one.
+
+```ts
+rows.row(key, { decl, value, adapter, onCommit, tables: true });  // Project Settings
+```
+
 ## Third-party
 
 The icon vocabulary (`iconNode`, `iconSvg` in `src/icons.ts`) vendors drawings

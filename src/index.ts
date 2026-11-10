@@ -90,7 +90,7 @@ export { mountJobProgress } from "./job-view.js";
 export type { JobProgressView, JobProgressOptions, JobBeginOptions } from "./job-view.js";
 export { JOB_PROGRESS } from "./job.js";
 export type { JobProgress } from "./job.js";
-export { initTooltips, tipBold, tipAt, hideTip } from "./tooltip.js";
+export { initTooltips, tipBold, tipAt, tipFor, hideTip } from "./tooltip.js";
 export type { TooltipOptions, TipRect } from "./tooltip.js";
 
 // The session and the save controller: the shape's own lifecycle (0.14.0).
