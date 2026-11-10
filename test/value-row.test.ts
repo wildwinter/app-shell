@@ -59,7 +59,7 @@ describe("valueRow", () => {
       const onCommit = vi.fn();
       const { el } = valueRow({ decl: to, value: undefined, onCommit, adapter: cast });
       const sel = el.querySelector("select")!;
-      expect(shown(sel)).toEqual(["auto", "all", "Cast: ANNA, Gate", "pointsOfInterest: Well"]);
+      expect(shown(sel)).toEqual(["default (auto)", "all", "Cast: ANNA, Gate", "pointsOfInterest: Well"]);
       expect(sel.value).toBe("");
       pick(sel, "Well");
       expect(onCommit).toHaveBeenLastCalledWith("Well");
@@ -79,7 +79,7 @@ describe("valueRow", () => {
 
     it("without an adapter, offers fixed words alone, and types a pick with other sources as text", () => {
       const words = valueRow({ decl: { name: "favour", type: "pick", from: [{ words: ["speaker", "listener"] }] }, value: "listener", onCommit: () => {} });
-      expect(shown(words.el.querySelector("select")!)).toEqual(["auto", "speaker", "listener"]);
+      expect(shown(words.el.querySelector("select")!)).toEqual(["default (auto)", "speaker", "listener"]);
       const typed = valueRow({ decl: to, value: "ANNA", onCommit: () => {} });
       expect(typed.el.querySelector("select")).toBeNull();
       expect(typed.el.querySelector("input")?.value).toBe("ANNA");
@@ -89,15 +89,21 @@ describe("valueRow", () => {
       const type: ValueDecl = { name: "type", type: "pick", from: [{ words: ["ambient", "bark"] }, { list: "types" }],
         valueHelp: { ambient: "Voices from sources.", bark: "A one-off line." } };
       const row = valueRow({ decl: type, value: "bark", onCommit: () => {}, adapter: { nodes: () => [], list: () => ["duel"] } });
+      // In the tooltip with the field's own help, and as the control's description: never drawn under it.
       const help = (): HTMLElement => row.el.querySelector<HTMLElement>(".shell-fieldrow-valuehelp")!;
+      const tip = (): string => row.el.querySelector<HTMLElement>(".shell-fieldrow-label")!.dataset["tip"] ?? "";
+      expect(help().classList.contains("shell-fieldrow-described")).toBe(true);
       expect(help().textContent).toBe("A one-off line.");
+      expect(tip()).toContain("A one-off line.");
       const sel = row.el.querySelector("select")!;
       pick(sel, "ambient");
       expect(help().textContent).toBe("Voices from sources.");
+      expect(tip()).toContain("Voices from sources.");
       pick(sel, "duel");
-      expect(help().hidden).toBe(true);
+      expect(help().textContent).toBe("");
       pick(sel, "");
-      expect(help().hidden).toBe(true);
+      expect(help().textContent).toBe("");
+      expect(tip()).toBe("");
     });
   });
 
@@ -141,7 +147,7 @@ describe("valueRow", () => {
     const decl: ValueDecl = { name: "beats", type: "list", id: "id", of: { type: "record", fields: [{ name: "id", type: "text" }, { name: "at", type: "number" }] } };
     const value = [{ id: "b2", at: 3 }, { id: "b1", at: 1 }];
     const { el } = valueRow({ decl, value, onCommit });
-    buttons(el, "Add")[0]!.click();
+    buttons(el, "Add to beats")[0]!.click();
     expect(onCommit).toHaveBeenLastCalledWith([...value, { at: 0, id: "item-3" }]);
     buttons(el, "Move down")[0]!.click();
     expect(onCommit).toHaveBeenLastCalledWith([{ id: "b1", at: 1 }, { id: "b2", at: 3 }, { at: 0, id: "item-3" }]);
@@ -170,7 +176,7 @@ describe("valueRow", () => {
 
   it("is read-only without onCommit", () => {
     const { el } = valueRow({ decl: { name: "words", type: "list", of: { type: "text" } }, value: ["a"] });
-    expect(buttons(el, "Add")).toHaveLength(0);
+    expect(el.querySelectorAll('button[aria-label^="Add"]')).toHaveLength(0);
     expect(el.querySelector<HTMLInputElement>("input")!.disabled).toBe(true);
   });
 });

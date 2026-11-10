@@ -135,15 +135,12 @@ textarea.shell-fieldrow-text { min-height: 3.6em; font-family: inherit; line-hei
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
   clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
 }
-/* A caption with help: its rollover is the help, and a small "?" after it says so (hidden from a screen reader,
-   which reads the help as the control's description). */
+/* Its place is its own field's: without a positioned ancestor nearer than the panel, the hidden help sat at the
+   bottom of a long settings page and gave the dialog itself something to scroll, so the wheel over its Cancel and
+   Save row moved the whole frame (Ian, 2026-11-10). */
+.shell-fieldrow-body { position: relative; }
+/* A caption with help: its rollover is the help, and the help cursor is the only sign (no mark per field). */
 .has-help { cursor: help; }
-.has-help::after {
-  content: "?" / ""; display: inline-flex; align-items: center; justify-content: center; vertical-align: 1px;
-  box-sizing: border-box; width: 14px; height: 14px; margin-left: 4px; border: 1px solid var(--line); border-radius: 50%;
-  font: 600 var(--text-xs)/1 var(--font-ui); color: var(--muted);
-}
-.has-help:hover::after { color: var(--ink); border-color: var(--muted); }
 .shell-fieldrow-problem { margin: 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--warn, var(--danger, var(--accent))); }
 .shell-fieldrow.has-problem .shell-fieldrow-text { border-color: var(--warn, var(--danger)); }
 .shell-flags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
@@ -213,34 +210,57 @@ kbd {
    caption, with a map's and a list's own controls beside each part. */
 /* A list, a map, or a record: its parts under its caption, which sits at the top of the field however long the
    list. A field's controls share one left edge, so a list's sit where a single field's do; only a record inside
-   one is set in, with a rule, so its fields read as one thing. */
+   one is set in, with a rule, so its fields read as one thing. A list, a map, or a record grid has room above and
+   below it, more than between its own rows, so one field's last row never runs into the next field's first. */
 .shell-fieldrow.shell-valuerow > .shell-fieldrow-label { align-self: start; padding-top: 5px; }
-.shell-valuerow-parts { gap: 6px; }
+.shell-fieldrow.shell-valuerow { margin-block: 4px 10px; }
+.shell-valuerow-parts {
+  gap: 6px;
+  /* One width for every table's values on a page, and room for a list's three tools (up, down, remove: 24px each,
+     2px apart), so every remove and every adder's + sit at the right of one column. */
+  --shell-table-width: 17em; --shell-table-key: 7em; --shell-table-tools: 76px;
+}
 .shell-valuerow-parts .shell-valuerow-parts:not(.shell-valuerow-table) {
   padding-left: 10px; border-left: 1px solid var(--line, color-mix(in oklab, var(--ink) 14%, transparent));
 }
-/* A list or a map of single values is a table: number or key, value, tools, one entry a row, the adder last. The
-   parts and their rows give their cells to the one grid, so every row's columns line up. */
+/* A list or a map of single values is a table, one entry a row, the adder the last: a list's value and tools (no
+   numbers: nothing refers to an item by number); a map's key, value, and tools. Every such table on a page is the
+   same width, so the tools form one column down it. The parts and their rows give their cells to the one grid. */
 .shell-valuerow-table {
-  display: grid; grid-template-columns: max-content minmax(8em, max-content) max-content;
+  display: grid; grid-template-columns: var(--shell-table-width) minmax(var(--shell-table-tools), max-content);
   justify-content: start; align-items: start; column-gap: 8px; row-gap: 4px;
+}
+.shell-valuerow-map > .shell-valuerow-table {
+  grid-template-columns: var(--shell-table-key) calc(var(--shell-table-width) - var(--shell-table-key) - 8px) minmax(var(--shell-table-tools), max-content);
 }
 .shell-valuerow-table > .shell-valuerow-part,
 .shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow { display: contents; }
 .shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-label {
-  grid-column: 1; padding-top: 5px; max-width: 14em; overflow-wrap: anywhere;
+  padding-top: 5px; overflow-wrap: anywhere;
 }
-.shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-body { grid-column: 2; }
-/* A table's value fills its column, so the tools sit beside it, whatever width the app gives its controls. */
+/* A list's items are named for a screen reader (its caption labels the control), not drawn. */
+.shell-valuerow-list > .shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-label { display: none; }
 .shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-body { align-items: stretch; }
-.shell-valuerow-table .shell-fieldrow-body > :is(input, select, textarea) { width: 100%; box-sizing: border-box; }
-.shell-valuerow-table > .shell-valuerow-part > .shell-valuerow-controls { grid-column: 3; padding-top: 2px; }
-.shell-valuerow-table > :not(.shell-valuerow-part) { grid-column: 1 / -1; }
-/* A list's numbers are its order, not names: quiet, and lined up on the right. */
-.shell-valuerow-list > .shell-valuerow-table > .shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-label {
-  justify-self: end; color: var(--muted); font-variant-numeric: tabular-nums;
+.shell-valuerow-table .shell-fieldrow-body > :is(input, select, textarea) { width: 100%; max-width: none; box-sizing: border-box; }
+.shell-valuerow-table > .shell-valuerow-part > .shell-valuerow-controls { padding-top: 2px; justify-self: end; }
+.shell-valuerow-table > .shell-valuerow-add > button { justify-self: end; }
+/* The adder is one more row: a map's key in the key and value columns, the + in the tools column. */
+.shell-valuerow-table > .shell-valuerow-add { display: contents; }
+.shell-valuerow-list > .shell-valuerow-table > .shell-valuerow-add > button { grid-column: 2; }
+.shell-valuerow-map > .shell-valuerow-table > .shell-valuerow-add > :is(input, select) { grid-column: 1 / span 2; width: 100%; max-width: none; box-sizing: border-box; }
+.shell-valuerow-map > .shell-valuerow-table > .shell-valuerow-add > button { grid-column: 3; }
+.shell-valuerow-table > :not(.shell-valuerow-part):not(.shell-valuerow-add) { grid-column: 1 / -1; }
+/* A record grid is as wide as its columns need, and its adder is a row on the tables' columns, so its + sits under
+   every other + on the page. */
+.shell-valuerow-parts > .shell-recordgrid { max-width: 100%; }
+.shell-valuerow-parts > .shell-recordgrid > .shell-recordgrid-table { width: auto; }
+.shell-valuerow-parts > .shell-recordgrid > .shell-recordgrid-add {
+  display: grid; grid-template-columns: var(--shell-table-width) minmax(var(--shell-table-tools), max-content);
+  column-gap: 8px; align-items: center; margin-top: 4px;
 }
-.shell-valuerow-parts > .shell-recordgrid { width: 100%; }
+.shell-valuerow-parts > .shell-recordgrid > .shell-recordgrid-add > :is(input, select) { width: 100%; max-width: none; box-sizing: border-box; }
+.shell-valuerow-parts > .shell-recordgrid > .shell-recordgrid-add > button { grid-column: 2; justify-self: end; }
+.shell-valuerow-parts > .shell-recordgrid > .shell-recordgrid-empty { margin: 4px 0 0; }
 .shell-valuerow-part { display: flex; align-items: flex-start; gap: 6px; width: 100%; }
 .shell-valuerow-part > .shell-fieldrow { flex: 1; min-width: 0; }
 .shell-valuerow-controls { display: inline-flex; gap: 2px; padding-top: 2px; }
@@ -269,6 +289,8 @@ kbd {
 .shell-group-cap:hover svg, .shell-group-cap:focus-visible svg { color: var(--ink); }
 .shell-group-cap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
 .shell-group-body:empty { display: none; }
+/* The fields a group would hold that are set here: drawn among the fields outside it, just above its heading. */
+.shell-group-above { display: contents; }
 
 /* A map of records as a grid (value-rows' recordMapGrid): a row per key, a column per record field, each
    cell the field's own row with its caption and help left to the column head. */
@@ -293,3 +315,20 @@ kbd {
   transition: background-color var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard),
     border-color var(--dur-tint) var(--ease-standard);
 }
+
+/* A pick that takes any text (suggest-box.ts): the list under its box floats as a menu does. */
+.shell-suggest-list {
+  position: fixed; z-index: 300; max-height: 240px; overflow-y: auto; padding: 4px;
+  background: var(--surface); border-radius: var(--radius-md); box-shadow: var(--shadow-pop);
+  font-family: var(--font-ui);
+}
+/* Never a window-drag region, even over one (dialog.css says why). */
+.shell-suggest-list, .shell-suggest-list * { -webkit-app-region: no-drag; }
+.shell-suggest-group {
+  padding: 6px 10px 2px; font: 600 var(--text-sm)/1.3 var(--font-ui); color: var(--muted);
+}
+.shell-suggest-item {
+  padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer;
+  font: var(--text-md)/1.3 var(--font-ui); color: var(--ink);
+}
+.shell-suggest-item:hover, .shell-suggest-item.is-active { background: var(--accent); color: var(--on-accent); }

@@ -210,7 +210,7 @@ export function recordMapGrid(initial: RecordMapGridOptions): RecordMapGrid {
       pick.addEventListener("change", () => add(pick.value));
       adder.append(pick);
     } else {
-      const input = el("input", "field shell-valuerow-key");
+      const input = el("input", `${opts.controlClassName ?? "field"} shell-valuerow-key`);
       input.type = "text"; input.placeholder = "New key"; input.value = addKey;
       input.addEventListener("input", () => { addKey = input.value; });
       const go = (): void => { const k = input.value.trim(); addKey = ""; add(k); };

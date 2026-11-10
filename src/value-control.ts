@@ -18,7 +18,7 @@
 // can take it.
 // ---------------------------------------------------------------------------
 
-import { captionHelp, helpOnKeyboardFocus } from "./field-help.js";
+import { captionHelp, helpOnKeyboardFocus, helpText } from "./field-help.js";
 import { el, tagChips } from "./dom.js";
 
 /** A declaration as these controls read it: a property's, a field's or a game-data field's. */
@@ -176,6 +176,15 @@ export interface FieldDeclLike extends ValueDeclLike {
  * The help for what `decl` holds: the chosen enum value's, stage's or pick word's (the one it falls back to, when
  * unset), or each chosen flag's, "name: sentence" a line each. Empty when the declaration describes none of them.
  */
+/** The word the tooltip names the value by: the chosen enum value or stage, else the one an unset field falls
+ *  back to (as `valueHelpText` reads it). Nothing for another type, whose value help names its own words. */
+function valueWord(decl: FieldDeclLike, value: unknown): string | undefined {
+  if (decl.type !== "enum" && decl.type !== "quality") return undefined;
+  if (typeof value === "string" && value !== "") return value;
+  if (typeof decl.default === "string" && decl.default !== "") return decl.default;
+  return decl.type === "enum" ? decl.values?.[0] : decl.stages?.[0];
+}
+
 export function valueHelpText(decl: FieldDeclLike, value: unknown): string {
   const help = decl.valueHelp;
   if (help === undefined) return "";
@@ -276,11 +285,13 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
   // The field's help is the control's description, read by a screen reader, and shown by the caption's "?" and on
   // keyboard focus rather than drawn under every field (field-help.ts).
   const purpose = el("p", "shell-fieldrow-purpose shell-fieldrow-described");
-  const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp");
+  // What the chosen value means is said with the field's help, in the tooltip, not under the control.
+  const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp shell-fieldrow-described");
   const problem = el("p", "shell-fieldrow-problem");
   problem.setAttribute("role", "status");
   row.append(caption, body);
-  helpOnKeyboardFocus(row, () => opts.decl.purpose ?? "");
+  const tip = (): string => helpText(opts.decl.purpose ?? "", valueWord(opts.decl, opts.value), valueHelpText(opts.decl, opts.value));
+  helpOnKeyboardFocus(row, tip);
 
   let shape = "";
   /** Redraw the control for the current value; set by whichever control is built. */
@@ -294,16 +305,16 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
   const ctl = (base: string): string => (opts.controlClassName ? `${base.replace(/^field /, "")} ${opts.controlClassName}` : base);
   const labelledBy = (node: HTMLElement): void => {
     node.setAttribute("aria-labelledby", caption.id);
-    const described = [purpose.id, problem.id].filter(Boolean).join(" ");
+    const described = [purpose.id, valueHelp.id, problem.id].filter(Boolean).join(" ");
     if (described) node.setAttribute("aria-describedby", described);
   };
-  purpose.id = `${caption.id}-p`; problem.id = `${caption.id}-m`;
+  purpose.id = `${caption.id}-p`; valueHelp.id = `${caption.id}-v`; problem.id = `${caption.id}-m`;
 
   const sayProblem = (): void => {
     // The chosen value's own help travels with every change of value, as the message does.
     const help = valueHelpText(opts.decl, opts.value);
     valueHelp.textContent = help;
-    valueHelp.hidden = help === "";
+    captionHelp(caption, tip());
     const words = opts.replaceProblem !== undefined
       ? [opts.replaceProblem].filter((w) => w !== "")
       : [typing || fieldValueProblem(opts.decl, opts.value), opts.problem ?? ""].filter((w) => w !== "");
@@ -446,7 +457,6 @@ export function fieldRow(initial: FieldRowOptions): FieldRowHandle {
     const label = next.label ?? decl.name;
     if (typeof label === "string") caption.textContent = label; else caption.replaceChildren(label);
     caption.className = `shell-fieldrow-label${next.labelClassName ? ` ${next.labelClassName}` : ""}`;
-    captionHelp(caption, decl.purpose ?? "");
     row.className = `shell-fieldrow${next.className ? ` ${next.className}` : ""}`;
     const nextShape = controlShape(next);
     opts = next;

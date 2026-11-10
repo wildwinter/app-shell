@@ -1,13 +1,20 @@
-// A declared field's help, kept out of the way: the field's caption, with a small "?" after it, whose rollover is the help,
+// A declared field's help, kept out of the way: the field's caption, whose rollover is the help,
 // and the same help above the control when it takes keyboard focus (Pattershot's brief field-help-as-a-tooltip,
-// ruled by Ian 2026-11-10). The help stays in the page, visually hidden, as the control's description, so a screen
-// reader still reads it. What a chosen value means, and a field's problem, stay under the control: they change
-// with the value, and a problem is a fault to fix.
+// ruled by Ian 2026-11-10, and settings-tables-tidy: no mark, and the chosen value's help in the tooltip too). The
+// help stays in the page, visually hidden, as the control's description, so a screen reader still reads it. Only a
+// field's problem is drawn under the control: it's a fault to fix.
 
-import { ensureTooltipHost, hideTip, tipFor } from "./tooltip.js";
+import { ensureTooltipHost, hideTip, tipBold, tipFor } from "./tooltip.js";
 
-/** Give `caption` the help: its rollover (the themed tooltip, hovering the caption or its "?"), and the "?" drawn
- *  after it by the stylesheet (`.has-help`), so the caption's own text is unchanged. None: both taken off. */
+/** A field's tooltip: its own help, then what the chosen value means, the value named in bold. Empty when there's
+ *  neither. */
+export function helpText(fieldHelp: string, value?: string, valueHelp?: string): string {
+  const said = valueHelp && value ? `${tipBold(value)}: ${valueHelp}` : valueHelp ?? "";
+  return [fieldHelp, said].filter((t) => t !== "").join("\n");
+}
+
+/** Give `caption` the help as its rollover (the themed tooltip, on hovering the caption; a help cursor says it's
+ *  there), so the caption's own text is unchanged. None: taken off. */
 export function captionHelp(caption: HTMLElement, help: string): void {
   caption.classList.toggle("has-help", help !== "");
   if (help === "") { delete caption.dataset["tip"]; return; }

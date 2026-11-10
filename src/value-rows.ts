@@ -28,7 +28,8 @@ import { defaultOf, pickChoices, valueProblems } from "@wildwinter/toolkit/exten
 import type { PickSource, TypeDecl, ValueContext } from "@wildwinter/toolkit/extensions";
 import { el, iconBtn, moveItem } from "./dom.js";
 import { fieldRow, fieldRowFocus, valueHelpText } from "./value-control.js";
-import { captionHelp, helpOnKeyboardFocus } from "./field-help.js";
+import { captionHelp, helpOnKeyboardFocus, helpText } from "./field-help.js";
+import { suggestBox } from "./suggest-box.js";
 import { isRecordMap, recordMapGrid, recordListGrid, isRecordList } from "./record-map.js";
 import type { RecordMapGrid } from "./record-map.js";
 import type { FieldDeclLike, FieldRowHandle, FieldValue } from "./value-control.js";
@@ -76,6 +77,12 @@ export interface ValueAdapter {
    * does not list is taken to be gone.
    */
   label?(kind: string, id: string): string | undefined;
+  /**
+   * A pool's values, in the order to offer them (the toolkit's `poolValues`: the commonest first), for a pick's
+   * `pool` source. A host scopes it to the extension whose rows it draws. Absent: a pool pick suggests only its
+   * other sources' choices, and still takes any text.
+   */
+  pool?(name: string): readonly string[] | undefined;
 }
 
 /** A node's name: from the choices, else the host's `label`; undefined when the host says there is none. */
@@ -250,30 +257,35 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
     const inner = scalarRow({ ...opts, decl: { ...opts.decl, type: "text" } });
     return { el: inner.el, update: (o) => { opts = o; inner.update({ ...o, decl: { ...o.decl, type: "text" } }); } };
   }
+  if ((opts.decl.from ?? []).some((s) => "pool" in s)) return poolPickRow(opts);
   const row = el("div", "shell-fieldrow shell-valuerow-pick");
   const caption = el("span", "shell-fieldrow-label");
   const body = el("div", "shell-fieldrow-body");
   const sel = el("select", "field shell-fieldrow-select");
   const help = el("p", "shell-fieldrow-purpose shell-fieldrow-described");
-  const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp");
+  // What the chosen word means is said with the field's help, in the tooltip, not under the control.
+  const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp shell-fieldrow-described");
   const problem = el("p", "shell-fieldrow-problem");
   problem.setAttribute("role", "status");
   describe(caption, sel, help, problem);
+  valueHelp.id = `${caption.id}-v`;
+  sel.setAttribute("aria-describedby", `${help.id} ${valueHelp.id} ${problem.id}`);
   body.append(sel, help, valueHelp, problem);
   row.append(caption, body);
-  helpOnKeyboardFocus(row, () => opts.decl.help ?? opts.decl.purpose ?? "");
+  const tip = (): string => helpText(opts.decl.help ?? opts.decl.purpose ?? "", typeof opts.value === "string" ? opts.value : undefined, valueHelpText(opts.decl, opts.value));
+  helpOnKeyboardFocus(row, tip);
   sel.addEventListener("change", () => {
     const v = sel.value === "" ? undefined : sel.value;
     opts = { ...opts, value: v };
     draw(opts);
     opts.onCommit?.(v);
   });
-  const groupName = (s: PickSource): string | undefined =>
-    "to" in s ? (s.to === "cast" ? "Cast" : s.to.charAt(0).toUpperCase() + s.to.slice(1)) : "list" in s ? s.list : (s as { keys?: string }).keys; // keys: toolkit 1.2.0
+  const groupName = sourceGroup;
   const draw = (o: ValueRowOptions): void => {
     opts = o;
     row.className = `shell-fieldrow shell-valuerow-pick${o.className ? ` ${o.className}` : ""}`;
     drawCaption(caption, o);
+    captionHelp(caption, tip());
     if (o.controlClassName) sel.className = `shell-fieldrow-select ${o.controlClassName}`;
     const adapter = o.adapter;
     const choices = pickChoices(o.decl as unknown as TypeDecl, {
@@ -283,7 +295,8 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
     const held = typeof o.value === "string" ? o.value : "";
     sel.replaceChildren();
     const option = (v: string, text: string): HTMLOptionElement => { const opt = el("option", undefined, text); opt.value = v; return opt; };
-    sel.append(option("", "auto"));
+    // Unset is automatic, said as every field's unset is: "default (...)".
+    sel.append(option("", "default (auto)"));
     // One group per source, in order; a value two sources hold is offered by the first only, so the select
     // shows one choice for what it holds (the row says the name is ambiguous).
     const offered = new Set<string>();
@@ -311,7 +324,73 @@ function pickRow(initial: ValueRowOptions): ValueRowHandle {
     help.textContent = o.decl.help ?? o.decl.purpose ?? "";
     // The chosen word's own help, as an enum's value has (a pick's help describes its fixed words only).
     valueHelp.textContent = valueHelpText(o.decl, o.value);
-    valueHelp.hidden = valueHelp.textContent === "";
+    const words = o.replaceProblem ?? [ownProblems(o.decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
+    problem.textContent = words;
+    problem.hidden = words === "";
+    row.classList.toggle("has-problem", words !== "");
+  };
+  draw(initial);
+  return { el: row, update: draw };
+}
+
+/** The heading a pick's source is listed under: none for fixed words, else what the choices are. */
+function sourceGroup(s: PickSource): string | undefined {
+  if ("words" in s) return undefined;
+  if ("to" in s) return s.to === "cast" ? "Cast" : s.to.charAt(0).toUpperCase() + s.to.slice(1);
+  if ("pool" in s) return "Used in this project";
+  return "list" in s ? s.list : (s as { keys?: string }).keys;
+}
+
+/**
+ * A pick with a `pool` source (free-text-picks): any text, typed in a box that suggests the other sources'
+ * choices (fixed words first, then the cast by name) and the names already used for the pool, the commonest first.
+ * A name a source holds is that choice; anything else is held as typed. Empty is automatic.
+ */
+function poolPickRow(initial: ValueRowOptions): ValueRowHandle {
+  let opts = initial;
+  const row = el("div", "shell-fieldrow shell-valuerow-pick");
+  const caption = el("span", "shell-fieldrow-label");
+  const body = el("div", "shell-fieldrow-body");
+  const help = el("p", "shell-fieldrow-purpose shell-fieldrow-described");
+  const valueHelp = el("p", "shell-fieldrow-purpose shell-fieldrow-valuehelp shell-fieldrow-described");
+  const problem = el("p", "shell-fieldrow-problem");
+  problem.setAttribute("role", "status");
+  const box = suggestBox({
+    className: "field shell-fieldrow-text",
+    placeholder: "default (auto)",
+    suggestions: () => {
+      const adapter = opts.adapter;
+      return pickChoices(opts.decl as unknown as TypeDecl, {
+        ...(adapter ? { nodes: (kind: string) => adapter.nodes(kind) } : {}),
+        ...(adapter?.list ? { list: (name: string) => adapter.list!(name) } : {}),
+        ...(adapter?.pool ? { pool: (name: string) => adapter.pool!(name) } : {}),
+      }).map((c) => ({ value: c.value, label: c.label, ...(sourceGroup(c.source) !== undefined ? { group: sourceGroup(c.source)! } : {}) }));
+    },
+    onCommit: (value) => {
+      const v = value === "" ? undefined : value;
+      opts = { ...opts, value: v };
+      draw(opts);
+      opts.onCommit?.(v);
+    },
+  });
+  const input = box.input;
+  describe(caption, input, help, problem);
+  valueHelp.id = `${caption.id}-v`;
+  input.setAttribute("aria-describedby", `${help.id} ${valueHelp.id} ${problem.id}`);
+  body.append(input, help, valueHelp, problem);
+  row.append(caption, body);
+  const tip = (): string => helpText(opts.decl.help ?? opts.decl.purpose ?? "", typeof opts.value === "string" ? opts.value : undefined, valueHelpText(opts.decl, opts.value));
+  helpOnKeyboardFocus(row, tip);
+  const draw = (o: ValueRowOptions): void => {
+    opts = o;
+    row.className = `shell-fieldrow shell-valuerow-pick${o.className ? ` ${o.className}` : ""}`;
+    drawCaption(caption, o);
+    captionHelp(caption, tip());
+    if (o.controlClassName) input.className = `shell-fieldrow-text ${o.controlClassName}`;
+    box.set(typeof o.value === "string" ? o.value : "");
+    box.setDisabled(o.onCommit === undefined || o.disabled === true);
+    help.textContent = o.decl.help ?? o.decl.purpose ?? "";
+    valueHelp.textContent = valueHelpText(o.decl, o.value);
     const words = o.replaceProblem ?? [ownProblems(o.decl, o.value, o.adapter), o.problem ?? ""].filter((w) => w !== "").join(" ");
     problem.textContent = words;
     problem.hidden = words === "";
@@ -467,7 +546,7 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
           commit({ ...value, [k]: defaultOf(decl.of as unknown as TypeDecl) });
         };
         if (keyNodes !== undefined) {
-          const pick = el("select", "field shell-valuerow-key");
+          const pick = el("select", keyClass(o));
           const first = el("option", undefined, "Add..."); first.value = ""; pick.append(first);
           for (const n of keyNodes.filter((n) => !Object.prototype.hasOwnProperty.call(value, n.id))) {
             const opt = el("option", undefined, n.label); opt.value = n.id; pick.append(opt);
@@ -475,12 +554,13 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
           pick.addEventListener("change", () => add(pick.value));
           adder.append(pick);
         } else {
-          const input = el("input", "field shell-valuerow-key");
+          const input = el("input", keyClass(o));
           input.type = "text"; input.placeholder = "New key"; input.value = addKey;
+          input.setAttribute("aria-label", `New key for ${nameOf(decl)}`);
           input.addEventListener("input", () => { addKey = input.value; });
           const go = (): void => { const k = input.value.trim(); addKey = ""; add(k); };
           input.addEventListener("keydown", (e) => { if ((e as KeyboardEvent).key === "Enter") go(); });
-          adder.append(input, iconBtn("add", "Add", go));
+          adder.append(input, iconBtn("add", `Add to ${nameOf(decl)}`, go));
         }
       }
     } else if (decl.type === "list" && decl.of) {
@@ -494,7 +574,9 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
           iconBtn("down", "Move down", () => { const next = [...value]; if (moveItem(next, i, 1)) set(next); }, i === value.length - 1),
           iconBtn("close", "Remove", () => set(value.filter((_, j) => j !== i)), false, true),
         ] : [];
-        const itemLabel = decl.id !== undefined && isObject(item) && typeof item[decl.id] === "string" ? item[decl.id] as string : `${i + 1}`;
+        // An item is named by its id, else, as nothing refers to an item by number, by the list and its place: a name
+        // for a screen reader, not drawn (the table shows no numbers).
+        const itemLabel = decl.id !== undefined && isObject(item) && typeof item[decl.id] === "string" ? item[decl.id] as string : `${nameOf(decl)}, item ${i + 1}`;
         child(idOf(item, i), asDecl(decl.of!, itemLabel), item, (v) => {
           const next = [...(Array.isArray(opts.value) ? opts.value : [])];
           next[i] = v === undefined ? defaultOf(decl.of as unknown as TypeDecl) : v;
@@ -502,7 +584,7 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
         }, controls, itemLabel);
       });
       adder.replaceChildren();
-      if (editable()) adder.append(iconBtn("add", "Add", () => commit([...value, freshItem(decl, value)])));
+      if (editable()) adder.append(iconBtn("add", `Add to ${nameOf(decl)}`, () => commit([...value, freshItem(decl, value)])));
     }
 
     for (const key of [...parts.keys()]) if (!used.has(key)) parts.delete(key);
@@ -522,6 +604,11 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
   };
   draw(initial);
   return { el: row, update: draw };
+}
+
+/** A map's key adder in the app's own control class, so it is the size of the inputs above it. */
+function keyClass(o: ValueRowOptions): string {
+  return `${o.controlClassName ?? "field"} shell-valuerow-key`;
 }
 
 /** A new item for a list: its type's default, and, in a list with ids, an id no item has yet. */

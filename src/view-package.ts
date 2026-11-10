@@ -323,7 +323,7 @@ export function planPackageAdd(manifest: Manifest, taken: readonly { readonly id
   const otherMajor = version.split(".")[0] !== pinned.split(".")[0];
   return {
     project: "none", pinned, version, missing: [],
-    note: `This project takes ${name} ${pinned}, newer than this package's ${version}, so it keeps ${pinned}.`
+    note: `This project uses ${name} ${pinned}, newer than this package's ${version}, so it keeps ${pinned}.`
       + (otherMajor ? ` The views installed from this package won't open in it, being a different major version.` : ""),
   };
 }
@@ -360,10 +360,12 @@ export function extensionRows(taken: readonly TakenExtension[], installed: reado
     const versions = installed.filter((i) => i.id === id).sort((a, b) => compareVersions(a.version, b.version));
     const manifest = mine?.manifest ?? versions[versions.length - 1]!.manifest;
     const views = viewsFor(manifest, host).map((v) => v.name);
+    const inUse = mine ? chooseInstalled(versions, id, mine.pin).installed?.version : undefined;
     rows.push({
       id, name: nameOf(manifest), inProject: mine !== undefined,
       ...(mine?.pin !== undefined ? { pinned: mine.pin } : {}),
       views, installed: versions.map((v) => v.version),
+      ...(inUse ? { inUse } : {}),
       needsInstall: mine !== undefined && views.length > 0 && versions.length === 0,
       requiredBy: mine ? requirersOf(id, taken) : [],
     });
@@ -375,7 +377,7 @@ export function extensionRows(taken: readonly TakenExtension[], installed: reado
  *  project takes requires it (the add rule the other way round), or when the project doesn't take it. */
 export function planProjectRemoval(id: string, taken: readonly TakenExtension[]): { readonly ok: true; readonly name: string } | { readonly ok: false; readonly why: string } {
   const mine = taken.find((t) => t.id === id);
-  if (!mine) return { ok: false, why: `This project doesn't take ${id}.` };
+  if (!mine) return { ok: false, why: `This project doesn't use ${id}.` };
   const name = nameOf(mine.manifest);
   const by = requirersOf(id, taken);
   if (by.length > 0) {
@@ -421,7 +423,7 @@ export function planPackageUpdate(
       return {
         kind: "refused",
         why: row.inProject
-          ? `This project takes ${row.name} ${from}, newer than this package's ${to}, so nothing changed: an update never goes back to an older version.`
+          ? `This project uses ${row.name} ${from}, newer than this package's ${to}, so nothing changed: an update never goes back to an older version.`
           : `${row.name} ${from} is installed here, newer than this package's ${to}, so nothing changed: an update never goes back to an older version.`,
       };
     }

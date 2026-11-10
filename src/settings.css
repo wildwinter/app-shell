@@ -9,6 +9,10 @@
   padding: 0; border: 0; border-radius: var(--radius-dialog);
   background: var(--surface); color: var(--ink);
   width: min(760px, 92vw); max-height: 82vh;
+  /* The frame never scrolls: only the tab rail and the panels do. A dialog scrolls its own content by default,
+     so a wheel turned over the title or the Cancel and Save row (which can't scroll) moved the whole frame,
+     buttons and all, by the few pixels the form ran over (Ian, 2026-11-10). */
+  overflow: hidden;
   box-shadow: var(--shadow-modal);
   font: var(--text-md) var(--font-ui, system-ui, sans-serif);
 }
@@ -115,6 +119,9 @@
 .shell-field { display: flex; flex-direction: column; gap: 3px; }
 .shell-field[hidden] { display: none; }   /* see .settings-panel[hidden] */
 .shell-fieldhint { margin: 0; font: var(--text-sm)/1.4 var(--font-ui); color: var(--muted); max-width: 60ch; }
+/* In a settings page a setting's name is in ink and the sentence under it muted and smaller, so which sentence
+   belongs to which setting reads at a glance (Ian, 2026-11-10: two greys a size apart ran together). */
+.settings-panel .shell-fieldcap { color: var(--ink); }
 .shell-fieldhint code { font: var(--text-xs) var(--font-mono, monospace); color: var(--ink); }
 /* The toggle (`labelledToggle`): the box sits where any other row's control
    does. A disabled one dims its caption too, or the row reads as live with

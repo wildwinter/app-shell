@@ -233,7 +233,10 @@ describe("a value's own help", () => {
     const act = fieldRow({ decl: { name: "act", type: "quality", stages: ["setup", "turn"], valueHelp: { turn: "The middle." } }, value: "turn", onCommit: () => {} });
     expect(help(act.el)).toBe("The middle.");
     const plain = fieldRow({ decl: { name: "tone", type: "enum", values: ["a"] }, value: "a", onCommit: () => {} });
-    expect(plain.el.querySelector<HTMLElement>(".shell-fieldrow-valuehelp")!.hidden).toBe(true);
+    expect(plain.el.querySelector<HTMLElement>(".shell-fieldrow-valuehelp")!.textContent).toBe("");
+    // Said in the tooltip, the value named, never drawn under the control.
+    expect(tone.el.querySelector(".shell-fieldrow-valuehelp")!.classList.contains("shell-fieldrow-described")).toBe(true);
+    expect(tone.el.querySelector<HTMLElement>(".shell-fieldrow-label")!.dataset["tip"]).toBe("\u0002calm\u0003: Unhurried.");
   });
 });
 

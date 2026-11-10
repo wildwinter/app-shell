@@ -26,6 +26,7 @@ const LAYERS: { owner: string; selector: string; sheet: string }[] = [
   { owner: "anchored.ts", selector: ".shell-anchored", sheet: "anchored.css" },
   { owner: "toast.ts", selector: ".shell-toast", sheet: "toast.css" },
   { owner: "command-palette.ts", selector: ".shell-palette", sheet: "command-palette.css" },
+  { owner: "suggest-box.ts (a pool pick's list)", selector: ".shell-suggest-list", sheet: "controls.css" },
   { owner: "floating.ts (the caller's class, so an attribute)", selector: "[data-shell-layer]", sheet: "tokens.css" },
 ];
 

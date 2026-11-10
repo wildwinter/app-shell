@@ -193,10 +193,10 @@ describe("planning Add Extension", () => {
   it("never downgrades, and says so", () => {
     expect(planPackageAdd(shot("0.3.0"), [{ id: "pattershot", pin: "0.4.0" }])).toEqual({
       project: "none", pinned: "0.4.0", version: "0.3.0", missing: [],
-      note: "This project takes Pattershot 0.4.0, newer than this package's 0.3.0, so it keeps 0.4.0.",
+      note: "This project uses Pattershot 0.4.0, newer than this package's 0.3.0, so it keeps 0.4.0.",
     });
     expect(planPackageAdd(shot("0.9.0"), [{ id: "pattershot", pin: "1.0.0" }]).note)
-      .toBe("This project takes Pattershot 1.0.0, newer than this package's 0.9.0, so it keeps 1.0.0. The views installed from this package won't open in it, being a different major version.");
+      .toBe("This project uses Pattershot 1.0.0, newer than this package's 0.9.0, so it keeps 1.0.0. The views installed from this package won't open in it, being a different major version.");
   });
   it("labels a view not installed here", () => {
     expect(viewMenuLabel("Performance sheet", true)).toBe("Performance sheet");
@@ -219,8 +219,12 @@ describe("the Extensions window's rows", () => {
     expect(rows.map((r) => r.name)).toEqual(["Another", "Pattershot", "Patterstage"]);
     expect(rows[1]).toEqual({
       id: "pattershot", name: "Pattershot", inProject: true, pinned: "0.4.0", views: ["Performance sheet"],
-      installed: ["0.3.0", "0.4.0"], needsInstall: false, requiredBy: [],
+      installed: ["0.3.0", "0.4.0"], inUse: "0.4.0", needsInstall: false, requiredBy: [],
     });
+    // The copy in use is the one the project opens: a pin with no exact copy falls to its major version's newest.
+    const nearby = extensionRows([{ ...shot, pin: "0.4.2" }], [at("pattershot", "Pattershot", "0.4.0", sheet), at("pattershot", "Pattershot", "0.3.0", sheet)], "patter");
+    expect(nearby[0]!.inUse).toBe("0.4.0");
+    expect(rows[0]!.inUse).toBeUndefined(); // not in the project
     expect(rows[2]).toMatchObject({ inProject: true, views: [], installed: [], needsInstall: false, requiredBy: ["Pattershot"] });
     expect(rows[0]).toMatchObject({ inProject: false, installed: ["1.0.0"], requiredBy: [] });
     expect(rows[0]!.pinned).toBeUndefined();
@@ -232,7 +236,7 @@ describe("the Extensions window's rows", () => {
   it("refuses to remove an extension another one needs, naming it, and one the project doesn't take", () => {
     expect(planProjectRemoval("patterstage", [shot, stage])).toEqual({ ok: false, why: "Pattershot needs Patterstage, so remove Pattershot first." });
     expect(planProjectRemoval("pattershot", [shot, stage])).toEqual({ ok: true, name: "Pattershot" });
-    expect(planProjectRemoval("nope", [shot])).toEqual({ ok: false, why: "This project doesn't take nope." });
+    expect(planProjectRemoval("nope", [shot])).toEqual({ ok: false, why: "This project doesn't use nope." });
     const two = { id: "b", manifest: man("b", "Bee", "1.0.0", { requires: ["patterstage"] }) };
     expect(planProjectRemoval("patterstage", [shot, stage, two]))
       .toEqual({ ok: false, why: "Pattershot and Bee need Patterstage, so remove Pattershot and Bee first." });
@@ -252,7 +256,7 @@ describe("Update…", () => {
   });
   it("refuses an older version, naming both", () => {
     expect(planPackageUpdate(row, m("0.3.0"), m("0.4.0"), "patter", [])).toEqual({
-      kind: "refused", why: "This project takes Pattershot 0.4.0, newer than this package's 0.3.0, so nothing changed: an update never goes back to an older version.",
+      kind: "refused", why: "This project uses Pattershot 0.4.0, newer than this package's 0.3.0, so nothing changed: an update never goes back to an older version.",
     });
     expect(planPackageUpdate({ ...row, inProject: false, pinned: undefined as never, installed: ["0.3.0", "0.4.0"] }, m("0.3.5"), m("0.4.0"), "patter", []))
       .toMatchObject({ kind: "refused", why: expect.stringContaining("Pattershot 0.4.0 is installed here") });

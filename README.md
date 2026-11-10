@@ -1125,14 +1125,20 @@ holder.append(...groups.rows({
 From Pattershot's briefs `field-help-as-a-tooltip` and `lists-and-maps-as-tables-in-settings`, at Ian's request
 (2026-11-10): an extension with a few dozen fields ran to screens of help paragraphs and stacked rows.
 
-- **A field's help is the caption's rollover**, not a paragraph under the control: a small "?" follows a caption
-  that has help, and hovering the caption shows it in the themed tooltip. A keyboard user gets it above the control
-  when the control takes focus (not on a click). The help stays in the page, visually hidden, as the control's
-  description, so a screen reader still reads it. A record grid's column headings carry their field's help the same
-  way. What a chosen value means (`valueHelp`) and a field's problem stay under the control.
-- **A list or a map of single values is a table**: each entry's number or key, its value, and its tools on one row,
-  in one grid so every row's columns line up, with the adder as the last row. A list's numbers are quiet and lined up
-  on the right.
+- **A field's help is the caption's rollover**, not a paragraph under the control: hovering a caption that has
+  help shows it in the themed tooltip (the caption takes a help cursor; there's no mark). A keyboard user gets it
+  above the control when the control takes focus from the keyboard (not on a click). The help stays in the page,
+  visually hidden, as the control's description, so a screen reader still reads it. What the chosen value means
+  (`valueHelp`) joins the same tooltip on a second line, after the value's name, and is described the same way, so
+  nothing but a problem is drawn under a control. A record grid's column headings carry their field's help too.
+- **A list or a map of single values is a table**: each entry's value (a map's key first) and its tools on one row,
+  in one grid, with the adder as the last row, sized and placed as a row. Every table on a page shares its widths,
+  so the tools line up in one column. A list draws no numbers: a screen reader hears each item as "moods, item 2".
+- **"Not set" reads one way**: an unset pick shows `default (auto)`, as an unset enum already did.
+- **A closed group keeps what's set outside it** (amends v1.2): the fields a node sets are drawn above the group's
+  heading, in the manifest's order, and the group holds only the fields left at their defaults, so closed it's its
+  heading alone, with no count. A field doesn't move while it's being edited: the split is settled when the group is
+  closed or the node changes. A group with nothing left inside draws no heading.
 - **`tables: true` on a value row** lays a map of records (`recordMapGrid`) or a list of records (`recordListGrid`,
   new, with move and remove tools per row) out as a grid, a column per field, for a page with room (Project
   Settings). Without it, a record is stacked rows, as a narrow inspector wants.
@@ -1140,6 +1146,17 @@ From Pattershot's briefs `field-help-as-a-tooltip` and `lists-and-maps-as-tables
   `labelClassName` (a pick, a reference, a list, a map and a record used to ignore it, so their captions looked
   unlike a plain field's). A list's controls share the left edge of a plain field's; only a record inside one is set
   in with a rule.
+- **The Extensions window says what's installed** (Pattershot's brief extensions-dialog-installed-here): each
+  extension's installed copies are "Views installed on this machine", each with "used by this project" or "not used
+  by this project" when a project is open (`ExtensionRow.inUse`, the copy `chooseInstalled` would open), and a line
+  on why there can be several. Uninstall buttons end in "…", since they ask first. The window and the package
+  sentences say a project "uses" an extension, not "takes" it.
+- **A pick that takes any text** (toolkit 1.2.0's `{ "pool": name }` source, from Pattershot's brief
+  free-text-with-suggestions): drawn as a text box with a list of suggestions under it, not a dropdown. It offers the
+  pick's fixed words, then its nodes by name, then the pool's values the host passes as `ValueAdapter.pool` (the
+  commonest first), filtered as the author types, anywhere in the name, case ignored. Arrows, Enter, and Escape work
+  the list; leaving the box keeps what's typed; a name a source holds is that choice (a cast member by name is held
+  by id). `suggestBox` (`src/suggest-box.ts`) is the box.
 - `tipFor(anchor, text)` shows a tip for an element without giving it a `data-tip`, drawn in a modal dialog's top
   layer when the anchor is in one.
 

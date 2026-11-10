@@ -111,9 +111,11 @@ export interface GroupRowsOptions {
 }
 
 export interface FieldGroups {
-  /** Every field's row in the manifest's order, a heading wherever the group changes; a closed group's heading a
-   *  disclosure counting what's set, with only the set fields under it. Opening or closing one redraws its rows
-   *  in place. */
+  /** Every field's row in the manifest's order, a heading wherever the group changes. A group that can be closed
+   *  holds only its fields at their defaults: the ones set here are drawn above its heading, with the fields
+   *  outside it, so closed it is its heading alone and opening it reveals exactly what was hidden. A field moves
+   *  only when the group closes or the node changes, never while it's being edited; a group with every field set
+   *  has no heading. Opening or closing one redraws its rows in place. */
   rows(o: GroupRowsOptions): HTMLElement[];
   /** Whether a group that starts closed has been opened. */
   isOpen(extension: string, group: string): boolean;
@@ -131,7 +133,9 @@ const groupOf = (decl: ValueDecl): string | undefined => (decl as { group?: stri
  */
 export function fieldGroups(): FieldGroups {
   const open = new Set<string>();
-  const shown = new Map<string, { fields: Set<string>; used: boolean }>();
+  /** Per node and group: the fields drawn above the heading, as they were set when the group last settled (when
+   *  the node was first drawn, or the group closed). Fixed in between, so a field doesn't move while it's edited. */
+  const promoted = new Map<string, { fields: Set<string>; used: boolean }>();
   const openKey = (extension: string, group: string): string => `${extension}\u0000${group}`;
 
   const groups: FieldGroups = {
@@ -139,11 +143,11 @@ export function fieldGroups(): FieldGroups {
     setOpen(extension, group, on) {
       const key = openKey(extension, group);
       if (on) open.add(key); else open.delete(key);
-      // Closing again starts from what is set now.
-      for (const k of shown.keys()) if (k.startsWith(`${extension}\u0000`) && k.endsWith(`\u0000${group}`)) shown.delete(k);
+      // Closing settles the group: what is set now moves above its heading next time it draws.
+      if (!on) for (const k of promoted.keys()) if (k.startsWith(`${extension}\u0000`) && k.endsWith(`\u0000${group}`)) promoted.delete(k);
     },
     sweep() {
-      for (const [key, entry] of shown) { if (!entry.used) shown.delete(key); else entry.used = false; }
+      for (const [key, entry] of promoted) { if (!entry.used) promoted.delete(key); else entry.used = false; }
     },
     rows(o) {
       // Runs: a group's fields together, as the manifest orders them. A group whose fields come apart is two runs
@@ -161,38 +165,49 @@ export function fieldGroups(): FieldGroups {
         const g = run.group;
         if (g === undefined) { out.push(...run.fields.map((d) => o.row(d))); continue; }
         if (!o.closed?.(g)) { out.push(o.group(g), ...run.fields.map((d) => o.row(d))); continue; }
+        // The fields set here when the group settled, drawn last before its heading in the manifest's order.
+        const key = `${o.extension}\u0000${o.node}\u0000${g}`;
+        let above = promoted.get(key);
+        if (!above) {
+          above = { fields: new Set(o.fields.filter((f) => groupOf(f) === g && isSet(f, o.entry?.[f.name])).map((f) => f.name)), used: true };
+          promoted.set(key, above);
+        }
+        above.used = true;
+        const fixed = above.fields;
+        const top = el("div", "shell-group-above");
         const heading = o.group(g);
         heading.classList.add("shell-group");
         const cap = el("button", "shell-group-cap");
         cap.type = "button";
         heading.replaceChildren(cap);
         const body = el("div", "shell-group-body");
-        const shownKey = `${o.extension}\u0000${o.node}\u0000${g}`;
         const draw = (): void => {
           const isOpen = groups.isOpen(o.extension, g);
-          // The count is the whole group's, across its runs.
-          const set = o.fields.filter((f) => groupOf(f) === g && isSet(f, o.entry?.[f.name])).map((f) => f.name);
-          let show: Set<string> | undefined;
-          if (!isOpen) {
-            const was = shown.get(shownKey);
-            show = was ? new Set([...was.fields, ...set]) : new Set(set);
-            shown.set(shownKey, { fields: show, used: true });
-          }
-          cap.replaceChildren(iconNode(isOpen ? "expanded" : "collapsed"), el("span", "shell-group-name", foldCaption(g, set.length)));
+          const inside = run.fields.filter((d) => !fixed.has(d.name));
+          top.replaceChildren(...run.fields.filter((d) => fixed.has(d.name)).map((d) => o.row(d)));
+          cap.replaceChildren(iconNode(isOpen ? "expanded" : "collapsed"), el("span", "shell-group-name", g));
           cap.setAttribute("aria-expanded", String(isOpen));
-          cap.dataset["tip"] = isOpen ? `Show only the ${g} fields set here` : `Show every ${g} field`;
+          cap.dataset["tip"] = isOpen ? `Hide the ${g} fields left at their defaults` : `Show the ${g} fields left at their defaults`;
           heading.classList.toggle("shell-group-open", isOpen);
-          body.replaceChildren(...run.fields.filter((d) => !show || show.has(d.name)).map((d) => o.row(d)));
+          // A group whose every field is set has nothing to hold, so no heading.
+          heading.hidden = inside.length === 0;
+          body.replaceChildren(...(isOpen ? inside.map((d) => o.row(d)) : []));
         };
         const list = redraws.get(g) ?? [];
         list.push(draw);
         redraws.set(g, list);
         cap.addEventListener("click", () => {
-          groups.setOpen(o.extension, g, !groups.isOpen(o.extension, g));
+          const closing = groups.isOpen(o.extension, g);
+          groups.setOpen(o.extension, g, !closing);
+          // Closing settles it: what's set now goes above the heading, what was cleared back into the group.
+          if (closing) {
+            fixed.clear();
+            for (const f of o.fields) if (groupOf(f) === g && isSet(f, o.entry?.[f.name])) fixed.add(f.name);
+          }
           for (const d of redraws.get(g) ?? []) d();
         });
         draw();
-        out.push(heading, body);
+        out.push(top, heading, body);
       }
       return out;
     },

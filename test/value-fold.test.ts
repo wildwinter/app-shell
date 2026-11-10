@@ -141,10 +141,35 @@ describe("closed groups", () => {
     expect(capOf(h).closest("h4")?.classList.contains("shell-group")).toBe(true);
   });
 
-  it("counts what a closed group holds and shows those fields, so a set value is never hidden", () => {
+  it("draws a field set here above the group's heading, so closed the group is its heading alone", () => {
     const h = holder(fieldGroups().rows(opts("n1", { lens: 35 })));
-    expect(capOf(h).textContent).toBe("More (1 set)");
+    expect(capOf(h).textContent).toBe("More");
     expect(shownOf(h)).toEqual(["target", "mood", "lens"]);
+    // lens is before the heading, not under it.
+    const lens = h.querySelector<HTMLElement>('[data-field="lens"]')!;
+    const heading = capOf(h).closest("h4")!;
+    expect(lens.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Opening reveals exactly what was hidden: the fields at their defaults.
+    capOf(h).click();
+    expect(shownOf(h)).toEqual(["target", "mood", "lens", "style"]);
+  });
+
+  it("moves nothing while a field is edited, and settles when the group closes", () => {
+    const groups = fieldGroups();
+    groups.setOpen("pattershot", "More", true);
+    // Set inside the open group: it stays there across the host's redraws.
+    expect(shownOf(holder(groups.rows(opts("n1", undefined))))).toEqual(["target", "mood", "style", "lens"]);
+    expect(shownOf(holder(groups.rows(opts("n1", { style: "wide" }))))).toEqual(["target", "mood", "style", "lens"]);
+    // Closed, it settles: style is above the heading now.
+    groups.setOpen("pattershot", "More", false);
+    const h = holder(groups.rows(opts("n1", { style: "wide" })));
+    expect(shownOf(h)).toEqual(["target", "mood", "style"]);
+  });
+
+  it("draws no heading for a group whose every field is set", () => {
+    const h = holder(fieldGroups().rows(opts("n1", { style: "wide", lens: 35 })));
+    expect(shownOf(h)).toEqual(["target", "mood", "style", "lens"]);
+    expect(capOf(h).closest("h4")!.hidden).toBe(true);
   });
 
   it("opens to every field on a click, and stays open from node to node and per extension", () => {
@@ -158,7 +183,7 @@ describe("closed groups", () => {
     expect(shownOf(holder(groups.rows(opts("n2", undefined, { extension: "other" }))))).toEqual(["target", "mood"]);
   });
 
-  it("keeps a value cleared while closed until the author leaves the node", () => {
+  it("keeps a value cleared above the heading there until the author leaves the node", () => {
     const groups = fieldGroups();
     expect(shownOf(holder(groups.rows(opts("n1", { style: "wide" }))))).toEqual(["target", "mood", "style"]);
     groups.sweep();
@@ -187,7 +212,7 @@ describe("closed groups", () => {
     fold.setOpen("pattershot", true);
     const open = sec({ lens: 35 });
     expect(shownOf(open)).toEqual(["target", "mood", "lens"]);
-    expect(capOf(open).textContent).toBe("More (1 set)");
+    expect(capOf(open).textContent).toBe("More");
     expect(fold.groups.isOpen("pattershot", "More")).toBe(false);
   });
 });

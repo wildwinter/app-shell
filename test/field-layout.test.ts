@@ -51,7 +51,8 @@ describe("lists and maps", () => {
   it("lays a list or a map of single values out as a table, and a record's fields as rows", () => {
     const list = valueRow({ decl: { name: "moods", type: "list", of: { type: "text" } }, value: ["calm", "tense"], onCommit: () => {} }).el;
     expect(list.querySelector(".shell-valuerow-parts")!.classList.contains("shell-valuerow-table")).toBe(true);
-    expect([...list.querySelectorAll(".shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-label")].map((l) => l.textContent)).toEqual(["1", "2"]);
+    // No numbers drawn: each item is named for a screen reader by the list and its place.
+    expect([...list.querySelectorAll(".shell-valuerow-part > .shell-fieldrow > .shell-fieldrow-label")].map((l) => l.textContent)).toEqual(["moods, item 1", "moods, item 2"]);
     const map = valueRow({ decl: { name: "staging", type: "map", key: { type: "text" }, of: { type: "pick", from: [{ words: ["full", "none"] }] } }, value: { talk: "full" }, adapter, onCommit: () => {} }).el;
     expect(map.querySelector(".shell-valuerow-parts")!.classList.contains("shell-valuerow-table")).toBe(true);
     const record = valueRow({ decl: { name: "cue", type: "record", fields: [{ name: "gain", type: "number" }] }, value: {}, onCommit: () => {} }).el;
