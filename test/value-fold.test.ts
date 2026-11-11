@@ -51,22 +51,27 @@ describe("the folded section", () => {
   const headingsOf = (sec: HTMLElement): string[] => [...sec.querySelectorAll("h4")].map((h) => h.textContent ?? "");
   const capOf = (sec: HTMLElement): HTMLButtonElement => sec.querySelector<HTMLButtonElement>(".shell-fold-cap")!;
 
-  it("folded, shows the caption alone with nothing set, and only the set fields with a count otherwise", () => {
+  it("folded, is its caption alone, with a count when anything is set (closed means closed)", () => {
     const fold = extensionFold();
     const empty = fold.section(opts("n1", { hold: false }));
     expect(shownOf(empty)).toEqual([]);
     expect(capOf(empty).textContent).toBe("Pattershot");
     expect(capOf(empty).getAttribute("aria-expanded")).toBe("false");
     const some = fold.section(opts("n2", { hold: true, beats: 3 }));
-    expect(shownOf(some)).toEqual(["hold", "beats"]);
-    expect(headingsOf(some)).toEqual(["Feeling"]);   // a group's heading only above a shown field of it
+    expect(shownOf(some)).toEqual([]);
+    expect(headingsOf(some)).toEqual([]);
     expect(capOf(some).textContent).toBe("Pattershot (2 set)");
   });
 
-  it("always shows the host's lead and tail", () => {
+  it("always shows the host's lead; the tail only when open, and counted as set", () => {
     const lead = document.createElement("p"); lead.textContent = "Locked by bob.";
     const tail = document.createElement("div"); tail.textContent = "stray";
-    const sec = extensionFold().section(opts("n1", undefined, { lead: [lead], tail: [tail] }));
+    const fold = extensionFold();
+    const sec = fold.section(opts("n1", { hold: true }, { lead: [lead], tail: [tail] }));
+    expect(sec.textContent).toContain("Locked by bob.");
+    expect(sec.textContent).not.toContain("stray");
+    expect(capOf(sec).textContent).toBe("Pattershot (2 set)");
+    capOf(sec).click();
     expect(sec.textContent).toContain("Locked by bob.");
     expect(sec.textContent).toContain("stray");
   });
@@ -82,25 +87,7 @@ describe("the folded section", () => {
     expect(shownOf(next)).toEqual(["target", "hold", "mood", "beats"]);
     capOf(next).click();
     expect(shownOf(next)).toEqual([]);
-    expect(fold.section(opts("n3", { hold: true })).querySelectorAll(".row")).toHaveLength(1);
-  });
-
-  it("keeps a value cleared while folded on screen until the author leaves the node", () => {
-    const fold = extensionFold();
-    expect(shownOf(fold.section(opts("n1", { hold: true, beats: 3 })))).toEqual(["hold", "beats"]);
-    fold.sweep();
-    // The author clears beats; the host redraws the same node, and its scene beside it.
-    expect(shownOf(fold.section(opts("n1", { hold: true })))).toEqual(["hold", "beats"]);
-    fold.section(opts("scene", undefined));
-    fold.sweep();
-    // And sets mood: it joins.
-    expect(shownOf(fold.section(opts("n1", { hold: true, mood: "tense" })))).toEqual(["hold", "mood", "beats"]);
-    fold.sweep();
-    // Another node, then back: only what is set.
-    fold.section(opts("n2", undefined));
-    fold.sweep();
-    fold.sweep();
-    expect(shownOf(fold.section(opts("n1", { hold: true })))).toEqual(["hold"]);
+    expect(fold.section(opts("n3", { hold: true })).querySelectorAll(".row")).toHaveLength(0);
   });
 
   it("folds each extension on its own", () => {
@@ -114,6 +101,51 @@ describe("the folded section", () => {
   it("words the caption one way", () => {
     expect(foldCaption("Pattershot", 0)).toBe("Pattershot");
     expect(foldCaption("Pattershot", 3)).toBe("Pattershot (3 set)");
+    expect(foldCaption("Pattershot", 2, 1)).toBe("Pattershot (2 set, 1 problem)");
+    expect(foldCaption("Pattershot", 0, 2)).toBe("Pattershot (2 problems)");
+  });
+
+  // "You see what's attached, and Add offers the rest" (patterkit design/proposals/inspector-one-door.md).
+  it("says a node has something to draw when it sets a value, has a problem, or the section is open", () => {
+    const fold = extensionFold();
+    const of = (entry: Record<string, unknown> | undefined, extra: Partial<FoldSectionOptions> = {}): boolean =>
+      fold.drawn({ extension: "pattershot", kind: "line", fields, entry, ...extra });
+    expect(of(undefined)).toBe(false);
+    expect(of({ hold: false })).toBe(false);                    // a default isn't set
+    expect(of({ hold: true })).toBe(true);
+    expect(of(undefined, { tail: [document.createElement("div")] })).toBe(true);
+    expect(of({}, { problems: ["Target is required."] })).toBe(true);
+    fold.setOpen("pattershot", true, "line");
+    expect(of(undefined)).toBe(true);
+    expect(of(undefined, { kind: "block" })).toBe(false);
+  });
+
+  it("remembers open by extension and kind of node, so a line's leaves the block's closed", () => {
+    const fold = extensionFold();
+    const line = fold.section(opts("n1", { hold: true }, { kind: "line" }));
+    capOf(line).click();
+    expect(fold.isOpen("pattershot", "line")).toBe(true);
+    expect(fold.isOpen("pattershot", "block")).toBe(false);
+    expect(shownOf(fold.section(opts("n2", undefined, { kind: "line" }))).length).toBe(4);
+    expect(shownOf(fold.section(opts("b1", { hold: true }, { kind: "block" })))).toEqual([]);
+  });
+
+  it("counts a closed section's problems on its caption and says the first as its rollover", () => {
+    const fold = extensionFold();
+    const sec = fold.section(opts("n1", { hold: true }, { problems: ["Target is required.", "Mood is not one of its values."] }));
+    expect(capOf(sec).textContent).toBe("Pattershot (1 set, 2 problems)");
+    expect(capOf(sec).classList.contains("has-problem")).toBe(true);
+    expect(capOf(sec).dataset["tip"]).toBe("Target is required.\nShow the Pattershot fields");
+    capOf(sec).click();
+    expect(capOf(sec).dataset["tip"]).toBe("Hide the Pattershot fields");
+    expect(fold.section(opts("n2", undefined)).querySelector(".has-problem")).toBeNull();
+  });
+
+  it("tells the host when the caption opens or closes it", () => {
+    const seen: boolean[] = [];
+    const sec = extensionFold().section(opts("n1", undefined, { onToggle: (on) => seen.push(on) }));
+    capOf(sec).click(); capOf(sec).click();
+    expect(seen).toEqual([true, false]);
   });
 });
 
@@ -207,7 +239,7 @@ describe("closed groups", () => {
       extension: "pattershot", caption: "Pattershot", node: "n1", fields, entry, row, group, closed,
     })]);
     const folded = sec({ lens: 35 });
-    expect(shownOf(folded)).toEqual(["lens"]);
+    expect(shownOf(folded)).toEqual([]);
     expect(folded.querySelectorAll(".shell-group-cap")).toHaveLength(0);
     fold.setOpen("pattershot", true);
     const open = sec({ lens: 35 });

@@ -27,6 +27,9 @@
 .ctxmenu-item:disabled { color: var(--muted); opacity: 0.55; cursor: default; }
 .ctxmenu-item:disabled:hover { background: none; color: var(--muted); }
 .ctxmenu-item.danger { color: var(--danger); }
+/* A part's heading: quiet, not an item, with a little air above it when it isn't first. */
+.ctxmenu-heading { padding: 4px 10px 2px; font: var(--text-xs) var(--font-ui); color: var(--muted); cursor: default; }
+.ctxmenu-heading:not(:first-child) { margin-top: 4px; border-top: var(--hairline, 1px) solid var(--line-soft, var(--line)); padding-top: 6px; }
 .ctxmenu-item.danger:hover { background: var(--danger); color: var(--surface); }
 
 /* An anchored panel: the same floating shell as the menu, hosting content. */

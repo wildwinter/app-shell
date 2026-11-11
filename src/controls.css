@@ -280,6 +280,14 @@ kbd {
 .shell-fold-cap:hover svg, .shell-fold-cap:focus-visible svg { color: var(--ink); }
 .shell-fold-cap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
 .shell-fold-body:empty { display: none; }
+/* Open, the fields are inset behind a thin rule under the chevron, so they read as the section's and not as the
+   rows around it (patterkit design/proposals/inspector-one-door.md, part A). */
+.shell-fold-open > .shell-fold-body {
+  margin: 4px 0 2px 5px; padding-left: 10px;
+  border-left: var(--hairline, 1px) solid var(--line-soft, var(--line));
+}
+/* A closed section with a problem inside says so on its caption, the only thing it draws. */
+.shell-fold-cap.has-problem .shell-fold-name { color: var(--warn, var(--danger, var(--accent))); }
 /* A closed group's heading (value-rows' fieldGroups): the host's heading, holding the same quiet disclosure. */
 .shell-group-cap {
   display: flex; align-items: center; gap: 4px; width: 100%;

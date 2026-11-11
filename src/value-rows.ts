@@ -24,6 +24,7 @@
 // only the family's seven types takes nothing new.
 // ---------------------------------------------------------------------------
 
+import { dropEntry, mapEntries, mapHasKey, setEntry } from "./map-entries.js";
 import { defaultOf, pickChoices, valueProblems } from "@wildwinter/toolkit/extensions";
 import type { PickSource, TypeDecl, ValueContext } from "@wildwinter/toolkit/extensions";
 import { el, iconBtn, moveItem } from "./dom.js";
@@ -51,6 +52,8 @@ export interface ValueDecl extends FieldDeclLike {
   key?: { type: string; to?: string };
   /** A map's or a list's value type. */
   of?: Omit<ValueDecl, "name"> & { name?: string };
+  /** A map with text keys: the entries the extension has built in, shown with their names fixed (map-entries.ts). */
+  builtIn?: Readonly<Record<string, unknown>>;
   /** A list's id field: the text field of its records that keys each item. */
   id?: string;
   min?: number;
@@ -526,23 +529,21 @@ function structuredRow(initial: ValueRowOptions): ValueRowHandle {
       const keyNodes = decl.key?.type === "reference" && o.adapter ? o.adapter.nodes(decl.key.to ?? "") : undefined;
       const keyKind = decl.key?.to ?? "";
       const keyLabel = (k: string): string => (o.adapter && keyNodes !== undefined ? nodeLabel(o.adapter, keyKind, k) : undefined) ?? k;
-      for (const k of Object.keys(value)) {
-        const remove = editable() ? [iconBtn("close", `Remove ${keyLabel(k)}`, () => {
-          const next = { ...(isObject(opts.value) ? opts.value : {}) };
-          delete next[k];
-          commit(Object.keys(next).length > 0 ? next : undefined);
-        })] : [];
+      // The extension's built-in entries first, names fixed: changed, they reset; the project's own are removed.
+      for (const entry of mapEntries(decl, value)) {
+        const k = entry.key;
+        const tools = !editable() ? []
+          : entry.builtIn ? [iconBtn("restart", `Reset ${keyLabel(k)} to built in`, () => commit(dropEntry(opts.value, k)), !entry.changed)]
+          : [iconBtn("close", `Remove ${keyLabel(k)}`, () => commit(dropEntry(opts.value, k)))];
         const gone = keyNodes !== undefined && o.adapter && nodeLabel(o.adapter, keyKind, k) === undefined ? `${k} is not here any more.` : undefined;
-        child(`k:${k}`, asDecl(decl.of, k), value[k], (v) => {
-          const next = { ...(isObject(opts.value) ? opts.value : {}) };
-          next[k] = v === undefined ? defaultOf(decl.of as unknown as TypeDecl) : v;
-          commit(next);
-        }, remove, keyLabel(k), gone);
+        child(`k:${k}`, asDecl(decl.of, k), entry.value, (v) => {
+          commit(setEntry(decl, opts.value, k, v === undefined ? defaultOf(decl.of as unknown as TypeDecl) : v));
+        }, tools, keyLabel(k), gone);
       }
       adder.replaceChildren();
       if (editable()) {
         const add = (k: string): void => {
-          if (k === "" || Object.prototype.hasOwnProperty.call(value, k)) return;
+          if (k === "" || mapHasKey(decl, value, k)) return;
           commit({ ...value, [k]: defaultOf(decl.of as unknown as TypeDecl) });
         };
         if (keyNodes !== undefined) {
@@ -654,6 +655,8 @@ export function valueRows(): ValueRows {
 // An extension's section folded to the fields a node sets (value-fold.ts), under this entry so a host takes
 // the rows and the fold together.
 export { isSet, extensionFold, fieldGroups, foldCaption } from "./value-fold.js";
+export { mapEntries, builtInOf } from "./map-entries.js";
+export type { MapEntry } from "./map-entries.js";
 export type { ExtensionFold, FieldGroups, FoldSectionOptions, GroupRowsOptions } from "./value-fold.js";
 
 // A map of records (record-map.ts): the inspector's summary and the helper window's grid.

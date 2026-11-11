@@ -20,6 +20,7 @@ import { captionHelp } from "./field-help.js";
 import { fieldRowFocus } from "./value-control.js";
 import { freshItem, valueRow, type ValueAdapter, type ValueDecl, type ValueRowHandle } from "./value-rows.js";
 import { isSet } from "./value-fold.js";
+import { dropEntry, mapEntries, mapHasKey, setEntry } from "./map-entries.js";
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
@@ -60,12 +61,12 @@ export function valueText(decl: ValueDecl, value: unknown, adapter?: ValueAdapte
   return String(value);
 }
 
-/** The inspector's summary of a map of records: a line per key, "TAM: smile, nod, WREN", the record's set
+/** The inspector's summary of a map of records: a line per key (built-in ones first), "TAM: smile, nod, WREN", the record's set
  *  fields in the manifest's order; a key with nothing set is its name alone. */
 export function recordMapSummary(decl: ValueDecl, value: unknown, adapter?: ValueAdapter): string[] {
-  if (!isObject(value)) return [];
   const fields = decl.of?.fields ?? [];
-  return Object.entries(value).map(([key, record]) => {
+  // The extension's built-in entries too, as the grid shows them (map-entries.ts).
+  return mapEntries(decl, value).map(({ key, value: record }) => {
     const name = recordMapKeyLabel(decl, key, adapter);
     const words = isObject(record) ? fields.map((f) => valueText(f, record[f.name], adapter)).filter((w) => w !== "") : [];
     return words.length > 0 ? `${name}: ${words.join(", ")}` : name;
@@ -112,8 +113,8 @@ export function recordMapGrid(initial: RecordMapGridOptions): RecordMapGrid {
 
   const editable = (): boolean => opts.onCommit !== undefined && opts.disabled !== true;
   const held = (): Record<string, unknown> => (isObject(opts.value) ? opts.value : {});
-  const commit = (next: Record<string, unknown>): void => {
-    const v = Object.keys(next).length > 0 ? next : undefined;
+  const commit = (next: Record<string, unknown> | undefined): void => {
+    const v = next !== undefined && Object.keys(next).length > 0 ? next : undefined;
     opts = { ...opts, value: v };
     draw();
     opts.onCommit?.(v);
@@ -128,10 +129,10 @@ export function recordMapGrid(initial: RecordMapGridOptions): RecordMapGrid {
       ...(opts.controlClassName !== undefined ? { controlClassName: opts.controlClassName } : {}),
       ...(editable() ? {
         onCommit: (v: unknown) => {
-          const map = held();
-          const rec: Record<string, unknown> = { ...(isObject(map[key]) ? map[key] as Record<string, unknown> : {}) };
+          // The whole entry, from what's shown: a built-in entry changed becomes the project's own, all of it.
+          const rec: Record<string, unknown> = { ...record };
           if (v === undefined) delete rec[field.name]; else rec[field.name] = v;
-          commit({ ...map, [key]: rec });
+          commit(setEntry(opts.decl, held(), key, rec));
         },
       } : {}),
       className: "shell-recordgrid-cell",
@@ -153,7 +154,7 @@ export function recordMapGrid(initial: RecordMapGridOptions): RecordMapGrid {
     const decl = opts.decl;
     const fields = decl.of?.fields ?? [];
     const map = held();
-    const keys = Object.keys(map);
+    const entries = mapEntries(decl, map);
     const adapter = opts.adapter;
     const keyKind = decl.key?.type === "reference" ? decl.key.to ?? "" : undefined;
     const keyNodes = keyKind !== undefined && adapter ? adapter.nodes(keyKind) : undefined;
@@ -166,10 +167,12 @@ export function recordMapGrid(initial: RecordMapGridOptions): RecordMapGrid {
 
     const used = new Set<string>();
     const rows: HTMLElement[] = [];
-    for (const key of keys) {
-      const record = isObject(map[key]) ? map[key] as Record<string, unknown> : {};
+    for (const entry of entries) {
+      const key = entry.key;
+      const record = isObject(entry.value) ? entry.value as Record<string, unknown> : {};
       const tr = el("tr");
       tr.dataset["key"] = key;
+      if (entry.builtIn) tr.classList.add("shell-recordgrid-builtin");
       const name = recordMapKeyLabel(decl, key, adapter);
       const keyCell = el("th", "shell-recordgrid-key", name);
       keyCell.setAttribute("scope", "row");
@@ -184,26 +187,29 @@ export function recordMapGrid(initial: RecordMapGridOptions): RecordMapGrid {
         tr.append(td);
       }
       const tools = el("td", "shell-recordgrid-tools");
-      if (editable()) tools.append(iconBtn("close", `Remove ${name}`, () => { const next = { ...held() }; delete next[key]; commit(next); }));
+      // A built-in entry's name is fixed: it resets (once changed) rather than being removed.
+      if (editable()) tools.append(entry.builtIn
+        ? iconBtn("restart", `Reset ${name} to built in`, () => commit(dropEntry(held(), key)), !entry.changed)
+        : iconBtn("close", `Remove ${name}`, () => commit(dropEntry(held(), key))));
       tr.append(tools);
       rows.push(tr);
     }
     for (const id of [...cells.keys()]) if (!used.has(id)) cells.delete(id);
     body.replaceChildren(...rows);
-    table.hidden = keys.length === 0;
-    empty.textContent = keys.length === 0 ? "None yet." : "";
-    empty.hidden = keys.length !== 0;
+    table.hidden = entries.length === 0;
+    empty.textContent = entries.length === 0 ? "None yet." : "";
+    empty.hidden = entries.length !== 0;
 
     adder.replaceChildren();
     if (!editable()) return;
     const add = (k: string): void => {
-      if (k === "" || Object.prototype.hasOwnProperty.call(held(), k)) return;
+      if (k === "" || mapHasKey(decl, held(), k)) return;
       commit({ ...held(), [k]: defaultOf(decl.of as unknown as TypeDecl) });
     };
     if (keyNodes !== undefined) {
       const pick = el("select", `field shell-valuerow-key${opts.controlClassName ? ` ${opts.controlClassName}` : ""}`);
       const first = el("option", undefined, "Add..."); first.value = ""; pick.append(first);
-      for (const n of keyNodes.filter((n) => !Object.prototype.hasOwnProperty.call(map, n.id))) {
+      for (const n of keyNodes.filter((n) => !mapHasKey(decl, map, n.id))) {
         const opt = el("option", undefined, n.label); opt.value = n.id; pick.append(opt);
       }
       pick.disabled = pick.options.length === 1;

@@ -25,6 +25,8 @@ export interface ContextItem {
    *  but cannot apply right now (Move up on the first row), so the menu keeps
    *  the same shape and the same item stays in the same place every time. */
   disabled?: boolean;
+  /** A quiet heading drawn above this item: it starts a part of the menu ("Game data", "Extensions"). */
+  heading?: string;
   onClick: () => void;
 }
 
@@ -98,6 +100,11 @@ export function openContextMenu(x: number, y: number, items: ContextItem[]): voi
   const { dismiss } = floating(menu);
 
   for (const item of items) {
+    if (item.heading !== undefined) {
+      const heading = el("div", { className: "ctxmenu-heading", text: item.heading });
+      heading.setAttribute("role", "presentation");
+      menu.append(heading);
+    }
     const button = el("button", {
       className: `ctxmenu-item${item.danger ? " danger" : ""}`, text: item.label,
       onClick: () => { if (item.disabled === true) return; dismiss(); item.onClick(); },

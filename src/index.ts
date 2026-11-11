@@ -111,6 +111,9 @@ export type { StaleBarOptions } from "./stale.js";
 // whatever the app has a queue of (stepper.ts).
 export { renderStepperBar } from "./stepper.js";
 export type { StepperBarOptions, StepperItem, StepperTone } from "./stepper.js";
+// The project's name in the top bar, a button leading to the overview (project-title.ts).
+export { projectTitle, projectTitleTip } from "./project-title.js";
+export type { ProjectTitle, ProjectTitleOptions } from "./project-title.js";
 export { EDIT_MENU, GO_MENU, FILE_MENU, PLAY_MENU, REVIEW_MENU, PUBLISH_MENU, VIEW_MENU, PROJECT_MENU, resolveClashesMenuItem } from "./menu.js";
 // The updater's view, on the dialog frame: the renderer half the main-process
 // updater (./updater) cannot run without (updater-view.ts).

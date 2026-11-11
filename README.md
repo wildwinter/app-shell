@@ -1164,6 +1164,35 @@ From Pattershot's briefs `field-help-as-a-tooltip` and `lists-and-maps-as-tables
 rows.row(key, { decl, value, adapter, onCommit, tables: true });  // Project Settings
 ```
 
+## v1.4 (the project's name in the top bar)
+
+At Ian's request (2026-11-11): each app drew the top bar's project name its own way, and Patterpad's sat in the
+title bar's window-drag region, where Electron gives the page no hover and no click.
+
+- **`projectTitle({ name, path, note, onOpen })`** draws the project's name as a button for `shell.topbarLead`.
+  Being a button keeps it out of the drag region. With a path and `onOpen`, hovering it says "The project
+  overview" with the path beneath (`projectTitleTip(path)`), and a click calls `onOpen`. With no path (no project
+  open yet) it's only a name: no rollover, no click. `note` is a quieter fact beside the name, such as a server
+  status. `update(...)` redraws it in place.
+- **A closed extension section is its heading and count alone** (Pattershot's brief
+  extension-section-closed-and-built-in-map-entries, Ian): `extensionFold` used to show a closed section's set
+  fields too, and a writer took it for open and the rest for missing. Closed, it's "Pattershot (3 set)" and the
+  host's lead (a lock line); keys the extension no longer declares count as set and show only when open.
+- **You see what's attached, and Add offers the rest** (patterkit `design/proposals/inspector-one-door.md`, P1 to P7,
+  Ian): `fold.drawn(...)` says whether a node has anything to show for an extension (its section is open, it sets
+  something, or there's a problem), so a host with an Add menu draws only those sections and offers the others there
+  by name. Open is remembered by extension and kind of node (`isOpen` and `setOpen` take the kind; a section takes
+  `kind`), so opening one on a line leaves the block's closed. A closed caption counts the section's `problems` and
+  says the first as its rollover ("Pattershot (2 set, 1 problem)"), since closed it draws no row to say them.
+  `onToggle` tells the host when the caption opens or closes it. An open section's fields are inset behind a thin
+  rule. A host that doesn't ask `drawn` draws every section, as before.
+- **A context menu's parts**: an item's `heading` draws a quiet heading above it ("Extensions").
+- **A map's built-in entries** (toolkit 1.3's `builtIn`): both map views, the stacked rows and the record grid, show
+  them first with their names fixed. Changing one writes the whole entry to the project's map; a reset (disabled
+  until it's changed) takes it back out, as does setting it back to its built-in value. A built-in entry has no
+  remove, and the key adder refuses its name. `recordMapSummary` lists them too; `mapEntries` and `builtInOf` (from
+  `./value-rows`) give a host the same list.
+
 ## Third-party
 
 The icon vocabulary (`iconNode`, `iconSvg` in `src/icons.ts`) vendors drawings

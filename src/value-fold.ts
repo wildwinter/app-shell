@@ -2,19 +2,24 @@
 // An extension's fields folded to the ones a node sets (Pattershot's brief,
 // "extension fields folded", rulings F1 to F9, 2026-10-20). An extension meant
 // to be left alone on most nodes drew every field on every node, nearly all
-// empty. Folded, its section is the caption, with a disclosure and a count,
-// and only the fields set; unfolded, every field, as before.
+// empty. Folded, its section is the caption, with a disclosure and a count of
+// what the node sets; unfolded, every field, as before. Closed means closed
+// (Pattershot's brief extension-section-closed-and-built-in-map-entries, Ian,
+// 2026-11-11): a folded section used to show its set fields too, and a writer
+// seeing some took the section for open and the rest for missing.
 //
 // One rule for the family, so Patterpad and Storyletter fold alike:
 // - set means the node holds a value that differs from the toolkit's
 //   `defaultOf`, compared deeply (`isSet`); a field is set or not as a whole;
-// - the fold is per extension, and stays as left while the author moves
-//   between nodes (for the session: it isn't stored);
-// - a value cleared while folded keeps its row until the author leaves the
-//   node (a redraw that doesn't draw it, then `sweep`), so a row never vanishes
-//   under the cursor;
-// - keys the extension doesn't declare, and the host's lead (a lock line),
-//   always show.
+// - the fold is per extension and kind of node (a line's, a block's), and
+//   stays as left while the author moves between nodes (for the session: it
+//   isn't stored);
+// - a closed section's caption counts its problems and says the first, since
+//   closed it draws no row to say them;
+// - a host with an Add menu draws only the sections `drawn` says to, and
+//   offers the rest there (design/proposals/inspector-one-door.md, P1 to P7);
+// - keys the extension doesn't declare (the host's tail) count as set, and
+//   show only when open; the host's lead (a lock line) always shows.
 //
 // The host draws each row (its own cache, classes and problems); this draws
 // the section around them. Project Settings doesn't fold: it's where an
@@ -57,7 +62,7 @@ export interface FoldSectionOptions {
   extension: string;
   /** The extension's name, the caption. */
   caption: string;
-  /** The node the section is for, by any key unique to it: a row cleared while folded stays while the host
+  /** The node the section is for, by any key unique to it: the open section's closed groups keep their rows while the host
    *  keeps drawing this node. */
   node: string;
   /** The extension's fields for the node's kind, in the manifest's order. */
@@ -74,6 +79,15 @@ export interface FoldSectionOptions {
   tail?: readonly HTMLElement[];
   /** Whether a group starts closed (the toolkit's `groupClosed` on the extension's manifest). Absent: none do. */
   closed?: (group: string) => boolean;
+  /** The kind of node ("line", "block", "scene"): the section's open state is remembered by extension and kind,
+   *  so opening it on a line leaves the block's and the scene's closed. Absent: by extension alone. */
+  kind?: string;
+  /** The problems in the node's values for the extension, as sentences. A closed section's caption counts them
+   *  and says the first as its rollover, since closed it draws no row to say them. */
+  problems?: readonly string[];
+  /** Called after the caption opens or closes the section: a host that leaves out sections that aren't `drawn`
+   *  redraws here, so one closed with nothing set goes back to its Add menu. */
+  onToggle?: (open: boolean) => void;
   /** The section's own class, beside `shell-fold`. */
   className?: string;
   /** The caption's class, beside `shell-fold-cap`. */
@@ -85,11 +99,16 @@ export interface ExtensionFold {
   section(o: FoldSectionOptions): HTMLElement;
   /** The section's closed groups, drawn while it's open: their state, kept as the fold's. */
   readonly groups: FieldGroups;
-  /** Whether an extension's section is open (every field). Folded until opened. */
-  isOpen(extension: string): boolean;
-  setOpen(extension: string, open: boolean): void;
-  /** After a redraw: forget the rows kept for nodes it didn't draw, so leaving a node and coming back shows
-   *  only what is set. A host that redraws its whole view calls it at the end of each, as a row cache's. */
+  /** Whether an extension's section is open (every field) on a kind of node. Folded until opened. */
+  isOpen(extension: string, kind?: string): boolean;
+  setOpen(extension: string, open: boolean, kind?: string): void;
+  /** Whether a node has anything to show for an extension: the section is open, or the node sets something, or
+   *  there's a problem to say. A host with an Add menu draws only these, and offers the rest there by the
+   *  extension's name ("you see what's attached, and Add offers the rest", patterkit
+   *  design/proposals/inspector-one-door.md). Takes what `section` takes. */
+  drawn(o: Pick<FoldSectionOptions, "extension" | "kind" | "fields" | "entry" | "tail" | "problems">): boolean;
+  /** After a redraw: forget what the open section's closed groups kept for nodes it didn't draw (the groups'
+   *  `sweep`). A host that redraws its whole view calls it at the end of each, as a row cache's. */
   sweep(): void;
 }
 
@@ -215,9 +234,14 @@ export function fieldGroups(): FieldGroups {
   return groups;
 }
 
-/** The caption's words: the name, and the count when anything is set. */
-export function foldCaption(name: string, set: number): string {
-  return set > 0 ? `${name} (${set} set)` : name;
+/** The caption's words: the name, then what's set and what's wrong, when there's either:
+ *  "Pattershot (2 set, 1 problem)". */
+export function foldCaption(name: string, set: number, problems = 0): string {
+  const parts = [
+    ...(set > 0 ? [`${set} set`] : []),
+    ...(problems > 0 ? [`${problems} ${problems === 1 ? "problem" : "problems"}`] : []),
+  ];
+  return parts.length > 0 ? `${name} (${parts.join(", ")})` : name;
 }
 
 /**
@@ -226,32 +250,18 @@ export function foldCaption(name: string, set: number): string {
  */
 export function extensionFold(): ExtensionFold {
   const open = new Set<string>();
-  // Per extension and node: the fields shown while folded, so a value cleared there keeps its row until the
-  // author moves on. An inspector shows several nodes at once (a line, its block, its scene), so each keeps
-  // its own; `sweep` drops the ones a redraw didn't draw.
-  const shown = new Map<string, { fields: Set<string>; used: boolean }>();
-  const keyOf = (o: FoldSectionOptions): string => `${o.extension}\u0000${o.node}`;
-
-  const visible = (o: FoldSectionOptions, setNames: ReadonlySet<string>): Set<string> => {
-    const was = shown.get(keyOf(o));
-    const fields = was ? new Set([...was.fields, ...setNames]) : new Set(setNames);
-    shown.set(keyOf(o), { fields, used: true });
-    return fields;
-  };
-
+  const openKey = (extension: string, kind?: string): string => `${extension}\u0000${kind ?? ""}`;
+  /** Everything the node holds for the extension: its set fields, and the keys it no longer declares (the tail,
+   *  one row each). */
+  const setCount = (o: Pick<FoldSectionOptions, "fields" | "entry" | "tail">): number =>
+    o.fields.filter((f) => isSet(f, o.entry?.[f.name])).length + (o.tail?.length ?? 0);
   const groups = fieldGroups();
   const fold: ExtensionFold = {
     groups,
-    isOpen: (extension) => open.has(extension),
-    setOpen(extension, on) {
-      if (on) open.add(extension); else open.delete(extension);
-      // Folding again starts from what is set now.
-      for (const key of shown.keys()) if (key.startsWith(`${extension}\u0000`)) shown.delete(key);
-    },
-    sweep() {
-      for (const [key, entry] of shown) { if (!entry.used) shown.delete(key); else entry.used = false; }
-      groups.sweep();
-    },
+    isOpen: (extension, kind) => open.has(openKey(extension, kind)),
+    setOpen(extension, on, kind) { if (on) open.add(openKey(extension, kind)); else open.delete(openKey(extension, kind)); },
+    drawn: (o) => open.has(openKey(o.extension, o.kind)) || setCount(o) > 0 || (o.problems?.length ?? 0) > 0,
+    sweep() { groups.sweep(); },
     section(o) {
       const sec = el("div", `shell-fold${o.className ? ` ${o.className}` : ""}`);
       sec.dataset["extension"] = o.extension;
@@ -259,33 +269,34 @@ export function extensionFold(): ExtensionFold {
       cap.type = "button";
       const body = el("div", "shell-fold-body");
       sec.append(cap, body);
+      const key = openKey(o.extension, o.kind);
 
       const draw = (): void => {
-        const isOpen = open.has(o.extension);
-        const setNames = new Set(o.fields.filter((f) => isSet(f, o.entry?.[f.name])).map((f) => f.name));
-        const show = isOpen ? undefined : visible(o, setNames);
-        cap.replaceChildren(iconNode(isOpen ? "expanded" : "collapsed"), el("span", "shell-fold-name", foldCaption(o.caption, setNames.size)));
+        const isOpen = open.has(key);
+        const problems = o.problems ?? [];
+        cap.replaceChildren(iconNode(isOpen ? "expanded" : "collapsed"), el("span", "shell-fold-name", foldCaption(o.caption, setCount(o), problems.length)));
         cap.setAttribute("aria-expanded", String(isOpen));
-        cap.dataset["tip"] = isOpen ? `Show only the fields set here` : `Show every ${o.caption} field`;
+        // Closed, the caption is the only place a problem inside can be said.
+        cap.dataset["tip"] = isOpen ? `Hide the ${o.caption} fields`
+          : problems.length > 0 ? `${problems[0]}\nShow the ${o.caption} fields` : `Show the ${o.caption} fields`;
+        cap.classList.toggle("has-problem", problems.length > 0);
         sec.classList.toggle("shell-fold-open", isOpen);
+        // Closed means closed: the caption and its count, and the lead (a lock line says why nothing can be
+        // edited), but no fields.
         const rows: HTMLElement[] = [...(o.lead ?? [])];
-        if (show) {
-          // Folded: the set fields, each group's under a plain heading; a group's closing applies once it's open.
-          let group: string | undefined;
-          for (const decl of o.fields) {
-            if (!show.has(decl.name)) continue;
-            const g = groupOf(decl);
-            if (g !== undefined && g !== group) { group = g; rows.push(o.group(g)); }
-            rows.push(o.row(decl));
-          }
-        } else {
+        if (isOpen) {
           rows.push(...groups.rows({ extension: o.extension, node: o.node, fields: o.fields, entry: o.entry, row: o.row, group: o.group,
             ...(o.closed ? { closed: o.closed } : {}) }));
+          rows.push(...(o.tail ?? []));
         }
-        rows.push(...(o.tail ?? []));
         body.replaceChildren(...rows);
       };
-      cap.addEventListener("click", () => { fold.setOpen(o.extension, !open.has(o.extension)); draw(); });
+      cap.addEventListener("click", () => {
+        const next = !open.has(key);
+        fold.setOpen(o.extension, next, o.kind);
+        draw();
+        o.onToggle?.(next);
+      });
       draw();
       return sec;
     },

@@ -19,6 +19,14 @@ describe("openContextMenu", () => {
     expect(menu()?.getAttribute("role")).toBe("menu");
   });
 
+  it("draws an item's heading above it, as a part of the menu and not an item", () => {
+    openContextMenu(0, 0, [{ label: "Tags", onClick: () => {} }, { label: "Pattershot", heading: "Extensions", onClick: () => {} }]);
+    const menu = document.querySelector(".ctxmenu")!;
+    expect([...menu.children].map((c) => c.textContent)).toEqual(["Tags", "Extensions", "Pattershot"]);
+    expect(menu.querySelectorAll('[role="menuitem"]')).toHaveLength(2);
+    expect(menu.querySelector(".ctxmenu-heading")?.getAttribute("role")).toBe("presentation");
+  });
+
   it("runs the item and closes on click", () => {
     const rename = vi.fn();
     openContextMenu(0, 0, [{ label: "Rename", onClick: rename }]);
