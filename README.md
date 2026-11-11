@@ -1166,7 +1166,7 @@ rows.row(key, { decl, value, adapter, onCommit, tables: true });  // Project Set
 
 ## v1.4 (the project's name in the top bar)
 
-At Ian's request (2026-11-11): each app drew the top bar's project name its own way, and Patterpad's sat in the
+Needs toolkit 1.3.0 (a map's `builtIn`). At Ian's request (2026-11-11): each app drew the top bar's project name its own way, and Patterpad's sat in the
 title bar's window-drag region, where Electron gives the page no hover and no click.
 
 - **`projectTitle({ name, path, note, onOpen })`** draws the project's name as a button for `shell.topbarLead`.
