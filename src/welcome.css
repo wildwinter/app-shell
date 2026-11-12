@@ -1,55 +1,63 @@
 /* ---------------------------------------------------------------------------
-   The welcome screen (welcome.ts). Patterpad's rules, generalised; consumes
-   the host palette (--surface / --ink / --muted / --line / --accent /
-   --danger / --font-ui / --font-read / --font-mono) over the shared tokens.
-   The buttons are controls.css's `.btn`; import it beside this file.
+   The welcome screen (welcome.ts): the mark, the title and its line, the
+   actions, and, once there are any, a short list of recent names with the tour
+   as a line beneath. Consumes the host palette (--surface / --ink / --muted /
+   --line / --accent / --danger / --font-ui / --font-read / --font-mono) over
+   the shared tokens. The buttons are controls.css's `.btn`; import it beside
+   this file.
+
+   It is kept sparse on purpose: space is what makes it calm. A new section
+   belongs in New Project, not here.
 
    Width is a per-app decision: `--welcome-width` on `.welcome`.
    --------------------------------------------------------------------------- */
 
 /* The whole screen drags the window; anything clickable opts out. */
 .welcome {
-  --welcome-width: 544px;
+  --welcome-width: 352px;
   flex: 1; min-height: 0; display: grid; place-items: center; padding: 32px; overflow: auto;
   -webkit-app-region: drag;
   animation: var(--anim-screen-in);
 }
 .welcome :is(button, input, select, a, .no-drag) { -webkit-app-region: no-drag; }
 .welcome[hidden] { display: none; }
-.welcome-card { width: min(var(--welcome-width), 100%); }
+/* A little above centre, where a page's weight sits best. */
+.welcome-card { width: min(var(--welcome-width), 100%); display: flex; flex-direction: column; align-items: center; padding-bottom: 6vh; }
+
+/* The mark, or an illustration: the app's own node, sized here. */
+.welcome-mark { width: 64px; height: 64px; margin-bottom: 19px; display: grid; place-items: center; }
+.welcome-mark > * { width: 100%; height: 100%; }
+.welcome-mark svg { display: block; width: 100%; height: 100%; }
 
 .welcome-title { margin: 0 0 3px; font: 400 38.5px/1.1 var(--font-read); color: var(--ink); text-align: center; }
 .welcome-sub { margin: 0 0 29px; color: var(--muted); font-style: italic; text-align: center; }
-.welcome-actions { display: flex; gap: 9.5px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
-/* The teaching line: quieter than the two actions above it. */
-.welcome-line { margin: 0 0 29px; text-align: center; color: var(--muted); font: var(--text-md) var(--font-ui); }
+.welcome-actions { display: flex; gap: 9.5px; justify-content: center; flex-wrap: wrap; }
+.welcome-below { width: 100%; }
 
-/* One group per job (learn / return), captioned. A caption is sentence-case
-   label text, weight 600, in the UI face: how a group box reads on the
-   platform, never an overline. */
-.welcome-group { margin-bottom: 25.5px; }
-.welcome-caption { margin: 0 0 8px; color: var(--muted); font: 600 var(--text-md)/1.3 var(--font-ui); }
-/* The consequence of a click, said before the click. */
-.welcome-note { margin: -4px 0 8px; color: var(--muted); font: var(--text-sm)/1.45 var(--font-ui); }
-
-/* Rows, not cards: a name with a hint under it, the same well the recents
-   use, so the two lists read as one kind of thing. */
-.welcome-list, .welcome-recents { display: flex; flex-direction: column; gap: 3px; }
-.welcome-item, .welcome-recent {
+/* The recents: names under a hairline, no caption (the section is named for a
+   screen reader). The folder is the row's rollover. */
+.welcome-recents { display: flex; flex-direction: column; gap: 1px; margin-top: 29px; padding-top: 13px; border-top: var(--hairline, 1px) solid var(--line); }
+.welcome-recent {
   display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; cursor: pointer;
-  background: none; border: 1px solid transparent; border-radius: var(--radius-md); padding: 7px 9.5px;
+  background: none; border: 0; border-radius: var(--radius-md); padding: 6px 9.5px;
   /* A button's UA default is centred text; a wrapping path would centre its
      second line. `anywhere` because a path has no spaces to break at. */
   text-align: left; overflow-wrap: anywhere; font: inherit; color: inherit;
-  transition: background var(--dur-tint) var(--ease-standard), border-color var(--dur-tint) var(--ease-standard);
+  transition: background var(--dur-tint) var(--ease-standard);
 }
-.welcome-item:hover, .welcome-recent:hover { background: color-mix(in oklab, var(--accent) 8%, transparent); border-color: var(--line); }
-.welcome-item-name, .welcome-recent-name { color: var(--ink); font: 500 var(--text-lg) var(--font-ui); }
-.welcome-item-hint { color: var(--muted); font: var(--text-sm)/1.45 var(--font-ui); }
-/* A tiled group (`tiles: true`) is the kit gallery's tile grid (kit-gallery.css),
-   so a kit or an example looks the same here as in New Project. */
-.welcome-tiles { margin-top: 2px; }
+.welcome-recent:hover { background: color-mix(in oklab, var(--accent) 8%, transparent); }
+.welcome-recent-name { color: var(--ink); font: var(--text-lg) var(--font-ui); }
+/* Only when two names in the list match. */
 .welcome-recent-path { color: var(--muted); font: var(--text-xs) var(--font-mono); }
 
-.welcome-error { margin: 0; color: var(--danger); font: var(--text-md) var(--font-ui); max-width: 60ch; text-align: center; }
+/* The tour once there are recents: one line, its action a link (never bare
+   muted text). */
+.welcome-line { margin: 16px 0 0; text-align: center; color: var(--muted); font: var(--text-md) var(--font-ui); }
+.welcome-link {
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: var(--accent);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.welcome-link:hover { color: var(--ink); }
+
+.welcome-error { margin: 19px 0 0; color: var(--danger); font: var(--text-md) var(--font-ui); max-width: 60ch; text-align: center; }
 .welcome-error[hidden] { display: none; }

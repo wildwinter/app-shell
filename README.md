@@ -1193,6 +1193,26 @@ title bar's window-drag region, where Electron gives the page no hover and no cl
   remove, and the key adder refuses its name. `recordMapSummary` lists them too; `mapEntries` and `builtInOf` (from
   `./value-rows`) give a host the same list.
 
+## v2.0 (a quiet welcome, and a quiet What's New)
+
+Breaking: `mountWelcome` and `whatsNewAfterUpdate` take new options. Ian, 2026-11-12: the page with no project open
+was the busiest page in either app, and What's New arrived over the work as a wall of text (patterkit
+`design/proposals/quiet-welcome-and-whats-new.md`, W1 to W4).
+
+- **The welcome has two states.** With no recents (a first run): the `mark`, the title and its line, then `tour`
+  (the accent button), `create`, and `open`. With recents: `open` (the accent) and `create`, the recent names under
+  a hairline, and the tour as one line ("New to Patter? Take the tour"). A recent is its name; the folder is its
+  rollover, and shows under the name only when two names in the list match. `actions`, `groups`, `tourLine`, and
+  `recentsCaption` are gone: kits and examples are New Project's (the kit gallery), and only there.
+- **`mark`** is an optional node above the title: the app's mark now, an illustration later, drawn in the
+  palette's colours so it reads in every palette.
+- **Nothing opens after an update.** `whatsNewAfterUpdate(state, { ...opts, host })` puts a "What's new" chip in
+  `host` (the top bar's trailing end, beside "Restart to update") and returns it, or null. Clicking it opens the
+  dialog and takes the chip away. It's in the accent when the update has a Breaking entry.
+- **The dialog lists titles.** Each version's Breaking entries (always), then the rest up to `MAX_TITLES` (5) in all,
+  as the bare lede, then one line: "And 3 more changes, and 6 fixes." and the link to the full release notes. The
+  forty-word previews (v1.1) are gone from the dialog; `changelog.ts` still reads them.
+
 ## Third-party
 
 The icon vocabulary (`iconNode`, `iconSvg` in `src/icons.ts`) vendors drawings

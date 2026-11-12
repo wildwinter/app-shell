@@ -1,10 +1,15 @@
 // ---------------------------------------------------------------------------
-// What's New (the October 2026 UI review, step 5a): the first launch after an
-// update says what's new in it, in the changelog's own words, and Help ▸
-// What's New shows the latest at any time. It tells people what's new, not
-// what moved inside: each entry's preview (its bold lede and the start of its
-// first paragraph; changelog.ts), Breaking ones first and marked, the fixes
-// the same way under their own heading, and a link to the full release notes.
+// What's New: after an update nothing opens. A chip in the top bar says
+// "What's new" for that session, beside where "Restart to update" sits, and
+// clicking it opens the dialog; Help ▸ What's New opens the same dialog at any
+// time (patterkit design/proposals/quiet-welcome-and-whats-new.md, W3 and W4;
+// Ian, 2026-11-12: a dialog over the work, full of text, was "so in your
+// face"). It replaces the launch dialog of the October 2026 UI review, step 5a.
+//
+// The dialog lists titles: each version's Breaking entries (always, marked),
+// then the rest up to MAX_TITLES in all, then one line counting what's left
+// and the fixes, with the link to the full release notes. A title is the
+// entry's bold lede (changelog.ts), so a lede has to say the change by itself.
 // A version that only carries another release ("Patterplay 0.46.0 inside") is
 // one line, not a heading.
 //
@@ -12,7 +17,7 @@
 // text), so nothing here needs the network. A fresh install shows nothing:
 // nothing has changed for them. Several versions skipped show together, newest
 // first. A tickbox, "Show what's new after updates", ticked by default, turns
-// the launch dialog off; Help ▸ What's New still opens it.
+// the chip off; Help ▸ What's New still opens the dialog.
 //
 // A version's Announcement (hand-written news, such as a new member of the
 // family) is a callout above every version shown, so it reads as a banner even
@@ -25,6 +30,7 @@
 
 import { el } from "./dom.js";
 import { dialogFrame } from "./dialog.js";
+import { plural } from "./util.js";
 import { latestVersions, parseChangelog, versionsSince, type ChangelogAnnouncement, type ChangelogLead, type ChangelogVersion } from "./changelog.js";
 
 export { WHATS_NEW_CHANNELS, type WhatsNewState } from "./whats-new-channels.js";
@@ -50,18 +56,33 @@ export interface WhatsNewOptions {
   onClose?: () => void;
 }
 
-/** The first launch after an update: open What's New for every version since
- *  the last run, if there's anything to say and the tickbox allows it. True
- *  when it opened. */
-export function whatsNewAfterUpdate(state: WhatsNewState, opts: Omit<WhatsNewOptions, "version" | "show">): boolean {
-  if (!state.show) return false;
+/** The most titles one version shows; its Breaking entries always show, and count towards it. */
+export const MAX_TITLES = 5;
+
+/** The first launch after an update: put the "What's new" chip in `host` (the
+ *  top bar's trailing end) for every version since the last run, if there's
+ *  anything to say and the tickbox allows it. Clicking the chip opens the
+ *  dialog and takes the chip away. The chip, or null when there's nothing. */
+export function whatsNewAfterUpdate(state: WhatsNewState, opts: Omit<WhatsNewOptions, "version" | "show"> & { host: HTMLElement }): HTMLButtonElement | null {
+  if (!state.show) return null;
   const all = parseChangelog(opts.changelog);
   // No version on record: an install from before What's New hears about this version; a fresh one, nothing.
   const versions = state.previous !== undefined ? versionsSince(all, state.previous, state.version)
     : state.existing ? latestVersions(all, state.version, 1).filter((v) => v.version === state.version) : [];
-  if (versions.length === 0) return false;
-  showWhatsNew(versions, { ...opts, version: state.version, show: state.show });
-  return true;
+  if (versions.length === 0) return null;
+  opts.host.querySelector(".whatsnew-chip")?.remove();
+  const breaking = versions.some((v) => v.headlines.some((h) => h.breaking));
+  const name = opts.appName === "" ? state.version : `${opts.appName} ${state.version}`;
+  const tip = `${name} is installed.${breaking ? " It has a change to check." : ""} See what’s new.`;
+  const chip = el("button", { className: `whatsnew-chip${breaking ? " attention" : ""}`, text: "What’s new", onClick: () => {
+    chip.remove();
+    showWhatsNew(versions, { ...opts, version: state.version, show: state.show });
+  } });
+  chip.type = "button";
+  chip.dataset["tip"] = tip;
+  chip.setAttribute("aria-label", `What’s new. ${tip}`);
+  opts.host.prepend(chip);
+  return chip;
 }
 
 /** Help ▸ What's New: the latest three released versions up to this one. */
@@ -69,15 +90,20 @@ export function openWhatsNew(opts: WhatsNewOptions): void {
   showWhatsNew(latestVersions(parseChangelog(opts.changelog), opts.version), opts);
 }
 
-/** A preview as the dialog draws it: the bold part strong, `code` as code, a Breaking one marked. */
+/** An entry as the dialog draws it: its title (the bold lede, without a closing full stop), `code` as code, a Breaking one marked. */
 function leadNode(h: ChangelogLead): HTMLElement {
   const li = el("li", "whatsnew-item");
   if (h.breaking) li.append(el("span", "whatsnew-tag", "Breaking"));
-  const strong = el("strong");
-  inline(strong, h.lead);
-  li.append(strong);
-  if (h.rest) inline(li, /^[,;:.)]/.test(h.rest) ? h.rest : ` ${h.rest}`); // "**Quieter corners**, and ..." keeps its comma close
+  inline(li, h.lead.replace(/\.$/, ""));
   return li;
+}
+
+/** "And 3 more changes, and 6 fixes." for what a version's titles leave out; "" when that's nothing. */
+function restLine(more: number, fixes: number, shown: number): string {
+  const parts = [more > 0 ? plural(more, "more change") : "", fixes > 0 ? plural(fixes, "fix", "fixes") : ""].filter(Boolean);
+  if (parts.length === 0) return "";
+  const said = parts.join(", and ");
+  return `${shown > 0 || more > 0 ? `And ${said}` : said}.`;
 }
 
 /** Text with `code` spans, as the changelog writes menu items and identifiers. */
@@ -133,13 +159,12 @@ function showWhatsNew(versions: ChangelogVersion[], opts: WhatsNewOptions): void
     const section = el("section", "whatsnew-version");
     const head = el("h3", "whatsnew-head", opts.appName === "" ? v.version : `${opts.appName} ${v.version}`);
     section.append(head);
-    if (v.headlines.length) section.append(el("ul", "whatsnew-list", ...v.headlines.map(leadNode)));
-    if (v.fixed.length) {
-      section.append(el("p", "whatsnew-sub", "Fixed"));
-      section.append(el("ul", "whatsnew-list whatsnew-fixed", ...v.fixed.map(leadNode)));
-    }
-    const foot = el("p", "whatsnew-foot", link);
-    section.append(foot);
+    const breaking = v.headlines.filter((h) => h.breaking);
+    const others = v.headlines.filter((h) => !h.breaking).slice(0, Math.max(0, MAX_TITLES - breaking.length));
+    const shown = [...breaking, ...others];
+    if (shown.length) section.append(el("ul", "whatsnew-list", ...shown.map(leadNode)));
+    const rest = restLine(v.headlines.length - shown.length, v.fixed.length, shown.length);
+    section.append(el("p", "whatsnew-foot", rest ? `${rest} ` : null, link));
     frame.body.append(section);
   }
 

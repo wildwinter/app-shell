@@ -1,23 +1,35 @@
-/* What's New (whats-new.ts): each version's previews in a list (Breaking ones
-   tagged), its fixes under a small heading, a link to the full notes, and the
-   tickbox at the foot. A version that only carries another release is one line. An announcement
-   is a callout above the versions. The panel and
-   the actions row are the dialog frame's (dialog.css); the button is `.btn`. */
-.whatsnew-dialog { --dialog-width: 520px; }
+/* What's New (whats-new.ts): the chip the top bar carries after an update, and
+   the dialog it opens: each version's titles in a list (Breaking ones tagged),
+   then one line counting the rest with a link to the full notes, and the
+   tickbox at the foot. A version that only carries another release is one line.
+   An announcement is a callout above the versions. The panel and the actions
+   row are the dialog frame's (dialog.css); the button is `.btn`. */
+
+/* The chip: quieter than "Restart to update" beside it, which asks for
+   something. An outline and muted words, in ink on hover; in the accent when
+   the update has a change to check. */
+.whatsnew-chip {
+  height: 22px; padding: 0 9px; border: var(--hairline, 1px) solid var(--line); border-radius: var(--radius-sm);
+  background: none; color: var(--muted); font: 500 var(--text-sm) var(--font-ui); cursor: pointer; white-space: nowrap;
+  -webkit-app-region: no-drag;
+  transition: background-color var(--dur-tint) var(--ease-standard), color var(--dur-tint) var(--ease-standard);
+}
+.whatsnew-chip:hover { color: var(--ink); background: color-mix(in oklab, var(--accent) 8%, transparent); }
+.whatsnew-chip.attention { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 35%, transparent); }
+
+.whatsnew-dialog { --dialog-width: 416px; }
 .whatsnew-dialog .shell-dialog-body { display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
 .whatsnew-announcement { padding: 10px 12px; border-radius: var(--radius-md); background: var(--accent-soft, color-mix(in oklab, var(--accent) 10%, transparent)); border: var(--hairline) solid color-mix(in oklab, var(--accent) 35%, transparent); }
 .whatsnew-announcement p { margin: 0; font: var(--text-md)/1.45 var(--font-ui); color: var(--ink-read, var(--ink)); }
 .whatsnew-announcement strong { font-weight: 600; color: var(--ink); }
 .whatsnew-announcement code { font: var(--text-sm) var(--font-mono); }
 .whatsnew-announcement a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
-.whatsnew-version { display: flex; flex-direction: column; gap: 6px; }
+.whatsnew-version { display: flex; flex-direction: column; gap: 8px; }
 .whatsnew-head { margin: 0; font: 600 var(--text-md) var(--font-ui); color: var(--ink); }
 .whatsnew-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
-.whatsnew-item { font: var(--text-md)/1.45 var(--font-ui); color: var(--ink-read, var(--ink)); }
-.whatsnew-item strong { font-weight: 600; color: var(--ink); }
+.whatsnew-item { font: var(--text-md)/1.45 var(--font-ui); color: var(--ink); }
 .whatsnew-item code { font: var(--text-sm) var(--font-mono); }
 .whatsnew-tag { display: inline-block; margin-right: 6px; padding: 0 5px; border-radius: var(--radius-sm, 4px); font: 600 var(--text-xs) var(--font-ui); color: var(--on-accent, #fff); background: var(--warn, var(--accent)); vertical-align: 0.1em; }
-.whatsnew-sub { margin: 4px 0 0; font: 600 var(--text-sm) var(--font-ui); color: var(--muted); }
 .whatsnew-carrier { margin: 0; font: var(--text-md)/1.45 var(--font-ui); color: var(--ink-read, var(--ink)); }
 .whatsnew-carrier strong { font-weight: 600; color: var(--ink); }
 .whatsnew-carrier code { font: var(--text-sm) var(--font-mono); }

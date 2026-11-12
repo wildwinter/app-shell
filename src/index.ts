@@ -132,7 +132,7 @@ export type { UpdaterViewOptions, UpdaterLink, UpdateReadyOptions } from "./upda
 export type { UpdaterDownloadProgress, UpdaterPromptOptions, UpdaterReadyInfo } from "./updater.js";
 // No project open: the welcome (welcome.ts + welcome.css).
 export { mountWelcome } from "./welcome.js";
-export type { Welcome, WelcomeOptions, WelcomeAction, WelcomeRecent, WelcomeGroup, WelcomeGroupItem } from "./welcome.js";
+export type { Welcome, WelcomeOptions, WelcomeAction, WelcomeTour, WelcomeRecent } from "./welcome.js";
 // The new-thing moment: pick a starting point by what you want to make (kit-gallery.ts + .css).
 export { openKitGallery, kitTile } from "./kit-gallery.js";
 export type { KitGallery, KitGalleryOptions, KitGallerySection, KitGalleryItem, KitGalleryChoice } from "./kit-gallery.js";

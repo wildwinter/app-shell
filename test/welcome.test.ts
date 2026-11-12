@@ -1,4 +1,4 @@
-// The welcome (welcome.ts): actions, the tour line, groups as rows, recents,
+// The welcome (welcome.ts): its two states (a first run, and with recents),
 // and the drag region with its opt-outs in welcome.css.
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -9,92 +9,85 @@ import { mountWelcome } from "../src/welcome.js";
 afterEach(() => document.body.replaceChildren());
 
 describe("mountWelcome", () => {
-  it("renders title, sub, actions (one primary), recents with name and path", () => {
-    const open = vi.fn(), recent = vi.fn();
+  const acts = (open = vi.fn(), create = vi.fn()) => ({ open: { label: "Open a project…", onClick: open }, create: { label: "New project…", onClick: create } });
+  const tour = (onClick = vi.fn()) => ({ label: "Take the tour", prompt: "New to Patter?", onClick });
+  const buttons = (root: HTMLElement): HTMLButtonElement[] => [...root.querySelectorAll<HTMLButtonElement>(".welcome-actions .btn")];
+  const primary = (root: HTMLElement): string[] => buttons(root).filter((b) => b.classList.contains("primary")).map((b) => b.textContent!);
+
+  it("on a first run: the mark, the title and its line, then the tour (the accent), New, and Open, and nothing else", () => {
+    const go = vi.fn();
+    const mark = document.createElement("svg-mark");
     const host = document.createElement("div");
-    const w = mountWelcome(host, {
-      title: "Patterpad", sub: "Write the script.",
-      actions: [{ label: "Open a project…", onClick: open, primary: true }, { label: "New project…", onClick: () => {} }],
-      recents: [{ name: "Tavern", path: "/home/me/tavern.patter", onOpen: recent }],
-    });
+    const w = mountWelcome(host, { title: "Patterpad", sub: "Write the script.", ...acts(), tour: tour(go), mark, recents: [] });
     expect(host.firstElementChild).toBe(w.el);
-    expect(w.el.classList.contains("welcome")).toBe(true);
+    expect(w.el.classList.contains("first-run")).toBe(true);
+    expect(w.el.querySelector(".welcome-mark")?.firstElementChild).toBe(mark);
     expect(w.el.querySelector(".welcome-title")?.textContent).toBe("Patterpad");
     expect(w.el.querySelector(".welcome-sub")?.textContent).toBe("Write the script.");
-    const btns = [...w.el.querySelectorAll<HTMLButtonElement>(".welcome-actions .btn")];
-    expect(btns.map((b) => b.textContent)).toEqual(["Open a project…", "New project…"]);
-    expect(btns[0]?.classList.contains("primary")).toBe(true);
-    expect(btns[1]?.classList.contains("primary")).toBe(false);
-    btns[0]!.click();
-    expect(open).toHaveBeenCalledOnce();
-    expect(w.el.querySelector(".welcome-caption")?.textContent).toBe("Recent");
-    const row = w.el.querySelector<HTMLButtonElement>(".welcome-recent")!;
-    expect(row.querySelector(".welcome-recent-name")?.textContent).toBe("Tavern");
-    expect(row.querySelector(".welcome-recent-path")?.textContent).toBe("/home/me/tavern.patter");
-    row.click();
-    expect(recent).toHaveBeenCalledOnce();
+    expect(buttons(w.el).map((b) => b.textContent)).toEqual(["Take the tour", "New project…", "Open a project…"]);
+    expect(primary(w.el)).toEqual(["Take the tour"]);
+    buttons(w.el)[0]!.click();
+    expect(go).toHaveBeenCalledOnce();
+    expect(w.el.querySelector(".welcome-recents")).toBeNull();
     expect(w.el.querySelector(".welcome-line")).toBeNull();
     expect(w.el.querySelector<HTMLElement>(".welcome-error")?.hidden).toBe(true);
   });
 
-  it("hides the recents caption with no recents, and setRecents redraws", () => {
-    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", actions: [], recents: [] });
-    expect(w.el.querySelector(".welcome-recents")).toBeNull();
+  it("on a first run with no tour, New is the accent", () => {
+    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", ...acts(), recents: [] });
+    expect(buttons(w.el).map((b) => b.textContent)).toEqual(["New project…", "Open a project…"]);
+    expect(primary(w.el)).toEqual(["New project…"]);
+  });
+
+  it("with recents: Open (the accent) and New, the names with the folder as rollover, and the tour as a line", () => {
+    const recent = vi.fn(), go = vi.fn();
+    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", ...acts(), tour: tour(go),
+      recents: [{ name: "Tavern", path: "/home/me/tavern.patter", onOpen: recent }] });
+    expect(w.el.classList.contains("first-run")).toBe(false);
+    expect(buttons(w.el).map((b) => b.textContent)).toEqual(["Open a project…", "New project…"]);
+    expect(primary(w.el)).toEqual(["Open a project…"]);
+    const list = w.el.querySelector(".welcome-recents")!;
+    expect(list.getAttribute("aria-label")).toBe("Recent projects");
+    expect(w.el.querySelector(".welcome-caption")).toBeNull();
+    const row = list.querySelector<HTMLButtonElement>(".welcome-recent")!;
+    expect(row.textContent).toBe("Tavern");
+    expect(row.dataset["tip"]).toBe("/home/me/tavern.patter");
+    row.click();
+    expect(recent).toHaveBeenCalledOnce();
+    const line = w.el.querySelector(".welcome-line")!;
+    expect(line.textContent).toBe("New to Patter? Take the tour");
+    line.querySelector("button")!.click();
+    expect(go).toHaveBeenCalledOnce();
+  });
+
+  it("shows the folder under a name only when two names in the list match", () => {
+    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", ...acts(), recents: [
+      { name: "Tavern", path: "/a/tavern.patter", onOpen: () => {} },
+      { name: "Heist", path: "/heist.patter", onOpen: () => {} },
+      { name: "Tavern", path: "/b/tavern.patter", onOpen: () => {} }] });
+    const rows = [...w.el.querySelectorAll<HTMLElement>(".welcome-recent")];
+    expect(rows.map((r) => r.querySelector(".welcome-recent-path")?.textContent ?? null)).toEqual(["/a/tavern.patter", null, "/b/tavern.patter"]);
+    expect(rows[1]!.dataset["tip"]).toBe("/heist.patter");
+  });
+
+  it("setRecents moves between the two states", () => {
+    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", ...acts(), tour: tour(), recents: [] });
     w.setRecents([{ name: "A", path: "/a", onOpen: () => {} }, { name: "B", path: "/b", onOpen: () => {} }]);
     expect(w.el.querySelectorAll(".welcome-recent").length).toBe(2);
+    expect(primary(w.el)).toEqual(["Open a project…"]);
     w.setRecents([]);
     expect(w.el.querySelector(".welcome-recents")).toBeNull();
+    expect(primary(w.el)).toEqual(["Take the tour"]);
   });
 
   it("caps the recents at five by default", () => {
     const many = Array.from({ length: 8 }, (_, i) => ({ name: `P${i}`, path: `/p${i}`, onOpen: () => {} }));
-    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", actions: [], recents: many });
+    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", ...acts(), recents: many });
     expect(w.el.querySelectorAll(".welcome-recent").length).toBe(5);
   });
 
-  it("draws groups as captioned lists of rows (name + hint), with the note, and the tour line", () => {
-    const pick = vi.fn();
-    const tour = document.createElement("p");
-    tour.textContent = "New to Patter?";
-    const w = mountWelcome(document.createElement("div"), {
-      title: "T", sub: "S", actions: [], recents: [], tourLine: tour,
-      groups: [{ caption: "Learn from a finished project", note: "Each opens as your own copy.",
-        items: [{ name: "The Hamlet", hint: "Start here.", onOpen: pick }, { name: "The Village", onOpen: () => {} }] }],
-    });
-    expect(w.el.querySelector(".welcome-line")?.firstElementChild).toBe(tour);
-    const group = w.el.querySelector(".welcome-group")!;
-    const cap = group.querySelector(".welcome-caption")!;
-    expect(cap.textContent).toBe("Learn from a finished project");
-    expect(cap.classList.contains("overline")).toBe(false);
-    expect(group.querySelector(".welcome-note")?.textContent).toBe("Each opens as your own copy.");
-    const rows = [...group.querySelectorAll<HTMLButtonElement>(".welcome-item")];
-    expect(rows.map((r) => r.querySelector(".welcome-item-name")?.textContent)).toEqual(["The Hamlet", "The Village"]);
-    expect(rows[0]?.querySelector(".welcome-item-hint")?.textContent).toBe("Start here.");
-    expect(rows[1]?.querySelector(".welcome-item-hint")).toBeNull();
-    rows[0]!.click();
-    expect(pick).toHaveBeenCalledOnce();
-  });
-
-  it("draws a tiled group as the kit gallery's tiles, with badges, and opens on click", () => {
-    const open = vi.fn();
-    const w = mountWelcome(document.createElement("div"), {
-      title: "T", sub: "S", actions: [], recents: [],
-      groups: [{ caption: "Learn from a finished project", tiles: true,
-        items: [{ name: "The Hamlet", hint: "Small.", badge: "Start here", features: ["Places", "Hands"], onOpen: open }, { name: "The Village", hint: "Full size.", onOpen: () => {} }] }],
-    });
-    expect(w.el.querySelector(".welcome-list")).toBeNull();
-    const tiles = [...w.el.querySelectorAll<HTMLButtonElement>(".welcome-tiles .kit-gallery-tile")];
-    expect(tiles.map((t) => t.querySelector(".kit-gallery-tile-name")?.textContent)).toEqual(["The Hamlet", "The Village"]);
-    expect(tiles[0]?.querySelector(".kit-gallery-badge")?.textContent).toBe("Start here");
-    expect(tiles[1]?.querySelector(".kit-gallery-badge")).toBeNull();
-    expect(tiles[0]?.querySelector(".kit-gallery-tile-blurb")?.textContent).toBe("Small.");
-    expect([...tiles[0]!.querySelectorAll(".kit-gallery-feature")].map((f) => f.textContent)).toEqual(["Places", "Hands"]);
-    tiles[0]!.click();
-    expect(open).toHaveBeenCalledOnce();
-  });
-
   it("shows and clears the error line", () => {
-    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", actions: [], recents: [], error: "It moved." });
+    const w = mountWelcome(document.createElement("div"), { title: "T", sub: "S", ...acts(), recents: [], error: "It moved." });
     const err = w.el.querySelector<HTMLElement>(".welcome-error")!;
     expect(err.hidden).toBe(false);
     expect(err.textContent).toBe("It moved.");
